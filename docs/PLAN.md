@@ -1,4 +1,4 @@
-# fenics-smoldyn: research plan
+# viva-pde-particle: research plan
 
 PDE/particle hybrid co-simulation with process-bigraph, compared against the hybrid solver embedded in vcell-fvsolver.
 See [fvsolver-hybrid-notes.md](fvsolver-hybrid-notes.md) for the detailed trace of the reference implementation.
@@ -56,22 +56,22 @@ The fvsolver approach is fast but hard-coded: one mesh type, one splitting schem
   - the `#ifdef OPTION_VCELL` path in `source/python/module.cpp:89`
 
   The patch adds a grid-backed `ValueProvider` that is fed from Python, rather than inventing a new mechanism.
-- **Code home:** a new package in this repo (`viva_fenics_smoldyn`). `viva-smoldyn` and `viva-fenics`
+- **Code home:** a new package in this repo (`viva_pde_particle`). `viva-smoldyn` and `viva-fenics`
   serve as references and patterns. Useful generic changes go back to them later as PRs.
 
 ## Repo / environment
 
 ### Layout (viva-template workspace, nested investigations)
 ```
-fenics-smoldyn/
+viva-pde-particle/
   pixi.toml                    # single self-contained env (conda-forge + pypi)
-  pyproject.toml               # hatchling; package viva_fenics_smoldyn
-  workspace.yaml               # schema_version 2, package_path: viva_fenics_smoldyn, default_emitter: parquet
+  pyproject.toml               # hatchling; package viva_pde_particle
+  workspace.yaml               # schema_version 2, package_path: viva_pde_particle, default_emitter: parquet
   AGENTS.md, CLAUDE.md, README.md, docs/PLAN.md, docs/fvsolver-hybrid-notes.md
   .pbg/schemas/                # from viva-template
   scripts/                     # lint-workspace.py, serve.sh (pixi-aware), build_smoldyn.sh
   external/Smoldyn/            # git submodule -> Smoldyn fork, branch `pyhybrid`
-  viva_fenics_smoldyn/
+  viva_pde_particle/
     core.py                    # build_core(): register processes/steps/emitters
     units.py                   # µM <-> molecules/µm³ (602.214...), area/volume helpers
     grid.py                    # fvsolver-compatible node-centred Cartesian grid, element volumes, binning
@@ -102,7 +102,7 @@ fenics-smoldyn/
   - `pyvcell[solver,native]`, which brings `pyvcell-fvsolver 0.10.7` (cp312 arm64 wheel exists) and
     `libvcell 0.0.18` (arm64 wheel exists)
   - `vivarium-workbench` and `viva-workspace` pulled from git `main`
-  - `viva_fenics_smoldyn` itself as an editable install
+  - `viva_pde_particle` itself as an editable install
 - **Smoldyn:** built from the submodule by the `pixi run build-smoldyn` task, which runs
   `pip install ./external/Smoldyn` with `-DOPTION_VCELL=ON`. This also works around the PyPI problem:
   the current smoldyn 2.75 wheels are Windows-only, and the older macOS wheels are x86_64.
@@ -258,7 +258,7 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
 - **Smoldyn's own Python API is awkward for stepping** (segfault if `molpos` is read before the first run, per viva-smoldyn).
   The new numpy accessors avoid the text output path entirely.
 - **Outward-facing steps that need explicit confirmation when they come up:** creating the GitHub repo for
-  fenics-smoldyn, creating the Smoldyn fork, and any PRs to upstream repos.
+  viva-pde-particle (done 2026-10-02), creating the Smoldyn fork, and any PRs to upstream repos.
 
 ## Verification
 - `pixi install && pixi run build-smoldyn && pixi run test`. Tests import every engine, check unit/binning
