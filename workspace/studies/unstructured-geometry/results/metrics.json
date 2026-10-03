@@ -1,9 +1,9 @@
 {
-  "b2_conversion_b_vs_continuum_rel_l2": 0.009759356986906036,
-  "b2_conversion_decay_max_z": 1.8182841590318934,
-  "b2_conversion_mass_balance_max_rel_dev": 0.00403928124999875,
-  "b2_exchange_mass_balance_max_rel_dev": 0.009912256200804048,
-  "b2_exchange_steady_ratio_rel_err": 0.003323190167524248,
+  "b2_conversion_b_vs_continuum_rel_l2": 0.005295906524118802,
+  "b2_conversion_decay_max_z": 1.5410932691511459,
+  "b2_conversion_mass_balance_max_rel_dev": 0.0010660312500000435,
+  "b2_exchange_mass_balance_max_rel_dev": 0.008637440955738152,
+  "b2_exchange_steady_ratio_rel_err": 0.0011045886898544133,
   "b2_mesh_volume_rel_err": -0.013906373683130302,
-  "b2_wall_time_s": 18.577883005142212
+  "b2_wall_time_s": 119.36015725135803
 }

@@ -103,17 +103,18 @@ visualizations:
   render: "python sims/run.py"
 
 conclusion: |
-  Results (results/metrics.json, 2026-10-03):
-  - **Conversion:** A follows exp(−kt) (|z| ≤ 1.8); A + B is conserved to 0.4%; B matches
-    the continuum FEM to 1.0% relative L2.
-  - **Exchange:** mass balance to 1.0%; steady ratio within 0.33% of k2/k1.
-  - **Geometry:** the polyhedral mesh is 1.4% smaller in volume than the ball, which
-    bounds the geometry-representation mismatch between the two sides.
-  The co-simulation runs on an unstructured mesh with curved particle confinement, and
-  the handoff stays conservative.
+  Results (results/metrics.json, 2026-10-03). Re-run after Study B2d, with Smoldyn confined
+  by the mesh's boundary triangles and the creation fix:
+  - **Conversion:** A follows exp(−kt) (|z| ≤ 1.5); A + B is conserved to 0.11%; B matches
+    the continuum FEM to 0.53% relative L2. The sphere membrane gave 0.4% and 1.0%.
+  - **Exchange:** mass balance to 0.86%; steady ratio within 0.11% of k2/k1.
+  - **Geometry:** the polyhedral mesh is 1.4% smaller in volume than the ball. With the mesh
+    as the membrane, the particle and PDE domains are identical, so this is now a
+    geometry-representation error of the model, not a mismatch between the two halves.
+  The co-simulation runs on an unstructured mesh, and the handoff stays conservative.
   Follow-ups:
   - membrane-bound particles;
-  - a native VCell comparison on the same analytic sphere. VCell handles curved
-    geometries (analytic, image and CSG) with tangent-plane/Voronoi membrane
-    numerics, so this is a discretization comparison, not a capability gap;
-  - higher-order (P2) PDE.
+  - native VCell on the same analytic sphere: done in sphere-cosim-vs-native (B2b).
+    VCell handles curved geometries (analytic, image and CSG) with tangent-plane/Voronoi
+    membrane numerics, so that is a discretization comparison, not a capability gap;
+  - higher-order (P2) PDE, or a finer mesh, to shrink the 1.4% volume error.

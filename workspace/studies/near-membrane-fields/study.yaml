@@ -19,8 +19,8 @@ hypothesis: |
   transfer at the membrane.
   - Native: exterior-node binning drops B sources next to the membrane, so the outer shell
     should be depleted.
-  - Co-sim: Pᵀ folds exterior counts into the nearest boundary DOFs, so its outer shell
-    should be slightly enriched.
+  - Co-sim: exterior-node counts are folded onto boundary DOFs (Pᵀ), so its outer shell
+    should be slightly enriched. Study B2d later revised this cause; see the conclusion.
 objective: |
   Same ball, grid, mesh and solvers as B2b. Conversion A_p → B_f (k = 0.5 /s, 20,000 A
   uniform in the ball), t = 2 s, 32 seeds per solver.
@@ -128,8 +128,8 @@ behavior_tests:
 - name: cosim-shell-unbiased
   classification: secondary
   description: >-
-    Co-sim outer-shell mean B relative to the interior. Expected to FAIL slightly; Pᵀ
-    folding enriches the boundary DOFs.
+    Co-sim outer-shell mean B relative to the interior. Failed (+1.3%) with the sphere
+    membrane; passes since B2d made the mesh boundary the default membrane.
   measure:
     kind: derived_scalar
     field: b2c_cosim_shell_bias
@@ -155,7 +155,7 @@ visualizations:
   render: "python sims/run.py"
 
 conclusion: |
-  Results (results/metrics.json, 2026-10-03; 32 seeds per solver):
+  Results (results/metrics.json, 2026-10-03; 32 seeds per solver; co-sim re-run with the B2d default membrane):
 
   **Geometry.**
   - The node-centred smoothed cell domain is within −0.50% of the ball volume. Taken as-is,
@@ -164,18 +164,22 @@ conclusion: |
 
   **Interior.** Both solvers match the exact uniform E[B]: native +0.49%, co-sim −0.37%.
 
-  **Next to the membrane, both solvers have a boundary artifact, of opposite sign.**
-  - **Native:** the outer shell (r > 3.5 µm) is 2.3% below the interior (z = −20). The
-    profile declines smoothly from about r = 2.5 µm to 0.98 at the membrane, which is the
-    diffusive footprint of the B sources dropped at the boundary. This is B2b's
-    exterior-binning loss, now localized.
-  - **Co-sim:** the shell is 1.3% above the interior (z = 10). This is consistent with Pᵀ
-    folding exterior-node counts into the nearest boundary DOFs: conservative, but it
-    concentrates the sources at the boundary.
-  - Smoothing the native grid barely changes its shell bias (−2.27% vs −2.29% on the
-    staircase). The field is smooth on the scale of the boundary displacement (< 0.1 µm),
-    so the smoothed grid helps geometry and visualization; the field artifact is in the
-    coupling.
+  **Next to the membrane.**
+  - **Native:**
+    - The outer shell (r > 3.5 µm) is 2.3% below the interior (z = −20).
+    - The profile declines smoothly from about r = 2.5 µm to 0.98 at the membrane: the
+      diffusive footprint of the B sources dropped at the boundary.
+    - This is B2b's exterior-binning loss, now localized.
+  - **Co-sim:**
+    - The shell is +0.12% (z = 1.2), unbiased.
+    - The first run, with Smoldyn confined by the exact sphere, gave +1.3% (z = 10).
+      This study attributed that to Pᵀ folding of exterior-node counts. Study B2d showed the
+      cause was the domain mismatch instead: particles in the ~1.4% sliver between sphere and
+      inscribed mesh load the boundary DOFs.
+    - Confining Smoldyn by the mesh's own boundary (now the default) removes it.
+  - **Smoothing** barely changes the native shell bias (−2.27% vs −2.29% on the staircase).
+    The field is smooth on the scale of the boundary displacement (< 0.1 µm), so the smoothed
+    grid helps geometry and visualization; the field artifact is in the coupling.
 
   Neither effect is a limitation of VCell's geometry or PDE numerics. Both come from how
   particles near a curved membrane are binned to the field.
@@ -184,4 +188,4 @@ conclusion: |
     node. Its correction for a nearest node in a different compartment (re-bin to the
     nearest same-compartment neighbour) is present but commented out. Re-enabling it is the
     likely native fix.
-  - Co-sim fix: distribute exterior counts by cell overlap rather than to the nearest DOF.
+  - Co-sim fix (B2d, done): the mesh boundary as the particle membrane.
