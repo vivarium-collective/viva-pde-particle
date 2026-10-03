@@ -2,7 +2,7 @@
 name = "viva-pde-particle"
 version = "0.0.0"
 description = "PDE/particle hybrid co-simulation (finite volume / FEniCSx + Smoldyn) with process-bigraph, benchmarked against vcell-fvsolver"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
     # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server

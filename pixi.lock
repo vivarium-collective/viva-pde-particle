@@ -12185,7 +12185,7 @@ packages:
   - vivarium-workbench @ git+https://github.com/vivarium-collective/vivarium-workbench.git@main
   - pytest>=7.4 ; extra == 'dev'
   - pyvcell[solver,native]>=0.3.3 ; extra == 'reference'
-  requires_python: '>=3.11'
+  requires_python: '>=3.12'
 - pypi: ../pyvcell
   name: pyvcell
   requires_dist:
