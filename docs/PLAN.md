@@ -103,8 +103,9 @@ viva-pde-particle/
     `libvcell 0.0.18` (arm64 wheel exists)
   - `vivarium-workbench` and `viva-workspace` pulled from git `main`
   - `viva_pde_particle` itself as an editable install
-- **Smoldyn:** built from the submodule by the `pixi run build-smoldyn` task, which runs
-  `pip install ./external/Smoldyn` with `-DOPTION_VCELL=ON`. This also works around the PyPI problem:
+- **Smoldyn:** built from the submodule by the `pixi run build-smoldyn` task (`scripts/build_smoldyn.sh`).
+  The task applies `patches/smoldyn/*.patch`, configures CMake with `-DOPTION_VCELL=ON` and graphics off,
+  then pip-installs the staged `build/.../py` package. This also works around the PyPI problem:
   the current smoldyn 2.75 wheels are Windows-only, and the older macOS wheels are x86_64.
 - **Local development against sibling checkouts in `../`:** a `pixi run dev-link` task runs
   `pip install -e ../pyvcell ../vivarium-workbench …`, so committed pins stay git/PyPI-based and the
@@ -161,12 +162,19 @@ Each process owns its own unit conversion, using `units.py` and `grid.py`.
 - **`SmoldynHybrid`:**
   - Persistent `smoldyn.Simulation`.
   - On `update(state, interval)`: `setField` for each input field, then `runUntil(t+interval)`, then return `getMoleculeHistogram`.
-- **Scheduling semantics:**
+- **Scheduling semantics** (confirmed in Phase 0 by `tests/test_scheduling_semantics.py`):
   - Process-bigraph processes read the state at the start of their interval, and their updates are applied
     afterwards. This reproduces fvsolver's "everyone reads old" lagged coupling.
   - With PDE interval `dt` and Smoldyn interval `k·dt`, the PDE sees particle concentrations held for k steps,
     exactly as in fvsolver.
-  - Phase 0 confirms this ordering on a trivial composite, and the confirmation is written up.
+  - **Difference for k > 1:** fvsolver runs the Smoldyn step after the k-th PDE iterate (`SimTool.cpp:889-893`),
+    so a Smoldyn step over `[T, T+k·dt]` sees the field at `T+(k-1)·dt`. A process-bigraph process with
+    `interval = k·dt` sees the field at `T`.
+  - So `SmoldynHybrid` gets a `coupling` option:
+    - `fvsolver` (default): run on the PDE's `dt` clock and step Smoldyn by `k·dt` on every k-th call, which
+      replicates fvsolver exactly.
+    - `start-of-interval`: use `interval = k·dt`, the plain process-bigraph behavior. This is a variant
+      worth comparing in its own right.
 - **Alternative orchestration (Phase 5), not possible in fvsolver:**
   - A `HybridCoupler` Step-based orchestrator for Gauss-Seidel ordering or Strang splitting.
   - A sub-cycled PDE (implicit backward Euler with a larger dt).
@@ -229,7 +237,7 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
 
 ## Phases (execution order)
 
-0. **Scaffold and spikes** (this session, after approval)
+0. **Scaffold and spikes**: done 2026-10-03; see "Phase 0 results" below.
    - Commit `docs/PLAN.md` and `docs/fvsolver-hybrid-notes.md`. The notes hold the coupling trace above,
      with file:line references.
    - Scaffold from viva-template: `workspace.yaml`, the package with an empty `build_core`, AGENTS/CLAUDE.md, `.gitignore`.
@@ -247,9 +255,43 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
 5. **Orchestration variants:** Studies B3–B5. Write-up.
 
+## Phase 0 results (2026-10-03)
+
+- **Scaffold:** rendered from `vivarium-collective/viva-template` (workspace `pde-particle`, package
+  `viva_pde_particle`). The generated `workspace-ci.yml` is drift-guarded, so it stays as generated: it
+  installs the light pure-Python package with uv on Python 3.11, and engine tests skip there.
+- **Environment:** `pixi.toml` provides Python 3.12, dolfinx 0.10.0, `pyvcell-fvsolver` 0.10.7 (reports
+  "with smoldyn version 2.38"), `libvcell` 0.0.18, `pyvcell` 0.4.1, process-bigraph 1.8.5 and
+  vivarium-workbench from git main.
+  - **Needs macOS 15+:** `[system-requirements] macos = "15.0"`, because the `pyvcell-fvsolver` wheels are
+    tagged `macosx_15_0`.
+  - **Ecosystem drift:** `viva-marketplace` is now the `viva-catalog` distribution, and pixi does not read
+    transitive `[tool.uv.sources]`. So `pixi.toml` mirrors vivarium-workbench main's git sources.
+  - `pixi run check-engines` reports what is importable.
+- **Smoldyn `OPTION_VCELL` build:** upstream (`ssandrews/Smoldyn` `e21d6dd`) did not compile with
+  `OPTION_VCELL`. The fixes are committed on the submodule's local `pyhybrid` branch and exported to
+  `patches/smoldyn/0001-*.patch`:
+  - compile the sources as C++, as VCell's vendored Smoldyn does
+  - `extern "C"` guards on libSteve headers
+  - use the system zlib and drop the stale Windows `zlib.h`/`zconf.h`
+  - fix a swallowed brace in `smolcomparts.c`
+  - update a stale `surfsetrate` call
+  - `calloc` casts, a missing `<sstream>`, and missing includes in `module.cpp`
+
+  The vanilla `OPTION_VCELL=OFF` build still compiles. The parent repo pins the submodule at the upstream
+  commit, and `build_smoldyn.sh` applies the patch, so the repo builds anywhere until a fork exists.
+  `tests/test_smoldyn_build.py` checks first-order decay against the analytic solution.
+- **Scheduling:** process-bigraph reads state at the start of each interval (Jacobi). This matches fvsolver
+  except for the k > 1 field-read difference above, which is handled by the `coupling` option.
+- **Workbench:** `pixi run lint` reports `workspace lint: OK`. `pixi run serve` starts the dashboard on the
+  pixi interpreter, and `/api/workspace` lists both investigations. The planned studies are recorded in each
+  investigation's `at_a_glance`, and each study's `study.yaml` is created when its phase starts (lint
+  rejects `studies:` entries without one).
+
 ## Risks / open items
-- **`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path. Fallback: compile only
-  the needed hybrid sources and the provider into the python module, without the full VCell option.
+- ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
+  Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
+  on arm64.
 - **Hybrid input generation:** if `libvcell` does not emit hybrid fvinput, our own writer is the path, and it
   needs one VCell-desktop-generated golden case to validate against. Check `../vcell` or a VCML from the VCell
   database for an existing hybrid model.

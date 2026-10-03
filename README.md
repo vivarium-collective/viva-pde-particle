@@ -1,4 +1,4 @@
-# pde-particle
+# viva-pde-particle
 
 <!-- BEGIN:dashboard -->
 <!-- `vivarium-workbench gen-readme` fills this with a prominent link to the
@@ -9,13 +9,28 @@
      (and `--check` in CI) to keep it fresh. -->
 <!-- END:dashboard -->
 
-A Process-Bigraph research workspace scaffolded from
+Research workspace for **PDE/particle hybrid co-simulation with process-bigraph**. A PDE
+process (numpy finite volume, later FEniCSx) is coupled to a Smoldyn particle process and
+benchmarked against the hybrid PDE/Smoldyn solver embedded in
+[vcell-fvsolver](https://github.com/virtualcell/vcell-fvsolver) for accuracy, performance
+and generalizability. Scaffolded from
 [viva-template](https://github.com/vivarium-collective/viva-template).
+
+- [docs/PLAN.md](docs/PLAN.md): research plan, design and phase status
+- [docs/fvsolver-hybrid-notes.md](docs/fvsolver-hybrid-notes.md): how the embedded hybrid solver works
+- Investigations: `workspace/investigations/cosim-vs-embedded-hybrid`, `workspace/investigations/hybrid-generalizability`
 
 ## Getting started
 
-    bash scripts/serve.sh           # open the dashboard
-    python3 scripts/lint-workspace.py
+Requires [pixi](https://pixi.sh). Supported platforms are osx-arm64 (macOS 15+) and linux-64.
+
+    git clone --recurse-submodules https://github.com/vivarium-collective/viva-pde-particle.git
+    cd viva-pde-particle
+    pixi install              # Python 3.12, dolfinx, pyvcell-fvsolver, process-bigraph, workbench
+    pixi run build-smoldyn    # builds Smoldyn (OPTION_VCELL) from external/Smoldyn + patches/
+    pixi run test
+    pixi run lint             # workspace lint: OK
+    pixi run serve            # open the vivarium-workbench dashboard
 
 See `NEXT_STEPS.md` for the full tour.
 
