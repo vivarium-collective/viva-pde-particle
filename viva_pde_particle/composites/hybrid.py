@@ -32,7 +32,14 @@ def build_hybrid_document(
     coupling: str = "fvsolver",
     seed: int = 1,
     particle_init: str = "exact",
+    pde_engine: str = "fv",
+    pde_options: dict | None = None,
 ) -> dict:
+    """``pde_engine``: ``"fv"`` (FVReactionDiffusion) or ``"fenicsx"`` (FenicsxReactionDiffusion,
+    ``pde_options={"mass": "lumped" | "consistent"}``)."""
+    engines = {"fv": "local:FVReactionDiffusion", "fenicsx": "local:FenicsxReactionDiffusion"}
+    if pde_engine not in engines:
+        raise ValueError(f"pde_engine must be one of {sorted(engines)}, got {pde_engine!r}")
     parts = partition(model)
     rng = np.random.default_rng(seed)
     counts0 = initial_particle_counts(model, rng, mode=particle_init)
@@ -46,8 +53,8 @@ def build_hybrid_document(
         "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
         "pde": {
             "_type": "process",
-            "address": "local:FVReactionDiffusion",
-            "config": {"grid": grid_cfg, "pde": parts.pde, "dt": dt},
+            "address": engines[pde_engine],
+            "config": {"grid": grid_cfg, "pde": parts.pde, "dt": dt, **(pde_options or {})},
             "interval": dt,
             "inputs": {"fields": ["fields"], "particle_counts": ["particle_counts"]},
             "outputs": {"fields": ["fields"]},
@@ -102,12 +109,14 @@ def run_hybrid(
     record_every: float | None = None,
     core=None,
     particle_init: str = "exact",
+    pde_engine: str = "fv",
+    pde_options: dict | None = None,
 ) -> HybridTrajectory:
     """Run the composite to ``t_end``, recording state every ``record_every`` (default k·dt)."""
     from viva_pde_particle.core import build_core
 
     core = core or build_core()
-    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed, particle_init)
+    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed, particle_init, pde_engine, pde_options)
     sim = Composite({"state": doc}, core=core)
     every = record_every or step_multiplier * dt
     n_records = int(round(t_end / every))

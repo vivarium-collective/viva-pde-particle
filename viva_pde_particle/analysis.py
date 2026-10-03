@@ -102,6 +102,13 @@ def two_sample_z(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.where(se > 0, (a.mean(axis=0) - b.mean(axis=0)) / np.where(se > 0, se, 1), 0.0)
 
 
+def paired_z(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Element-wise z of the mean paired difference a − b (same seeds: common random numbers)."""
+    d = np.asarray(a) - np.asarray(b)
+    se = d.std(axis=0, ddof=1) / np.sqrt(len(d))
+    return np.where(se > 0, d.mean(axis=0) / np.where(se > 0, se, 1), 0.0)
+
+
 def molecules(grid, conc_uM: np.ndarray) -> np.ndarray:
     """Total molecules of a µM field; sums the trailing grid axes (any leading axes kept)."""
     vol = grid.element_volumes * MOLECULES_PER_UM3_PER_UM
@@ -116,6 +123,7 @@ def write_metrics(path: Path, metrics: dict) -> None:
 
 __all__ = [
     "molecules",
+    "paired_z",
     "two_sample_z",
     "continuum_model",
     "histogram_variance",

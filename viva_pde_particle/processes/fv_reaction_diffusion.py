@@ -24,6 +24,17 @@ from process_bigraph import Process
 from viva_pde_particle.grid import CartesianGrid
 
 
+def reaction_rates(terms: list[dict], species: list[str], conc: dict[str, np.ndarray], shape) -> dict[str, np.ndarray]:
+    """dC/dt from mass-action terms (µM/s) for each continuous species (shared by the PDE engines)."""
+    rates = {s: np.zeros(shape) for s in species}
+    for term in terms:
+        r = np.full(shape, term["coeff"] * term["k"])
+        for s, n in term["reactants"].items():
+            r = r * conc[s] ** n
+        rates[term["species"]] += r
+    return rates
+
+
 class FVReactionDiffusion(Process):
     """PDE half of a hybrid model (see :func:`viva_pde_particle.model.partition`).
 
@@ -66,13 +77,7 @@ class FVReactionDiffusion(Process):
 
     def reaction_rates(self, conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """dC/dt from reactions (µM/s) for each continuous species."""
-        rates = {s: np.zeros(self.grid.shape) for s in self.species}
-        for term in self.pde["terms"]:
-            r = np.full(self.grid.shape, term["coeff"] * term["k"])
-            for s, n in term["reactants"].items():
-                r = r * conc[s] ** n
-            rates[term["species"]] += r
-        return rates
+        return reaction_rates(self.pde["terms"], self.species, conc, self.grid.shape)
 
     def step(self, fields: dict[str, np.ndarray], particle_conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         conc = {**particle_conc, **fields}
