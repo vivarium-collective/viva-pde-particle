@@ -28,6 +28,9 @@ macos = "15.0"
 python = "3.12.*"
 # PDE engine (Phase 4). 0.10 matches virtualcell/vcell-fenics.
 fenics-dolfinx = "0.10.*"
+# Unstructured meshes for Investigation B (gmsh is GPL; used here as a meshing tool only).
+gmsh = "*"
+python-gmsh = "*"
 mpich = "*"
 numpy = "*"
 scipy = "*"
