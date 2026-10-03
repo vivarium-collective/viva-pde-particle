@@ -100,3 +100,17 @@ def test_particle_positions_from_per_node_counts():
     assert pts.shape == (2, 3)
     np.testing.assert_allclose(pts[:, :2], [[2.0 - 2e-6, 1.0]] * 2, atol=1e-9)  # nudged inside x = 2
     assert np.all(pts[:, 2] > 0)
+
+
+@needs_hybrid
+def test_zero_reactant_reactions_become_general_kinetics():
+    """VCell mass action drops Kf when there are no reactants; sources must be General kinetics."""
+    from viva_pde_particle.benchmarks.calcium_sparks import TEST1, calcium_sparks_model
+    from viva_pde_particle.reference.vcell_native import to_biomodel
+
+    bm = to_biomodel(calcium_sparks_model(TEST1), t_end=0.1, dt=0.01, output_dt=0.1)
+    leak = next(r for r in bm.model.reactions if r.name == "leak")
+    assert leak.kinetics.kinetics_type == "GeneralKinetics"
+    assert [(p.name, float(p.value)) for p in leak.kinetics.kinetics_parameters] == [("J", 0.1)]
+    pump = next(r for r in bm.model.reactions if r.name == "pump")
+    assert pump.kinetics.kinetics_type == "MassAction"

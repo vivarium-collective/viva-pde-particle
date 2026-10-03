@@ -525,7 +525,51 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
 - Δz = 0.25, because VCell needs ≥ 3 z-nodes (the paper used 0.5).
 - Channel coordinates use defaults approved by the author: columns at x = 2, 4, 6, 8; rows at y = 0.3–1.8.
 
-**Next:** C2 `coupled-sparks-fast-diffusion` (Test 2, against a non-spatial Gibson–Bruck SSA), then A3–A6.
+**Next:** C2 and A3; see the Phase 3c results.
+
+## Phase 3c results (2026-10-03): C2, A3, and three more VCell/Smoldyn findings
+
+**C2 `coupled-sparks-fast-diffusion`** (Test 2 / Fig 2):
+- The reference is an exact event-driven sampler of the well-mixed piecewise-deterministic process
+  (`benchmarks/pdmp.py`, 20,000 realizations). It validates against the analytic open probability on Test 1.
+- With 500 trials per solver:
+  - mean |z| vs reference: 1.57 (co-sim), 0.64 (native);
+  - P(n, t) L2: 0.05 for both, at the sampling floor;
+  - co-sim vs native KS p ≥ 0.035.
+- **Open observation:** both solvers share a marginal KS p ≈ 7·10⁻⁴ against the well-mixed reference, likely
+  residual spatial structure at D = 1000. A follow-up should use larger ensembles or D → ∞.
+
+**A3 `two-way-exchange`** (A_p ⇌ B_f with field-dependent creation):
+- Co-sim conserves A + B to 1.2%, reaches k₂/k₁ to 0.3%, and creates 0.989× the exact expectation.
+- Native overproduces creation by 1.813×, which is exactly the predicted boundary-volume factor 1.815×, so it does
+  not conserve mass.
+
+**Findings:**
+1. **VCell zero-reactant mass action** keeps only −Kr·Π(products) and drops Kf. A constant source (`0 → U`)
+   silently vanished from the native PDE and biased C2 (|z| 11.5 before the fix). The converter now writes
+   zero-reactant reactions as General kinetics. This is by design in VCell, but it's a trap for converters.
+2. **Smoldyn grid 0th-order creation** used the full cell volume at boundary nodes, overproducing by
+   Σfull/Σactual. This is in VCell's vendored Smoldyn: [virtualcell/vcell-fvsolver#24](https://github.com/virtualcell/vcell-fvsolver/issues/24).
+   Fixed in our fork.
+3. **The same path skipped boundary nodes** with geometric compartments: centres on the walls fail `posincompart`.
+   Fixed in our fork by nudging the test point inward.
+4. **Residual start-up artifact:** Smoldyn skips 0th-order creation for about the first 2 steps (~1% over 2 s).
+   Not yet fixed.
+
+**Upstream issues filed:**
+- [virtualcell/vcell#2158](https://github.com/virtualcell/vcell/issues/2158): no-op particle jump processes.
+- [virtualcell/vcell-fvsolver#23](https://github.com/virtualcell/vcell-fvsolver/issues/23): second hybrid solve
+  segfaults.
+- [virtualcell/vcell-fvsolver#24](https://github.com/virtualcell/vcell-fvsolver/issues/24): boundary
+  overproduction.
+
+**Infrastructure:** `run_ensemble(workers=…)` runs co-sim ensembles in spawned processes.
+
+**Next:**
+- A4 `bimolecular-hybrid`;
+- A5 coupling-interval convergence;
+- A6 performance;
+- Investigation B (FEniCSx, Phase 4).
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

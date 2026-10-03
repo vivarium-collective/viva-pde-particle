@@ -44,5 +44,6 @@ executive:
   verdict_status: pending
 studies:
 - separable-calcium-sparks
+- coupled-sparks-fast-diffusion
 expert_docs: []
 acceptance_criteria: []

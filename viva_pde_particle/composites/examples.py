@@ -134,3 +134,37 @@ def calcium_sparks(core=None, *, test=1, dt=0.01, step_multiplier=1, coupling="f
 
     params = {1: TEST1, 2: TEST2}[int(test)]
     return build_hybrid_document(calcium_sparks_model(params), dt, step_multiplier, coupling, seed)
+
+
+# ---------------------------------------------------------------- two-way exchange
+
+def two_way_exchange_model(k1: float = 1.0, k2: float = 0.5, b0: float = 0.2, d_a: float = 1.0,
+                           d_b: float = 1.0, length: float = 10.0, num: int = 11,
+                           thickness: float | None = 1.0) -> HybridModel:
+    """A_particle -> B_field (k1) and B_field -> A_particle (k2·[B]), conserving A + B.
+
+    B starts as a uniform field ``b0`` (µM) and A is absent. The particle side creates A
+    by 0th-order, field-dependent creation (rate k2·[B] per volume), and the PDE side
+    gains B from the binned A. At steady state, total A / total B = k2 / k1.
+    """
+    g = square_grid(length, num, thickness)
+    return HybridModel(
+        g,
+        [Species("A", d_a, particle=True, initial=0), Species("B", d_b, initial=b0)],
+        [Reaction("a_to_b", {"A": 1}, {"B": 1}, k=k1), Reaction("b_to_a", {"B": 1}, {"A": 1}, k=k2)],
+    )
+
+
+@composite_generator(
+    name="two_way_exchange",
+    description="A_particle <-> B_field exchange: particle decay feeds the field; the field creates particles.",
+    parameters={
+        "k1": {"type": "float", "default": 1.0, "description": "A -> B rate (1/s)"},
+        "k2": {"type": "float", "default": 0.5, "description": "B -> A rate (1/s)"},
+        "b0": {"type": "float", "default": 0.2, "description": "Initial B (µM)"},
+        **_COUPLING_PARAMS,
+    },
+)
+def two_way_exchange(core=None, *, k1=1.0, k2=0.5, b0=0.2, dt=0.01, step_multiplier=1,
+                     coupling="fvsolver", seed=1):
+    return build_hybrid_document(two_way_exchange_model(k1, k2, b0), dt, step_multiplier, coupling, seed)

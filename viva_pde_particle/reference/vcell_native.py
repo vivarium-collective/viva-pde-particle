@@ -104,10 +104,18 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
     for s in model.species:
         m.add_species(s.name, COMPARTMENT)
     for r in model.reactions:
-        kin = Kinetics(kinetics_type="MassAction", kinetics_parameters=[
-            KineticsParameter(name="Kf", value=r.k, role="forward rate constant", unit="", reaction_name=r.name),
-            KineticsParameter(name="Kr", value=0.0, role="reverse rate constant", unit="", reaction_name=r.name),
-        ])
+        if not r.reactants:
+            # VCell mass action with no reactants keeps only the reverse term (rate = -Kr·Π products)
+            # and discards Kf, so a constant source must be written as General kinetics J = k.
+            kin = Kinetics(kinetics_type="GeneralKinetics", kinetics_parameters=[
+                KineticsParameter(name="J", value=repr(float(r.k)), role="reaction rate", unit="uM.s-1",
+                                  reaction_name=r.name),
+            ])
+        else:
+            kin = Kinetics(kinetics_type="MassAction", kinetics_parameters=[
+                KineticsParameter(name="Kf", value=r.k, role="forward rate constant", unit="", reaction_name=r.name),
+                KineticsParameter(name="Kr", value=0.0, role="reverse rate constant", unit="", reaction_name=r.name),
+            ])
         rx = Reaction(name=r.name, compartment_name=COMPARTMENT, reversible=False, is_flux=False, kinetics=kin)
         for s, n in r.reactants.items():
             rx.reactants.append(SpeciesReference(name=s, stoichiometry=n, species_ref_type=SpeciesRefType.reactant))

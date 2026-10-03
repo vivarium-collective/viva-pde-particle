@@ -13,16 +13,30 @@ from viva_pde_particle.processes.fv_reaction_diffusion import FVReactionDiffusio
 from viva_pde_particle.units import MOLECULES_PER_UM3_PER_UM
 
 
-def run_ensemble(model: HybridModel, seeds, t_end: float, dt: float, **kwargs):
-    """Run the co-simulation once per seed.
+def _run_one(args):
+    model, seed, t_end, dt, kwargs = args
+    from viva_pde_particle.core import build_core
+
+    return run_hybrid(model, t_end, dt, seed=int(seed), core=build_core(), **kwargs).as_arrays()
+
+
+def run_ensemble(model: HybridModel, seeds, t_end: float, dt: float, workers: int = 1, **kwargs):
+    """Run the co-simulation once per seed, serially or in ``workers`` spawned processes.
 
     Returns ``(times, fields, counts)``, where fields/counts map species to arrays of
     shape (n_seeds, n_times, *grid.shape).
     """
     from viva_pde_particle.core import build_core
 
-    core = build_core()
-    runs = [run_hybrid(model, t_end, dt, seed=int(s), core=core, **kwargs).as_arrays() for s in seeds]
+    if workers > 1:
+        import multiprocessing as mp
+        from concurrent.futures import ProcessPoolExecutor
+
+        with ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn")) as pool:
+            runs = list(pool.map(_run_one, [(model, s, t_end, dt, kwargs) for s in seeds]))
+    else:
+        core = build_core()
+        runs = [run_hybrid(model, t_end, dt, seed=int(s), core=core, **kwargs).as_arrays() for s in seeds]
     times = runs[0][0]
     fields = {s: np.stack([r[1][s] for r in runs]) for s in runs[0][1]}
     counts = {s: np.stack([r[2][s] for r in runs]) for s in runs[0][2]}
@@ -82,6 +96,18 @@ def histogram_variance(grid, counts: np.ndarray, axis: int) -> float:
     return float((counts * (x - mean) ** 2).sum() / n)
 
 
+def two_sample_z(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Element-wise z of the difference of two ensemble means (arrays shaped (n_runs, ...))."""
+    se = np.sqrt(a.var(axis=0, ddof=1) / len(a) + b.var(axis=0, ddof=1) / len(b))
+    return np.where(se > 0, (a.mean(axis=0) - b.mean(axis=0)) / np.where(se > 0, se, 1), 0.0)
+
+
+def molecules(grid, conc_uM: np.ndarray) -> np.ndarray:
+    """Total molecules of a µM field; sums the trailing grid axes (any leading axes kept)."""
+    vol = grid.element_volumes * MOLECULES_PER_UM3_PER_UM
+    return (np.asarray(conc_uM) * vol).sum(axis=tuple(range(-grid.dim, 0)))
+
+
 def write_metrics(path: Path, metrics: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     clean = {k: (float(v) if isinstance(v, (np.floating, np.integer)) else v) for k, v in metrics.items()}
@@ -89,6 +115,8 @@ def write_metrics(path: Path, metrics: dict) -> None:
 
 
 __all__ = [
+    "molecules",
+    "two_sample_z",
     "continuum_model",
     "histogram_variance",
     "run_continuum",

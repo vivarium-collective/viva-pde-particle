@@ -41,3 +41,22 @@ def test_open_probability_and_expectation():
     np.testing.assert_allclose(ref[0], TEST1.U0)
     assert ref[1].max() > TEST1.U0 and ref[1].min() >= TEST1.U0 - 1e-12
     assert spark_error(ref, ref, TEST1.U0) == 0.0
+
+
+def test_well_mixed_pdmp_matches_exact_open_probability():
+    from viva_pde_particle.benchmarks.pdmp import simulate_well_mixed
+
+    t = np.array([0.2, 1.0, 4.0])
+    _, n = simulate_well_mixed(TEST1, 24, 10.6, t, 3000, seed=7)
+    frac = n.mean(axis=0) / 24
+    se = np.sqrt(open_probability(t) * (1 - open_probability(t)) / (24 * 3000))
+    assert np.all(np.abs(frac - open_probability(t)) < 4 * se)
+
+
+def test_well_mixed_pdmp_calcium_between_events():
+    from viva_pde_particle.benchmarks.pdmp import simulate_well_mixed
+
+    # no channels: U stays at U0 exactly
+    U, n = simulate_well_mixed(TEST2, 0, 10.6, np.array([1.0, 2.0]), 5, seed=1)
+    np.testing.assert_allclose(U, TEST2.U0)
+    assert n.max() == 0
