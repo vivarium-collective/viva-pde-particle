@@ -10,7 +10,9 @@ placed one per channel node. Calcium ``U`` is a field.
 - **Influx:** ``O -> O + U``, with ``k = J·602.214`` so that ``dU/dt = J·n_open/V_i``.
 - **Pump:** ``U -> 0`` at ``V_p``, plus a constant source ``0 -> U`` at ``V_p·U₀``.
 
-Geometry: [0, 10.1]×[0, 2.1]×[0, 0.5] µm³, Δx = Δy = 0.1, Δz = 0.5, i.e. 102×22×2 nodes.
+Geometry: [0, 10.1]×[0, 2.1]×[0, 0.5] µm³ with Δx = Δy = 0.1. The paper uses Δz = 0.5
+(2 z-nodes); current VCell requires >= 3 nodes per axis, so Δz = 0.25 (102×22×3 nodes)
+is used for both solvers here.
 The channels are arranged as 4 columns of 6 (Fig 1A). The exact coordinates are not
 given in the text; the defaults below are PROVISIONAL (approved by the author for now):
 columns at x = 2, 4, 6, 8 µm, rows at y = 0.3 ... 1.8 µm (step 0.3), on the z = 0 layer.
@@ -46,7 +48,7 @@ TEST2 = SparkParams(D=1000.0, k_on=0.1, coupled=True)
 
 
 def spark_grid() -> CartesianGrid:
-    return CartesianGrid((0.0, 0.0, 0.0), (10.1, 2.1, 0.5), (102, 22, 2))
+    return CartesianGrid((0.0, 0.0, 0.0), (10.1, 2.1, 0.5), (102, 22, 3))
 
 
 def channel_nodes(grid: CartesianGrid) -> tuple[np.ndarray, ...]:

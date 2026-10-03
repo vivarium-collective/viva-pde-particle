@@ -17,10 +17,18 @@ workbench needs zarr 3.
 
 Limits of the BioModel route:
 
-- Particle initial conditions are uniform. A total ``N`` is passed as the equivalent
-  concentration, and VCell draws Poisson(expected) molecules per node, so the initial
-  total is Poisson(N). Match it in the co-simulation with ``particle_init="poisson"``.
-  Per-node particle placement needs a math-level model (Phase 3b).
+- **Uniform particle initial conditions:** a total ``N`` is passed as the equivalent
+  concentration, and VCell writes ``compartment_mol Poisson(N)``. Match it in the
+  co-simulation with ``particle_init="poisson"``.
+- **Per-node particle counts** (e.g. ion channels at fixed sites) are not expressible in a
+  BioModel. Such species get zero initial concentration, and their initial-molecule lines
+  in the VCell-generated ``.smoldynInput`` are replaced by ``mol 1 X x y z`` at the node
+  centres. Only initial positions change; the math and all other inputs remain VCell's.
+  (The long-term fix is located initial counts in VCell, or MathModel support in libvcell.)
+- **No-op particle reactions** (a particle catalysing a continuous source, ``O -> O + U``)
+  are removed from the ``.smoldynInput``. VCell keeps them as destroy/create jump processes,
+  which suppress the particle's competing reactions in Smoldyn. See
+  :func:`drop_noop_reactions`.
 - Spatially varying field initial conditions need ``Species.initial_expression``.
 - VCell's spatial stochastic math requires 3D geometry. 2D problems run as quasi-2D slabs
   (``Nz = 3``, the minimum VCell accepts per axis), with the co-simulation on the same grid.
@@ -68,8 +76,8 @@ def validate_for_native(model: HybridModel) -> None:
         raise ValueError("a hybrid model needs at least one particle and one continuous species")
     for s in model.species:
         init = np.asarray(s.initial)
-        if s.particle and init.ndim != 0:
-            raise ValueError(f"species {s.name}: per-node particle placement needs a math-level model (Phase 3b)")
+        if s.particle and init.ndim != 0 and (init.shape != g.shape or np.any(init != np.round(init))):
+            raise ValueError(f"species {s.name}: per-node particle counts must be integers of grid shape")
         if not s.particle and init.ndim != 0 and s.initial_expression is None:
             raise ValueError(f"species {s.name}: array initial condition needs Species.initial_expression")
 
@@ -117,7 +125,9 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
         if s.particle:
             init = np.asarray(s.initial)
             if init.ndim != 0:
-                raise ValueError(f"species {s.name}: per-node particle placement needs Phase 3b (math model)")
+                # placed explicitly after input generation (see place_particles)
+                app.map_species(s.name, init_conc=0.0, diff_coef=s.diffusion)
+                continue
             # Concentration mode (UseConcentration, the default): VCell seeds each node with
             # Poisson(conc·602.214·V_node) molecules, so a total N becomes the equivalent uniform µM.
             conc = float(init) / (g.element_volumes.sum() * MOLECULES_PER_UM3_PER_UM)
@@ -139,6 +149,72 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
         options=vc.SmoldynSimulationOptions(random_seed=seed, step_multiplier=step_multiplier),
     )
     return bm
+
+
+def particle_positions(model: HybridModel, inset: float = 1e-6) -> dict[str, np.ndarray]:
+    """Node-centre positions (n, 3), one row per molecule, for species with per-node counts.
+
+    Positions are nudged ``inset`` (relative to the domain size) inside the domain walls.
+    """
+    g = model.grid
+    coords = [c.ravel() for c in g.node_coordinates()]
+    lo = np.array(g.origin) + inset * np.array(g.size)
+    hi = np.array(g.origin) + (1 - inset) * np.array(g.size)
+    out = {}
+    for s in model.species:
+        init = np.asarray(s.initial)
+        if s.particle and init.ndim != 0:
+            reps = init.ravel().astype(int)
+            pts = np.stack([np.repeat(c, reps) for c in coords], axis=1)
+            out[s.name] = np.clip(pts, lo, hi)
+    return out
+
+
+def drop_noop_reactions(smoldyn_input: Path) -> list[str]:
+    """Remove Smoldyn reactions whose particle reactants equal their products; return their names.
+
+    VCell's ParticleMathMapping keeps a particle jump process when a particle is a catalyst of
+    a continuous source (e.g. ``O -> O + U``, or O as a modifier): the process destroys and
+    re-creates O at rate k. Such a process does nothing to the particles, but Smoldyn gives
+    competing first-order reactions probabilities ∝ k_i/Σk, so a fast no-op suppresses the
+    particle's real reactions (e.g. channel closing). The continuous source stays in the PDE
+    (.fvinput), so dropping the process from the particle side is exact. The proper fix is
+    for combineHybrid to drop processes whose actions cancel.
+    """
+    dropped, kept = [], []
+    for line in smoldyn_input.read_text().splitlines():
+        words = line.split()
+        if words and words[0] in ("reaction", "reaction_cmpt", "reaction_surface") and "->" in words:
+            body = words[1:]
+            if words[0] != "reaction":
+                body = body[1:]  # compartment or surface name
+            name, rest = body[0], body[1:]
+            arrow = rest.index("->")
+            rct = sorted(w for w in rest[:arrow] if w not in ("+", "0"))
+            prd_words = rest[arrow + 1:-1]  # last word is the rate
+            prd = sorted(w for w in prd_words if w not in ("+", "0"))
+            if rct and rct == prd:
+                dropped.append(name)
+                continue
+        kept.append(line)
+    if dropped:
+        smoldyn_input.write_text("\n".join(kept) + "\n")
+    return dropped
+
+
+def place_particles(smoldyn_input: Path, positions: dict[str, np.ndarray]) -> None:
+    """Replace the initial-molecule lines of the given species with explicit ``mol 1`` lines."""
+    lines = smoldyn_input.read_text().splitlines()
+    kept = []
+    for line in lines:
+        words = line.split()
+        if len(words) >= 3 and words[0] in ("mol", "compartment_mol") and words[2] in positions:
+            continue
+        kept.append(line)
+    end = next(i for i, line in enumerate(kept) if line.strip() == "end_file")
+    placed = [f"mol 1 {name} " + " ".join(repr(float(v)) for v in p)
+              for name, pts in positions.items() for p in pts]
+    smoldyn_input.write_text("\n".join(kept[:end] + placed + kept[end:]) + "\n")
 
 
 @dataclass
@@ -211,6 +287,11 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
     vcg = out / next(f for f in files if f.endswith(".vcg"))
     if "SMOLDYN_BEGIN" not in fv.read_text():
         raise RuntimeError("generated .fvinput is not a hybrid (no SMOLDYN block)")
+    smoldyn_input = out / next(f for f in files if f.endswith(".smoldynInput"))
+    drop_noop_reactions(smoldyn_input)
+    positions = particle_positions(model)
+    if positions:
+        place_particles(smoldyn_input, positions)
     rc = fvsolve(input_file=fv, vcg_file=vcg, output_dir=out)
     if rc != 0:
         raise RuntimeError(f"pyvcell-fvsolver returned {rc}")

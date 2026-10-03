@@ -116,3 +116,21 @@ def field_modulated_decay(core=None, *, n_particles=4000, k=1.0, d_a=0.0, d_b=0.
                           dt=0.01, step_multiplier=1, coupling="fvsolver", seed=1):
     model = field_modulated_decay_model(n_particles, k, d_a, d_b, b_profile)
     return build_hybrid_document(model, dt, step_multiplier, coupling, seed)
+
+
+# ---------------------------------------------------------------- calcium sparks (paper benchmark)
+
+@composite_generator(
+    name="calcium_sparks",
+    description="Schaff et al. 2016 calcium sparks: 24 stochastic channels (particles) + diffusing Ca2+ (PDE).",
+    parameters={
+        "test": {"type": "integer", "default": 1,
+                 "description": "1 = separable (Test 1); 2 = coupled k_on·U/U0, fast diffusion (Test 2)"},
+        **_COUPLING_PARAMS,
+    },
+)
+def calcium_sparks(core=None, *, test=1, dt=0.01, step_multiplier=1, coupling="fvsolver", seed=1):
+    from viva_pde_particle.benchmarks.calcium_sparks import TEST1, TEST2, calcium_sparks_model
+
+    params = {1: TEST1, 2: TEST2}[int(test)]
+    return build_hybrid_document(calcium_sparks_model(params), dt, step_multiplier, coupling, seed)

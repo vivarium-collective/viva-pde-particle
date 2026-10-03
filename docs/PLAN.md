@@ -493,6 +493,40 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
 - Phase 3b: math-level models with located particles, for the paper's calcium sparks (Investigation C).
 - Studies A3–A6 on both solvers.
 
+## Phase 3b results (2026-10-03): paper benchmark C1 on both solvers
+
+**Per-node particle placement in the native path:**
+- A BioModel cannot express per-node particle counts (VCell seeds particles from a concentration as Poisson draws).
+- Species with per-node counts therefore get zero initial concentration, and their molecules are written as
+  `mol 1 X x y z` into the VCell-generated `.smoldynInput`.
+- The math stays VCell's.
+- **Long-term fix:** located initial counts in VCell, or MathModel support in libvcell (it only accepts BioModels
+  today).
+
+**VCell finding, no-op particle jump processes:**
+- **The problem:** a particle that catalyses a continuous source (channel influx `O → O + U`) becomes a
+  destroy/create jump process `O → O` at rate k (~6000/s). This happens even when the particle is written as a
+  modifier.
+- **Why it matters:** Smoldyn splits competing first-order reactions in proportion to their rates, so this no-op
+  suppresses channel closing. The open fraction rises from 1/6 to ~0.9.
+- **What we do:** `drop_noop_reactions` removes such processes from the `.smoldynInput`. The source stays in the
+  PDE, so this is exact.
+- **Proper fix:** `ParticleMathMapping.combineHybrid` should drop jump processes whose actions cancel. Worth an
+  upstream VCell issue/PR.
+
+**Study C1 `separable-calcium-sparks`** (Test 1 / Fig 1B; 128 trials × Δt ∈ {0.02, 0.01, 0.005} × both solvers):
+- ε vs N log-log slope: −0.46 co-sim, −0.43 native (theory −1/2).
+- ε at N = 128: 1.4% co-sim, 1.6% native.
+- ε is flat in Δt, i.e. statistically dominated, as the paper reports.
+- Co-sim vs native difference: 0.75× the combined sampling error.
+- All behavior tests pass.
+
+**Deviations (provisional):**
+- Δz = 0.25, because VCell needs ≥ 3 z-nodes (the paper used 0.5).
+- Channel coordinates use defaults approved by the author: columns at x = 2, 4, 6, 8; rows at y = 0.3–1.8.
+
+**Next:** C2 `coupled-sparks-fast-diffusion` (Test 2, against a non-spatial Gibson–Bruck SSA), then A3–A6.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
