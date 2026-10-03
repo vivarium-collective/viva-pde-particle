@@ -254,6 +254,34 @@ solver to within its stochastic error, and at what cost?
 
 Results go to study-local parquet runs. Figures are produced with `/viva-viz`, and reports through `/viva-report`.
 
+### Investigation C: `vcell-hybrid-paper-benchmarks`
+The validation suite of the VCell hybrid methods paper, run against both VCell's native hybrid solver (through
+the Phase 3 pyvcell path) and the co-simulation, with its figures regenerated:
+- Schaff, Gao, Li, Novak & Slepchenko (2016), *Numerical approach to spatial deterministic-stochastic models
+  arising in cell biology*, PLoS Comput Biol 12(12): e1005236, doi:10.1371/journal.pcbi.1005236.
+
+**Question:** do the native solver and the co-simulation both reproduce the paper's results, and where do they
+differ?
+
+**Model mapping (calcium sparks):** stochastic two-state channels are immobile particle species placed at fixed
+nodes (`Ch_closed`, `Ch_open`, D = 0), coupled to a diffusing Ca²⁺ field `U`:
+- opening `Ch_closed → Ch_open` at `k_on` (Test 1) or `k_on·U/U₀` (field-dependent, Test 2+);
+- closing at `k_off`;
+- open channels as a field source `J` (`Ch_open → Ch_open + U`);
+- removal by pumps (`V_p`).
+
+| Study | Paper | Model / regime | Reference | Paper's metric |
+|---|---|---|---|---|
+| `separable-calcium-sparks` | Test 1, Fig 1 | 24 channels, field-independent gating; D = 1 µm²/s; quasi-2D 10.1×2.1×0.5 µm³, Δx = 0.1 µm; Δt 0.002–0.02 s; T = 5 s | Analytic expectation (separable case) | Error ε(N, Δt), ∝ N^-1/2 |
+| `coupled-sparks-fast-diffusion` | Test 2, Figs 2–3 | Field-dependent opening `k_on·U/U₀`, k_on = 0.1 s⁻¹, D = 1000 µm²/s, Δt = 0.2 ms | Non-spatial Gibson–Bruck SSA (we implement) | p(U,t), P(n,t) at t = 1, 2, 3 s and steady state; L2 ≈ 1% of max |
+| `single-channel-fokker-planck` | Tests 3–5, Figs 4–6 | Dimensionless single channel, fast and finite diffusion | Direct functional Fokker–Planck solution (to implement) | L2 of p(ρ), 1–3% of max |
+| `gated-binding-3d` | Test 6, Fig 7 | M (inert↔reactive) particles + ligand field L in 10³ µm³, h = 0.2 and 0.034 µm | t^-3/2 asymptotics | Relaxation function; documents the point-particle limitation |
+| `cell-polarization` (stretch) | Test 7, Fig 8 | Membrane receptors in a sphere, R = 4 µm | Qualitative | Needs membranes (Investigation B `membrane-particles`) |
+
+Each study runs ensembles through both solvers. The figures are regenerated with the native and co-simulation
+results overlaid, and the paper's numbers are recorded as `pass_if` provenance. Parameter details are in the
+paper's Methods and S1 text; they are to be transcribed into each `study.yaml` when the study is built.
+
 ## Phases (execution order)
 
 0. **Scaffold and spikes**: done 2026-10-03; see "Phase 0 results" below.
@@ -272,7 +300,10 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
      `SmoldynHybrid` and the composite builder. See "Phase 2a results" below.
    - **2b, done 2026-10-03:** Studies A1–A2 as workbench studies. See "Phase 2b results" below.
 3. **Reference path:** teach pyvcell (and, as needed, libvcell and pyvcell-fvsolver) to build, generate and run
-   hybrid VCell applications headlessly (see §4). This phase runs Studies A3–A6.
+   hybrid VCell applications headlessly (see §4).
+   - **First target:** the calcium-spark model of Investigation C (`separable-calcium-sparks`, then
+     `coupled-sparks-fast-diffusion`), exercising the native solver on a published, well-characterized case.
+   - **Then** Studies A3–A6.
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
 5. **Orchestration variants:** Studies B3–B5. Write-up.
 6. **Standards-based model description (follow-on; options to be discussed when we get there).**
