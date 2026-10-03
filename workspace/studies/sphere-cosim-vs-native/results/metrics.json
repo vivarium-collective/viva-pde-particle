@@ -1,17 +1,22 @@
 {
   "b2b_conversion_survival_max_z": 0.7267455092510289,
   "b2b_cosim_decay_max_z": 0.5104136616677708,
+  "b2b_cosim_exchange_mass_balance_final_signed": -0.012206978945686786,
   "b2b_cosim_exchange_mass_balance_max_rel_dev": 0.01267944503465912,
   "b2b_cosim_exchange_steady_ratio_rel_err": 0.013005126838731007,
+  "b2b_cosim_mass_balance_final_signed": 0.00785753431133518,
   "b2b_cosim_mass_balance_max_rel_dev": 0.00785753431133518,
   "b2b_cosim_mesh_volume_rel_err": -0.013906373683130302,
-  "b2b_exchange_a_final_rel_diff": 0.06492304571616928,
   "b2b_exchange_a_totals_max_z": 8.50917858824401,
+  "b2b_exchange_native_minus_cosim_a_final_rel": -0.060965011488232,
   "b2b_final_radial_b_rel_diff": 0.035201326263905874,
   "b2b_native_decay_max_z": 0.9869817568120889,
+  "b2b_native_exchange_a_binned_outside_cell_frac": 0.011762036803629947,
+  "b2b_native_exchange_mass_balance_final_signed": -0.06809896105184077,
   "b2b_native_exchange_mass_balance_max_rel_dev": 0.06809896105184077,
   "b2b_native_exchange_steady_ratio_rel_err": 0.019698271767635056,
+  "b2b_native_mass_balance_final_signed": -0.005717491154531018,
   "b2b_native_mass_balance_max_rel_dev": 0.005717491154531018,
   "b2b_native_staircase_volume_rel_err": -0.004679334772840438,
-  "b2b_wall_time_s": 830.8752210140228
+  "b2b_wall_time_s": 856.7828512191772
 }

@@ -673,10 +673,13 @@ with a membrane.
 **Results** (box [0,9]³, Δ = 0.25, R = 4, 8 seeds):
 - **Volume:** VCell's representation of the ball is more accurate (−0.47%) than the co-sim mesh at h = 0.8 (−1.4%).
 - **Conversion:** the solvers agree (|z| = 0.73; radial B within 3.5%).
-- **Exchange:** an open discrepancy. Native A + B grows 6.8%, and native total A is 6.5% above the co-sim.
-  - Creation alone is a few percent low in both (0.960 native, 0.974 co-sim), so creation doesn't explain it.
-  - The cause is under investigation, likely near-membrane voxel treatment on the native PDE side.
-  - Not claimed as a VCell defect.
+- **Exchange: the native solver loses molecules at the curved membrane.** Signed balance at 5 s: native −6.8%,
+  co-sim −1.2%. Native A is 6.1% below the co-sim. An earlier version said "grows"; that misread an unsigned metric.
+  The loss is consistent with two mechanisms:
+  - **Exterior binning:** 1.2% of native A is binned to nodes outside the voxelized cell, where its PDE source is
+    dropped.
+  - **Creation deficit:** native creation runs at 0.960 of exact (co-sim 0.974).
+  The rough budget matches. These are coupling details at curved membranes, not VCell geometry/PDE limitations.
 
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 

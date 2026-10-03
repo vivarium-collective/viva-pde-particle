@@ -83,12 +83,14 @@ def run_cosim(which, t_end, every):
     return times, a, b_grid, float(proc.ml.sum())
 
 
-def run_native(which, t_end, every):
+def run_native(which, t_end, every, return_counts=False):
     from viva_pde_particle.reference.vcell_native import run_native_ensemble
 
     times, f, c = run_native_ensemble(model(which), SEEDS, t_end=t_end, dt=DT, output_dt=every,
                                       geometry=NATIVE_GEOMETRY)
     a = c["A"].reshape(len(SEEDS), len(times), -1).sum(axis=2)
+    if return_counts:
+        return times, a, f["B"], c["A"]
     return times, a, f["B"]
 
 
@@ -136,22 +138,30 @@ def main() -> int:
             z = np.where(sd > 0, (a.mean(0) - exp_.mean(0)) / np.where(sd > 0, sd, 1), 0)
             metrics[f"b2b_{name}_decay_max_z"] = float(np.abs(z).max())
             bt = b_molecules(bg)
-            metrics[f"b2b_{name}_mass_balance_max_rel_dev"] = float(np.abs((a + bt).mean(0) / a[:, 0].mean() - 1).max())
+            bal = (a + bt).mean(0) / a[:, 0].mean() - 1
+            metrics[f"b2b_{name}_mass_balance_max_rel_dev"] = float(np.abs(bal).max())
+            metrics[f"b2b_{name}_mass_balance_final_signed"] = float(bal[-1])
         fc, fn = ac / ac[:, :1], an / an[:, :1]
         metrics["b2b_conversion_survival_max_z"] = float(np.abs(two_sample_z(fc, fn)).max())
         pc, pn = radial_profile(bc[:, -1].mean(0)), radial_profile(bn[:, -1].mean(0))
         metrics["b2b_final_radial_b_rel_diff"] = float(np.abs(pc - pn).max() / np.abs(pn).max())
 
         tc, ac, bc, _ = run_cosim("exchange", 5.0, 0.25)
-        tn, an, bn = run_native("exchange", 5.0, 0.25)
+        tn, an, bn, cn = run_native("exchange", 5.0, 0.25, return_counts=True)
+        late_n = tn >= 4.0
+        outside = ~inside_mask()
+        a_out = (cn * outside).reshape(cn.shape[0], cn.shape[1], -1).sum(axis=2)
+        metrics["b2b_native_exchange_a_binned_outside_cell_frac"] = float(a_out[:, late_n].sum() / an[:, late_n].sum())
         for name, t, a, bg in (("cosim", tc, ac, bc), ("native", tn, an, bn)):
             bt = b_molecules(bg)
             total0 = bt[:, 0].mean()
-            metrics[f"b2b_{name}_exchange_mass_balance_max_rel_dev"] = float(np.abs((a + bt).mean(0) / total0 - 1).max())
+            balance = (a + bt).mean(0) / total0 - 1
+            metrics[f"b2b_{name}_exchange_mass_balance_max_rel_dev"] = float(np.abs(balance).max())
+            metrics[f"b2b_{name}_exchange_mass_balance_final_signed"] = float(balance[-1])
             late = t >= 4.0
             metrics[f"b2b_{name}_exchange_steady_ratio_rel_err"] = float(abs(a[:, late].mean() / bt[:, late].mean() - 0.5) / 0.5)
         metrics["b2b_exchange_a_totals_max_z"] = float(np.abs(two_sample_z(ac, an)).max())
-        metrics["b2b_exchange_a_final_rel_diff"] = float(abs(ac[:, -1].mean() - an[:, -1].mean()) / an[:, -1].mean())
+        metrics["b2b_exchange_native_minus_cosim_a_final_rel"] = float((an[:, -1].mean() - ac[:, -1].mean()) / ac[:, -1].mean())
         metrics["b2b_wall_time_s"] = time.time() - started
         write_metrics(STUDY_DIR / "results" / "metrics.json", metrics)
 
