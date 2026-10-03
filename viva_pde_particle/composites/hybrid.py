@@ -31,10 +31,11 @@ def build_hybrid_document(
     step_multiplier: int = 1,
     coupling: str = "fvsolver",
     seed: int = 1,
+    particle_init: str = "exact",
 ) -> dict:
     parts = partition(model)
     rng = np.random.default_rng(seed)
-    counts0 = initial_particle_counts(model, rng)
+    counts0 = initial_particle_counts(model, rng, mode=particle_init)
     grid_cfg = model.grid.to_config()
     config_text = write_smoldyn_config(
         parts.particles, model.grid, counts0, time_step=step_multiplier * dt, seed=seed
@@ -100,12 +101,13 @@ def run_hybrid(
     seed: int = 1,
     record_every: float | None = None,
     core=None,
+    particle_init: str = "exact",
 ) -> HybridTrajectory:
     """Run the composite to ``t_end``, recording state every ``record_every`` (default k·dt)."""
     from viva_pde_particle.core import build_core
 
     core = core or build_core()
-    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed)
+    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed, particle_init)
     sim = Composite({"state": doc}, core=core)
     every = record_every or step_multiplier * dt
     n_records = int(round(t_end / every))

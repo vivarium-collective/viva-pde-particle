@@ -41,6 +41,17 @@ baseline:
     dt: 0.01
 
 variants:
+- name: native-vcell-slab
+  composite: viva_pde_particle.composites.examples.field_modulated_decay
+  params:
+    n_particles: 4000
+    k: 1.0
+    b_profile: linear
+    dt: 0.01
+  note: >-
+    The same model on a quasi-2D slab (11x11x3), run by both the co-simulation (Poisson
+    initial placement) and VCell's native hybrid solver via
+    viva_pde_particle.reference.vcell_native (pyvcell -> libvcell -> vcell-fvsolver).
 - name: continuum-limit
   composite: viva_pde_particle.composites.examples.field_modulated_decay
   params:
@@ -105,6 +116,59 @@ behavior_tests:
       note: 160,000 total molecule samples give ~0.3% sampling error on the total.
   requires_simulation: continuum-limit
 
+- name: native-vcell-follows-local-field
+  classification: primary
+  description: Native VCell hybrid, static B (slab, 8 seeds); max |z| over x-columns of survivors vs N0·exp(-k·B·t).
+  measure:
+    kind: derived_scalar
+    field: a2_native_static_field_max_abs_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Same exact expectation as the co-simulation test; validates the headless native reference path.
+  requires_simulation: native-vcell-slab
+- name: cosim-matches-native-static
+  classification: primary
+  description: Two-sample max |z| over x-columns of per-run survival fractions, co-simulation vs native VCell (static B).
+  measure:
+    kind: derived_scalar
+    field: a2_cosim_vs_native_static_survival_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Equal expected survival under both solvers; 8 runs each.
+  requires_simulation: native-vcell-slab
+- name: cosim-matches-native-diffusing
+  classification: primary
+  description: Two-sample max |z| over x-columns of the final A profile, co-simulation vs native VCell (diffusing A and B).
+  measure:
+    kind: derived_scalar
+    field: a2_cosim_vs_native_diffusing_profile_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Same model, mesh and coupling scheme in both solvers; differences only from sampling (8 runs each).
+  requires_simulation: native-vcell-slab
+- name: cosim-matches-native-total
+  classification: secondary
+  description: Relative difference of mean total survival, co-simulation vs native VCell (diffusing A and B).
+  measure:
+    kind: derived_scalar
+    field: a2_cosim_vs_native_diffusing_survival_rel_diff
+  pass_if:
+    op: "<"
+    value: 0.02
+    provenance:
+      kind: theory
+      note: 160,000 molecule samples per solver; sampling error ~0.5%.
+  requires_simulation: native-vcell-slab
+
 pipeline_gate:
   prerequisites:
   - handoff-units-and-binning
@@ -131,3 +195,12 @@ conclusion: |
   - ensemble-mean A vs continuum: 2.9% relative L2, at the expected sampling-noise level;
   - total A vs continuum: 0.14%.
   The field-to-particle direction of the coupling is correct.
+
+  Co-simulation vs native VCell hybrid (Phase 3a, quasi-2D slab 11×11×3, 8 seeds each,
+  matched Poisson initial placement):
+  - native column survival vs exp(-k·B·t): max |z| = 1.68;
+  - co-sim vs native static-field survival: max |z| = 1.47;
+  - B fields identical to 1e-16;
+  - diffusing case, final x-profiles: max |z| = 2.58;
+  - total survival differs by 0.25%.
+  The two implementations are statistically indistinguishable on this model.

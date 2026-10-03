@@ -23,8 +23,14 @@ _COUPLING_PARAMS = {
 }
 
 
-def square_grid(length: float = 10.0, num: int = 11) -> CartesianGrid:
-    return CartesianGrid((0.0, 0.0), (length, length), (num, num))
+def square_grid(length: float = 10.0, num: int = 11, thickness: float | None = None) -> CartesianGrid:
+    """Square 2D grid, or a quasi-2D 3D slab (3 z-nodes, the minimum VCell allows) of the given thickness.
+
+    The VCell native hybrid reference needs 3D, so comparisons use the slab.
+    """
+    if thickness is None:
+        return CartesianGrid((0.0, 0.0), (length, length), (num, num))
+    return CartesianGrid((0.0, 0.0, 0.0), (length, length, thickness), (num, num, 3))
 
 
 # ---------------------------------------------------------------- particle diffusion
@@ -74,16 +80,22 @@ def gaussian_field(grid: CartesianGrid, peak: float, width: float) -> np.ndarray
 
 def field_modulated_decay_model(n_particles: int = 4000, k: float = 1.0, d_a: float = 0.0,
                                 d_b: float = 0.0, b_profile: str = "linear",
-                                length: float = 10.0, num: int = 11) -> HybridModel:
+                                length: float = 10.0, num: int = 11,
+                                thickness: float | None = None) -> HybridModel:
     """A_particle -> 0 at rate k·[B](x). B is a catalyst field (unchanged by the reaction).
 
     ``b_profile``: ``linear`` (0 -> 1 µM across x) or ``gaussian`` (1 µM peak, width L/5).
     """
-    g = square_grid(length, num)
-    b = linear_field(g, 0.0, 1.0) if b_profile == "linear" else gaussian_field(g, 1.0, length / 5)
+    g = square_grid(length, num, thickness)
+    if b_profile == "linear":
+        b, expr = linear_field(g, 0.0, 1.0), f"(x / {length!r})"
+    else:
+        w, c = length / 5, length / 2
+        b, expr = gaussian_field(g, 1.0, w), f"exp(-((x - {c!r})^2 + (y - {c!r})^2) / {2 * w * w!r})"
     return HybridModel(
         g,
-        [Species("A", d_a, particle=True, initial=n_particles), Species("B", d_b, initial=b)],
+        [Species("A", d_a, particle=True, initial=n_particles),
+         Species("B", d_b, initial=b, initial_expression=expr)],
         [Reaction("decay", {"A": 1, "B": 1}, {"B": 1}, k=k)],
     )
 

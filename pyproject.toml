@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
 # VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. Needs Python >=3.12.
-reference = ["pyvcell[solver,native]>=0.4.1"]
+reference = ["pyvcell[solver,native]>=0.3.3"]
 
 [build-system]
 requires = ["hatchling"]

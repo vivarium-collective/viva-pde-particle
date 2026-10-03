@@ -450,6 +450,49 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
 - Phase 3, the reference path through pyvcell/libvcell/pyvcell-fvsolver. A3–A6 compare against it.
 - The coupling-only checks of A3 (`two-way-exchange`) can run on the co-simulation before that.
 
+## Phase 3a results (2026-10-03): headless native reference
+
+**Pipeline** (`viva_pde_particle/reference/vcell_native.py`), with no VCell desktop and no hand-written inputs:
+- `HybridModel` → pyvcell BioModel: a stochastic spatial application, `force_continuous` fields, and the
+  `"Finite Volume Standalone, Regular Grid"` solver;
+- → libvcell, VCell's `ParticleMathMapping.combineHybrid()`, which writes `.fvinput` + `.smoldynInput`;
+- → pyvcell-fvsolver, i.e. vcell-fvsolver with embedded Smoldyn 2.38;
+- → pyvcell's `PdeDataSet` reader: fields in µM, particles as counts per voxel.
+
+**Upstream:**
+- **pyvcell** needed hybrid authoring and result support: [virtualcell/pyvcell#62](https://github.com/virtualcell/pyvcell/pull/62),
+  open for review. It adds:
+  - `add_hybrid_sim`, `SmoldynSimulationOptions` and `Simulation.time_step`;
+  - `map_species(force_continuous=)`;
+  - particle channels in `Result`.
+- **libvcell** needed no change.
+- **Local use:** the `dev` pixi environment installs `../pyvcell` editable. The `default` environment (CI) keeps
+  the PyPI pyvcell, and native tests skip there.
+
+**Findings and decisions:**
+- **3D only:** VCell's spatial stochastic/hybrid math requires 3D geometry, with at least 3 mesh nodes per axis.
+  2D problems run as quasi-2D slabs (`Nz = 3`), with the co-simulation on the identical grid.
+  (The paper's 2-node z-axis would be rejected by current VCell.)
+- **Particle initial conditions** in a concentration-mode application are Poisson per node, so the initial total
+  is Poisson(N). The co-simulation matches with `particle_init="poisson"`. Exact placement needs a
+  math-level model (Phase 3b).
+- **vcell-fvsolver can't run two hybrid solves in one process:** the second segfaults inside `solve()`,
+  presumably from embedded-Smoldyn or hybrid globals. `run_native` therefore spawns a fresh process per solve,
+  and `run_native_ensemble` runs seeds in parallel (8 seeds in ~2 s). The solver bug is worth fixing upstream.
+- **zarr conflict:** pyvcell's zarr-based `Result` pins zarr 2, and the workbench needs zarr 3, so our runner reads
+  the `.sim` output directly.
+
+**First co-sim vs native comparison** (Study A2, part 3):
+- native survival vs `exp(-k·B·t)`: |z| = 1.68;
+- co-sim vs native, static-field survival: |z| = 1.47;
+- co-sim vs native, diffusing x-profiles: |z| = 2.58;
+- total survival differs by 0.25%;
+- fields are identical.
+
+**Next:**
+- Phase 3b: math-level models with located particles, for the paper's calcium sparks (Investigation C).
+- Studies A3–A6 on both solvers.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

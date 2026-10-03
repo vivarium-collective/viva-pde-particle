@@ -19,6 +19,10 @@ concurrency:
 jobs:
   engines:
     runs-on: ubuntu-latest
+    env:
+      # Every `pixi run` uses pixi.lock as committed, without re-solving. The `dev`
+      # environment points at a sibling ../pyvcell checkout that does not exist on CI.
+      PIXI_FROZEN: "true"
     steps:
       - uses: actions/checkout@v6
         with:

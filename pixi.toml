@@ -66,3 +66,12 @@ serve = { cmd = "vivarium-workbench serve --workspace .", description = "Start t
 check-engines = { cmd = "python scripts/check_engines.py", description = "Report versions of every engine importable in this env" }
 # Local development against sibling checkouts in ../ (overrides the git/PyPI pins in this env only).
 dev-link = { cmd = "pip install --no-deps -e ../pyvcell -e ../vivarium-workbench -e ../process-bigraph -e ../bigraph-schema", description = "Editable-install sibling checkouts over the pinned versions" }
+
+# Development environment: sibling checkouts in ../ as editable installs, for co-developing upstream
+# packages (e.g. pyvcell's spatial-hybrid support) before they are released. CI uses `default`.
+#   pixi run -e dev test
+[feature.dev.pypi-dependencies]
+pyvcell = { path = "../pyvcell", editable = true, extras = ["solver", "native"] }
+
+[environments]
+dev = { features = ["dev"], solve-group = "dev" }
