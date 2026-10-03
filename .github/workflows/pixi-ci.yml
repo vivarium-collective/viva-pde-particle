@@ -26,7 +26,11 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           cache: true
-          locked: true
+          # --frozen: install exactly pixi.lock without re-validating it against pixi.toml.
+          # `--locked` always fails here: viva-superpowers/vivarium-workbench require
+          # viva-workspace as `@ git+...@main` while the lock records `?branch=main`, and
+          # pixi reports "mismatching git ref: main != main".
+          frozen: true
       - name: Engines importable
         run: pixi run check-engines
       - name: Build Smoldyn (OPTION_VCELL, patched)
