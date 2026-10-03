@@ -121,25 +121,34 @@ viva-pde-particle/
 
 ## Technical design
 
-### 1. Smoldyn patch (fork `external/Smoldyn`, branch `pyhybrid`)
-- **`GridValueProvider` / `GridValueProviderFactory`** (`source/vcell/GridValueProvider.{h,cpp}`):
-  - Rate strings in the VCell `…;` form are parsed as a constant times a product of named fields
-    (a minimal parser: `k*B`, `k*B*C`, `B`). Anything more complex is an error in v1.
-  - `getValue(t,x,y,z,rxn)` does the nearest-node lookup with the same indexing as fvsolver,
-    `i = (int)((x-x0)/dx + 0.5)`. Membrane panel lookup is deferred.
-- **`SimpleMesh`-based `AbstractMesh`** with the PDE grid geometry, so 0th-order per-voxel Poisson
-  creation in `smoldynhybrid.c` works.
-- **pybind11 additions** (`source/python/module.cpp`, gated by `OPTION_VCELL`):
-  - `Simulation.setGrid(origin, spacing, shape)`
-  - `Simulation.setField(name, np.ndarray)`: zero-copy view or memcpy into the provider's buffer; called once per
-    coupling step
-  - `Simulation.getMoleculePositions(species) -> ndarray[n,3]`, so positions are no longer read via `listmols` text
-  - `Simulation.getMoleculeHistogram(species) -> ndarray[shape]`: nearest-node counts in C, mirroring
-    `computeHistogram`
-- **Model loading:** stays file-based through `.smoldynInput` (`simInitAndLoad`), or uses the Python builder API
-  with expression rates. The particle process supports both.
-- **Upstream:** keep the patch minimal and self-contained so it can be offered upstream (ssandrews/Smoldyn).
-  The fork's GitHub location (proposed: `virtualcell/Smoldyn`) needs confirmation before it is created.
+### 1. Smoldyn extensions (fork `virtualcell/Smoldyn`, branch `pyhybrid`) — implemented in Phase 1
+- **`HybridGrid`** (`source/vcell/HybridGrid.h`, header-only, all builds):
+  - a node-centred Cartesian grid with VCell `CartesianMesh` geometry:
+    - `dx = L/(N-1)`, or `L` when `N = 1`;
+    - nodes at `x0 + i·dx`, or the domain centre when `N = 1`;
+    - nearest node `(int)((x-x0)·(N-1)/L + 0.5)`, clamped;
+  - holds named scalar fields in VCell order (x fastest), i.e. numpy shape `(Nz, Ny, Nx)` in C order.
+- **`GridValueProvider` / `GridValueProviderFactory`** (`source/vcell/GridValueProvider.{h,cpp}`, `OPTION_VCELL`):
+  - **Parsing:** a rate written `k*B;` in the configuration file is parsed as a product of numbers and field names.
+    Names set by `define` are substituted by Smoldyn first. Any other expression is a load error.
+  - **Evaluation:** the rate is evaluated at the nearest grid node. An unset field evaluates to 0.
+  - **Membrane/surface variants** use the same volume lookup. The panel-indexed membrane lookup is deferred.
+- **`GridMesh`** (an `AbstractMesh` over `HybridGrid`) drives Smoldyn's 0th-order creation: one
+  Poisson(`rate·dt·dx·dy·dz`) draw per node whose centre is in the compartment, placed uniformly within that
+  node's cell. This matches vcell-fvsolver, including its full-volume treatment of boundary nodes.
+- **Python** (`_smoldyn`):
+  - `HybridGrid(origin, size, num)` with `setField(name, array)`, `getField`, `index`, `center`, `shape`,
+    `spacing` and `requiredFields()`. The last is the set of field names the loaded rates reference.
+  - `Simulation(filepath, flags, grid)` (`OPTION_VCELL`) loads a configuration file with the grid-backed
+    factory and mesh.
+  - `Simulation.getMoleculePositions(species="all", state=all)` returns an `(n, dim)` array.
+  - `Simulation.getMoleculeHistogram(species, grid, state=all)` returns nearest-node counts shaped like the grid.
+    It mirrors `VCellSmoldynOutput::computeHistogram`.
+  - The accessors exist in all builds.
+- **Model loading is file-based** (`.smoldynInput`-style text). The builder API cannot attach a factory, because
+  rates are parsed while the file is read.
+- **Upstream:** the changes are kept self-contained so they can be offered to ssandrews/Smoldyn. The vanilla
+  `OPTION_VCELL=OFF` build is verified to still compile.
 
 ### 2. Processes and the coupling contract
 Units on the wire:
@@ -247,13 +256,27 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
      This is the main risk: the VCell build path may pull in VCell-only sources or zlib quirks.
    - Run a scheduling spike: two dummy processes with intervals dt and k·dt confirm the "read old" semantics.
    - Create empty Investigations A and B with `investigation.yaml`, and run `scripts/lint-workspace.py` until it reports OK.
-1. **Smoldyn patch:** `GridValueProvider`, mesh, and the pybind accessors, with C++ and python unit tests.
+1. **Smoldyn extensions:** done 2026-10-03; see "Phase 1 results" below.
 2. **Core co-sim:** `grid.py`, `units.py`, `HybridModel` + partitioner, `FVReactionDiffusion`, `SmoldynHybrid`, composites.
    This phase also runs Studies A1–A2.
 3. **Reference path:** fvsolver input writer and runner. A hand-built hybrid case is validated against VCell
    desktop if needed, and VCML import goes through pyvcell. This phase runs Studies A3–A6.
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
 5. **Orchestration variants:** Studies B3–B5. Write-up.
+6. **Standards-based model description (follow-on; options to be discussed when we get there).**
+   - **Goal:** describe the hybrid model with SBML plus the Spatial package instead of VCML.
+   - **How VCell does it today:** a single model is augmented with the choice of which species are particles.
+     VCell's math generation (`ParticleMathMapping.combineHybrid()`, see the notes) then produces both the
+     fvsolver input and the Smoldyn input and combines them.
+   - **Open design question:** how to express the particle/continuous partition in a standards-based way.
+     Candidates to evaluate:
+     - a sidecar list of particle species (with per-species particle properties) next to an SBML Spatial document;
+     - SBML annotations on species;
+     - a SED-ML or simulation-level setting;
+     - reusing VCell's own SBML Spatial import/export (`libvcell`/`pyvcell` converters) to reach the existing math
+       generation.
+   - **Prerequisite:** the `HybridModel` + `partition()` layer from Phase 2, which is the target this format
+     would load into.
 
 ## Phase 0 results (2026-10-03)
 
@@ -288,6 +311,28 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
   investigation's `at_a_glance`, and each study's `study.yaml` is created when its phase starts (lint
   rejects `studies:` entries without one).
 
+## Phase 1 results (2026-10-03)
+
+- **Fork:** `virtualcell/Smoldyn` (a fork of ssandrews/Smoldyn), branch `pyhybrid`. The submodule now tracks it,
+  and the Phase 0 patch files are retired.
+- **Implemented** the `HybridGrid`, `GridValueProvider`/`Factory`, `GridMesh` and numpy accessors described in
+  Technical design §1.
+- **Two pre-existing `OPTION_VCELL` bugs fixed** along the way:
+  - **Compartments crashed.** Compartment setup always used VCell's voxel-map path, which dereferences a NULL
+    `volumeSamplesPtr` unless the model has `highResVolumeSamples`. It now falls back to geometric compartments,
+    as `posincompart` already did.
+  - **Out-of-bounds reads in 1D/2D models.** The hybrid rate evaluation read `pos[2]` past the end of the
+    position array. Positions are now padded to 3D.
+- **Tests:** `tests/test_smoldyn_hybrid.py` covers:
+  - grid geometry against the VCell formulas;
+  - field round-trips;
+  - positions and histogram against a numpy re-binning;
+  - 1st order: `A → ∅` at rate `k·[B]` with a half-domain field, where the zero-field half is exactly unchanged
+    and the other half matches `exp(-k t)` within 4σ;
+  - an unset field acting as rate 0, and field updates taking effect between `runUntil` calls;
+  - 0th order: `∅ → A` at rate `k·[B]`, where the count matches `nodes·k·B·dx·dy·T` and molecules appear only
+    in the producing cells.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
@@ -299,8 +344,9 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
   (no fields) are run in both to measure this.
 - **Smoldyn's own Python API is awkward for stepping** (segfault if `molpos` is read before the first run, per viva-smoldyn).
   The new numpy accessors avoid the text output path entirely.
-- **Outward-facing steps that need explicit confirmation when they come up:** creating the GitHub repo for
-  viva-pde-particle (done 2026-10-02), creating the Smoldyn fork, and any PRs to upstream repos.
+- **Outward-facing steps that need explicit confirmation when they come up:** PRs to upstream repos (e.g.
+  offering the Smoldyn changes to ssandrews/Smoldyn). The GitHub repo and the `virtualcell/Smoldyn` fork were
+  created at the user's request on 2026-10-02 and 2026-10-03.
 
 ## Verification
 - `pixi install && pixi run build-smoldyn && pixi run test`. Tests import every engine, check unit/binning

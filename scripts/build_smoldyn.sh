@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build and install the Smoldyn python module from external/Smoldyn into the
-# active (pixi) environment.
+# Build and install the Smoldyn python module from external/Smoldyn (the
+# virtualcell/Smoldyn fork, branch pyhybrid) into the active (pixi) environment.
 #
 #   pixi run build-smoldyn                 # OPTION_VCELL=ON (hybrid ValueProvider hooks)
 #   SMOLDYN_VCELL=OFF pixi run build-smoldyn   # vanilla upstream build, for A/B comparisons
@@ -17,23 +17,6 @@ BUILD="$ROOT/build/smoldyn-vcell-$VCELL"
 PY="$(command -v python)"
 
 [ -f "$SRC/CMakeLists.txt" ] || { echo "external/Smoldyn missing: git submodule update --init external/Smoldyn" >&2; exit 1; }
-
-# Apply our Smoldyn patches (patches/smoldyn/*.patch, exported from the submodule's
-# `pyhybrid` branch) when the submodule is checked out at plain upstream. Idempotent:
-# a patch that is already present (e.g. on the pyhybrid branch) is skipped.
-shopt -s nullglob
-for patch in "$ROOT"/patches/smoldyn/*.patch; do
-  if git -C "$SRC" apply --check --reverse "$patch" 2>/dev/null; then
-    echo "already applied: $(basename "$patch")"
-  elif git -C "$SRC" apply --check "$patch" 2>/dev/null; then
-    git -C "$SRC" apply "$patch"
-    echo "applied: $(basename "$patch")"
-  else
-    echo "ERROR: $(basename "$patch") neither applies nor is already applied to external/Smoldyn" >&2
-    exit 1
-  fi
-done
-shopt -u nullglob
 
 cmake -S "$SRC" -B "$BUILD" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
