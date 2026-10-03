@@ -81,9 +81,7 @@ viva-pde-particle/
       smoldyn_hybrid.py        # patched-Smoldyn particle process (Phase 2)
       fenicsx_reaction_diffusion.py  # dolfinx PDE process (Phase 4)
       mesh_binning.py          # particle -> mesh-cell histogram for unstructured meshes (Phase 4)
-    reference/
-      fvsolver_inputs.py       # write hybrid .fvinput + .smoldynInput from HybridModel
-      fvsolver_runner.py       # pyvcell_fvsolver.solve() + result reader (counts → conc)
+    reference/                 # Phase 3: drive the embedded hybrid solver via pyvcell / libvcell / pyvcell-fvsolver
     analysis/                  # ensemble stats, error metrics, timing
     composites/*.composite.yaml
   workspace/
@@ -165,7 +163,10 @@ Each process owns its own unit conversion, using `units.py` and `grid.py`.
 
 - **`FVReactionDiffusion`:**
   - Node-centred grid with `dx = L/(N-1)` and half/quarter boundary volumes (as in `CartesianMesh.cpp:804`).
-  - Explicit forward Euler, zero-flux boundaries by default.
+  - Semi-implicit, matching vcell-fvsolver's `FV_SOLVER` (`SparseVolumeEqnBuilder` + PCG), the PDE solver
+    used in hybrid runs. Diffusion is backward Euler, and reactions are forward Euler from the start-of-step
+    state: `s_i·uⁿ⁺¹ + D·dt·K·uⁿ⁺¹ = s_i·(uⁿ + R·dt)`, with zero-flux boundaries. (Phase 2 finding: "forward
+    Euler" applies to the reactions and the coupling, not to diffusion.)
   - Reaction terms come from the `HybridModel`; particle species appear as read-only concentrations,
     `counts / (vol·602.214)`.
 - **`SmoldynHybrid`:**
@@ -195,16 +196,25 @@ Each process owns its own unit conversion, using `units.py` and `grid.py`.
   - The PDE side keeps every reaction term that involves a continuous species.
   - The Smoldyn side gets each reaction with its continuous reactants folded into the rate (`k*B;`).
     Continuous products are dropped, and continuous-only reactions are dropped.
-- **Emitters** from the same `HybridModel`:
-  1. composite state for process-bigraph
-  2. `.fvinput` + `.smoldynInput` for the reference fvsolver (`reference/fvsolver_inputs.py`), using the
-     keywords `VOLUME_PARTICLE`, `SMOLDYN_STEP_MULTIPLIER`, the `SMOLDYN_BEGIN/INPUT_FILE/END` block,
-     `vcellWriteOutput` and the `highResVolumeSamples` map
-- **Phase 3:** import hybrid VCML through `pyvcell` (`SpeciesMapping.force_continuous`, `ParticleProperties`).
-  The cross-check uses `libvcell.vcml_to_finite_volume_input` to see whether VCell's own writer emits hybrid inputs.
+- **Outputs from the same `HybridModel`:**
+  1. the composite state for process-bigraph (`composites/hybrid.py`), with Smoldyn config text from
+     `model/smoldyn_config.py`;
+  2. the same model as a VCell hybrid application for the reference solver (Phase 3, see §4).
 
-### 4. Reference runner
-- **Running:** `pyvcell_fvsolver.solve(fvinput, vcg, outdir)`.
+### 4. Reference runner (Phase 3): teach the VCell Python stack, no VCell desktop
+The reference inputs come from VCell's own math generation, not from a hand-written fvinput/smoldynInput writer
+and not from VCell desktop. This may require extending:
+- **pyvcell:** build a spatial application with a particle-species selection, i.e. a hybrid/stochastic
+  application with `SpeciesMapping.force_continuous` for the field species. The VCML model classes can already
+  represent this. Today `add_application` hardcodes `stochastic=False`, and `simulate` runs only the FV path.
+- **libvcell:** VCML → solver inputs through VCell's `ParticleMathMapping.combineHybrid()` and its writers,
+  emitting the combined `.fvinput` + `.smoldynInput`. Check what `vcml_to_finite_volume_input` already does for
+  hybrid applications.
+- **pyvcell-fvsolver:** run the hybrid inputs. The solver already embeds Smoldyn 2.38. Results must expose the
+  particle variables, which are stored as raw counts per voxel (`FVDataSet.cpp:413-418`).
+
+Then:
+- **Running:** `pyvcell_fvsolver.solve(fvinput, vcg, outdir)`, driven through pyvcell.
 - **Reading results:** read the `.sim`/`.zip`/`.hdf5` output with pyvcell `sim_results` (or a thin custom reader if
   the zarr path does not apply). Particle variables are stored as **raw counts per voxel**
   (`FVDataSet.cpp:413-418`).
@@ -257,10 +267,12 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
    - Run a scheduling spike: two dummy processes with intervals dt and k·dt confirm the "read old" semantics.
    - Create empty Investigations A and B with `investigation.yaml`, and run `scripts/lint-workspace.py` until it reports OK.
 1. **Smoldyn extensions:** done 2026-10-03; see "Phase 1 results" below.
-2. **Core co-sim:** `grid.py`, `units.py`, `HybridModel` + partitioner, `FVReactionDiffusion`, `SmoldynHybrid`, composites.
-   This phase also runs Studies A1–A2.
-3. **Reference path:** fvsolver input writer and runner. A hand-built hybrid case is validated against VCell
-   desktop if needed, and VCML import goes through pyvcell. This phase runs Studies A3–A6.
+2. **Core co-sim.**
+   - **2a, done 2026-10-03:** `grid.py`, `units.py`, `HybridModel` + partitioner, `FVReactionDiffusion`,
+     `SmoldynHybrid` and the composite builder. See "Phase 2a results" below.
+   - **2b:** Studies A1–A2 as workbench studies.
+3. **Reference path:** teach pyvcell (and, as needed, libvcell and pyvcell-fvsolver) to build, generate and run
+   hybrid VCell applications headlessly (see §4). This phase runs Studies A3–A6.
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
 5. **Orchestration variants:** Studies B3–B5. Write-up.
 6. **Standards-based model description (follow-on; options to be discussed when we get there).**
@@ -333,13 +345,49 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
   - 0th order: `∅ → A` at rate `k·[B]`, where the count matches `nodes·k·B·dx·dy·T` and molecules appear only
     in the producing cells.
 
+## Phase 2a results (2026-10-03)
+
+**Package `viva_pde_particle`:**
+- `units.py`: µM ↔ molecules/µm³ (602.214), and Smoldyn rate-unit factors by particle order.
+- `grid.py`: `CartesianGrid` with VCell conventions:
+  - spacing, node coordinates and nearest-node binning;
+  - element volume fractions (½, ¼, ⅛ at boundaries);
+  - counts ↔ µM;
+  - the volume-scaled zero-flux diffusion operator.
+- `model/`: `HybridModel` (`Species`, `Reaction`) and `partition()`, a port of `combineHybrid`. The particle
+  side folds continuous reactants into the rate as `k·[B]` and converts it to Smoldyn units: ×602.214 for 0th
+  order, ×1 for 1st, ÷602.214 for 2nd. `write_smoldyn_config()` emits the configuration, adding a
+  domain-covering compartment when grid-based 0th-order creation is needed.
+- **`processes/FVReactionDiffusion`:** the semi-implicit `FV_SOLVER` step, using an `splu` factorization per
+  species. Particle species enter the reactions as binned µM.
+- **`processes/SmoldynHybrid`:** the patched Smoldyn with a `HybridGrid`.
+  - `coupling: fvsolver` (default): runs on the PDE clock and takes one `k·dt` step every k-th call.
+  - `coupling: start-of-interval`: interval `k·dt`.
+  - Exact step counts come from `breaktime = t + (n-½)·dt`.
+- `composites/hybrid.py`: `build_hybrid_document()` and `run_hybrid()`, which records the trajectory.
+
+**Implementation notes:**
+- **Overwrite types for outputs:** process-bigraph's plain `map[array[float]]` output is additive, so writers
+  declare `map[overwrite[array[float]]]`.
+
+**Tests** (29 passed, 1 skipped):
+- the cosine eigenmodes of the FV operator decay at exactly the backward-Euler rate;
+- diffusion conserves mass, and the explicit reaction term matches;
+- particle binning respects boundary volumes;
+- the partition gives the expected terms, units and config text;
+- end to end:
+  - field-modulated decay leaves zero-field regions exactly unchanged and decays the rest as `exp(-k[B]t)`;
+  - `A_p → B_f` conserves A+B molecules within 2%;
+  - with `fvsolver` coupling and k = 4, particle counts change only every 4th PDE step;
+  - both coupling modes agree for slow dynamics.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
   on arm64.
-- **Hybrid input generation:** if `libvcell` does not emit hybrid fvinput, our own writer is the path, and it
-  needs one VCell-desktop-generated golden case to validate against. Check `../vcell` or a VCML from the VCell
-  database for an existing hybrid model.
+- **Hybrid input generation:** VCell's math generation (`ParticleMathMapping`) is the source of truth. If
+  `libvcell` does not yet expose the hybrid path, extending it (and pyvcell) is Phase 3 work in those repos. We
+  will not write our own fvinput/smoldynInput generator.
 - **Smoldyn version gap:** the reference uses Smoldyn 2.38 and the co-sim uses 2.7x. Pure-Smoldyn baselines
   (no fields) are run in both to measure this.
 - **Smoldyn's own Python API is awkward for stepping** (segfault if `molpos` is read before the first run, per viva-smoldyn).
