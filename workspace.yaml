@@ -4,6 +4,10 @@ created: "2026-10-03"
 plugin_version: 0.4.16
 package_path: viva_pde_particle
 
+# Persist study runs to parquet (as in viva-smoldyn); the Evaluate-stage analyses read it.
+runtime:
+  default_emitter: parquet
+
 # Directory layout. New workspaces group their research directories under a
 # tidy `workspace/` subtree (the dirs below); the hidden `.pbg/` machine state
 # stays at the root like `.git/`. Tooling (dashboard, lint, skills) resolves

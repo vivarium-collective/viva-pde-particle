@@ -31,3 +31,7 @@ workspace/reports/assets/*
 !workspace/reports/assets/.keep
 # Transient brainstorm session artifacts (server PIDs, logs, rendered HTML).
 .superpowers/brainstorm/
+
+# Native builds (Smoldyn) and pixi env
+build/
+.pixi/

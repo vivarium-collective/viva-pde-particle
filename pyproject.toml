@@ -1,7 +1,7 @@
 [project]
-name = "pde-particle"
+name = "viva-pde-particle"
 version = "0.0.0"
-description = "Process-bigraph research workspace"
+description = "PDE/particle hybrid co-simulation (finite volume / FEniCSx + Smoldyn) with process-bigraph, benchmarked against vcell-fvsolver"
 requires-python = ">=3.11"
 dependencies = [
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
@@ -17,6 +17,8 @@ dependencies = [
     "pypdf>=4.0",
     "matplotlib",
     "plotly",
+    "numpy",
+    "scipy",
     # Web-based workspace dashboard (server + templates + assets + lib helpers).
     # Extracted from viva-template as of v0.4.16; provides the `vivarium-workbench
     # serve` CLI invoked by scripts/serve.sh.
@@ -25,6 +27,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
+# VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. Needs Python >=3.12.
+reference = ["pyvcell[solver,native]>=0.4.1"]
 
 [build-system]
 requires = ["hatchling"]
