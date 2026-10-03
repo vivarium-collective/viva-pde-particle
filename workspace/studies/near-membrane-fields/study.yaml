@@ -179,5 +179,9 @@ conclusion: |
 
   Neither effect is a limitation of VCell's geometry or PDE numerics. Both come from how
   particles near a curved membrane are binned to the field.
-  - Native fix: bin each particle to the node of the voxel region that contains it.
+  - Native: VCellSmoldynOutput::computeHistogram (vcell-fvsolver,
+    bridgeVCellSmoldyn/VCellSmoldynOutput.cpp:476–548) bins each molecule to the nearest
+    node. Its correction for a nearest node in a different compartment (re-bin to the
+    nearest same-compartment neighbour) is present but commented out. Re-enabling it is the
+    likely native fix.
   - Co-sim fix: distribute exterior counts by cell overlap rather than to the nearest DOF.

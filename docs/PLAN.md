@@ -693,6 +693,9 @@ by the new `reference/vcell_vtk.py`. The co-sim uses P1 DOFs. 32 seeds per solve
   - Native is 2.3% low (z −20): B2b's exterior-binning loss, localized.
   - Co-sim is 1.3% high (z 10): Pᵀ folds exterior counts onto boundary DOFs.
   - Smoothing does not change the native bias; the artifact is in the particle→field binning, not the geometry/PDE.
+  - **Code:** `VCellSmoldynOutput::computeHistogram` (vcell-fvsolver `bridgeVCellSmoldyn/VCellSmoldynOutput.cpp:476–548`)
+    bins to the nearest node. Its same-compartment neighbour correction is present but commented out, and is the
+    likely native fix.
 
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 
