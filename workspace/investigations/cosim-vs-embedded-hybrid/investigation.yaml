@@ -1,0 +1,55 @@
+schema_version: 2
+name: cosim-vs-embedded-hybrid
+title: Process-bigraph co-simulation vs the embedded vcell-fvsolver hybrid solver
+created: '2026-10-03'
+status: planned
+question: >-
+  Can a process-bigraph co-simulation of a PDE process and a Smoldyn process reproduce
+  the hybrid PDE/particle solver embedded in vcell-fvsolver to within its stochastic
+  error, and at what computational cost?
+hypothesis: >-
+  With the same Cartesian mesh, the same nearest-node binning and units, and the same
+  lagged explicit coupling, the co-simulation's ensemble statistics are statistically
+  indistinguishable from fvsolver's. The co-simulation is slower by a bounded
+  per-coupling-step overhead (scheduling plus data marshaling), and both converge at
+  first order in the coupling interval.
+description: |
+  The embedded hybrid solver couples its finite volume PDE solver to a VCell-patched
+  Smoldyn 2.38 through lagged operator splitting (see docs/fvsolver-hybrid-notes.md):
+
+  - Each side reads the other's state from the previous step.
+  - Particle counts are binned to the nearest grid node.
+  - Field-dependent particle reaction rates are looked up from the containing voxel.
+
+  This investigation rebuilds that method from two independent process-bigraph
+  processes and compares the result against the embedded solver: first the units and
+  binning handoff, then the reaction classes in order of coupling difficulty, then
+  convergence and performance.
+
+  Coupling-semantics note (Phase 0): process-bigraph reads state at the start of each
+  interval, which matches fvsolver for the PDE side. A Smoldyn step of k·dt in fvsolver
+  reads the field at T+(k-1)·dt, not at T. To replicate that exactly, the Smoldyn
+  process runs on the PDE clock and steps every k-th call
+  (tests/test_scheduling_semantics.py).
+at_a_glance:
+- study: handoff-units-and-binning
+  role: Pure diffusion on each side plus the histogram-to-concentration handoff; checks units, boundary volumes and conservation.
+- study: field-modulated-decay
+  role: 'A_particle -> 0 at rate k·[B](x): the simplest field-to-particle coupling, against the analytic and continuum limit.'
+- study: two-way-exchange
+  role: 'A_particle -> B_field and 0th-order 0 -> A_particle at rate k·[B]: mass balance across the handoff in both directions.'
+- study: bimolecular-hybrid
+  role: 'A_particle + B_field -> C_field: per-region ensemble mean and variance, co-sim vs fvsolver.'
+- study: coupling-interval-convergence
+  role: Sweeps the Smoldyn step multiplier k and dt; compares error curves of both implementations.
+- study: performance-scaling
+  role: Wall time vs grid size, particle count and k, with a per-component overhead breakdown.
+executive:
+  what_is_this: >-
+    A head-to-head comparison of a modular (process-bigraph) and a hard-coded
+    (vcell-fvsolver) implementation of the same PDE/particle hybrid algorithm.
+  verdict: Not yet run.
+  verdict_status: pending
+studies: []
+expert_docs: []
+acceptance_criteria: []
