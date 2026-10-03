@@ -1,3 +1,4 @@
 [submodule "external/Smoldyn"]
 	path = external/Smoldyn
-	url = https://github.com/ssandrews/Smoldyn.git
+	url = https://github.com/virtualcell/Smoldyn.git
+	branch = pyhybrid

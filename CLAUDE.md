@@ -26,18 +26,22 @@ vcell-fvsolver.
 - **Sibling checkouts:** `pixi run dev-link` installs `../pyvcell` etc. editable over the pins.
   Never commit local paths.
 
-## Smoldyn submodule and patches
+## Smoldyn submodule (virtualcell/Smoldyn fork)
 
-- **Where the fixes live:** `external/Smoldyn` is pinned to an upstream ssandrews/Smoldyn commit.
-  Our changes live on the submodule's local `pyhybrid` branch and are exported as
-  `patches/smoldyn/*.patch`. `scripts/build_smoldyn.sh` applies them idempotently.
-- **After changing Smoldyn,** commit on `pyhybrid`, then re-export:
-  `git -C external/Smoldyn format-patch --binary -o ../../patches/smoldyn origin/master..pyhybrid`
-  (clear the old patches first). Keep the parent's gitlink at the upstream commit until a fork exists.
-- **Patch rules:**
+- **Where it points:** `external/Smoldyn` tracks the `pyhybrid` branch of `virtualcell/Smoldyn`, a fork of
+  ssandrews/Smoldyn. In the submodule, `origin` = upstream ssandrews (the diff base, `origin/master`) and
+  `fork` = virtualcell (push here).
+- **Hybrid extensions:**
+  - `source/vcell/HybridGrid.h`
+  - `source/vcell/GridValueProvider.{h,cpp}`
+  - the `HybridGrid` / `getMoleculePositions` / `getMoleculeHistogram` bindings in `source/python/module.cpp`
+  - the hybrid `Simulation(filepath, flags, grid)` constructor
+- **After changing Smoldyn:** commit on `pyhybrid` and run `git -C external/Smoldyn push fork pyhybrid`,
+  then commit the updated gitlink in this repo.
+- **Rules for Smoldyn changes:**
   - every change must keep the vanilla `OPTION_VCELL=OFF` build compiling (`SMOLDYN_VCELL=OFF pixi run build-smoldyn`);
   - never commit the in-tree built `_smoldyn*.so`.
-- Creating the Smoldyn fork (proposed `virtualcell/Smoldyn`) needs the user's go-ahead.
+- **Ask first** before opening PRs to upstream ssandrews/Smoldyn.
 
 ## Coupling semantics to preserve
 
