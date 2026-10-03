@@ -67,6 +67,14 @@ def _sphere_surface(center, radius) -> list[str]:
             "end_surface", f"start_compartment {DOMAIN}", "surface walls", f"point {c}", "end_compartment"]
 
 
+def _triangle_surface(triangles, interior_point) -> list[str]:
+    """A closed reflecting surface of triangle panels (e.g. a mesh boundary) and the domain inside it."""
+    lines = ["start_surface walls", "action both all reflect"]
+    lines += ["panel tri " + " ".join(_fmt(v) for v in np.asarray(t, dtype=float).ravel()) for t in triangles]
+    c = " ".join(_fmt(v) for v in interior_point)
+    return lines + ["end_surface", f"start_compartment {DOMAIN}", "surface walls", f"point {c}", "end_compartment"]
+
+
 def write_smoldyn_config(
     particles: dict,
     grid: CartesianGrid,
@@ -78,8 +86,10 @@ def write_smoldyn_config(
 ) -> str:
     """Return the configuration text for the particle half (from :func:`partition`).
 
-    ``geometry``: None (the grid box) or ``{"kind": "sphere", "center", "radius"}``. A sphere
-    adds a reflecting spherical surface and the ``domain`` compartment inside it.
+    ``geometry``: None (the grid box), ``{"kind": "sphere", "center", "radius"}`` or
+    ``{"kind": "triangles", "triangles": (m, 3, 3), "interior_point"}`` (e.g. the boundary of the
+    PDE mesh, so particles and fields share one domain). Either adds a reflecting surface
+    and the ``domain`` compartment inside it.
     ``positions``: explicit initial molecule positions per species (n, dim), which replace
     the per-node placement from ``initial_counts``.
     """
@@ -105,9 +115,13 @@ def write_smoldyn_config(
     ]
     reactions = particles["reactions"]
     if geometry is not None:
-        if geometry.get("kind") != "sphere":
-            raise ValueError(f"unsupported geometry {geometry!r}")
-        lines += _sphere_surface(geometry["center"], geometry["radius"])
+        kind = geometry.get("kind")
+        if kind == "sphere":
+            lines += _sphere_surface(geometry["center"], geometry["radius"])
+        elif kind == "triangles":
+            lines += _triangle_surface(geometry["triangles"], geometry["interior_point"])
+        else:
+            raise ValueError(f"unsupported geometry kind {kind!r}")
     elif any(rx["order"] == 0 and rx["fields"] for rx in reactions):
         lines += _domain_surface(grid)
     for rx in reactions:

@@ -87,6 +87,7 @@ class SmoldynHybrid(Process):
         "step_multiplier": {"_type": "integer", "_default": 1},
         "coupling": {"_type": "string", "_default": "fvsolver"},
         "quiet": {"_type": "boolean", "_default": True},
+        "emit_positions": {"_type": "boolean", "_default": False},
     }
 
     def initialize(self, config):
@@ -121,10 +122,13 @@ class SmoldynHybrid(Process):
         return {"fields": "map[array[float]]"}
 
     def outputs(self):
-        return {
+        out = {
             "particle_counts": "map[overwrite[array[float]]]",
             "particle_totals": "map[overwrite[float]]",
         }
+        if self.config["emit_positions"]:
+            out["particle_positions"] = "map[overwrite[array[float]]]"
+        return out
 
     def counts(self) -> dict[str, np.ndarray]:
         return {
@@ -132,12 +136,22 @@ class SmoldynHybrid(Process):
             for s in self.particle_species
         }
 
-    def initial_state(self):
+    def positions(self) -> dict[str, np.ndarray]:
+        """Molecule positions (n, dim) per particle species (copies, not views)."""
+        return {s: np.array(self.sim.getMoleculePositions(s), dtype=float) for s in self.particle_species}
+
+    def _report(self) -> dict:
         counts = self.counts()
-        return {
+        out = {
             "particle_counts": counts,
             "particle_totals": {s: float(c.sum()) for s, c in counts.items()},
         }
+        if self.config["emit_positions"]:
+            out["particle_positions"] = self.positions()
+        return out
+
+    def initial_state(self):
+        return self._report()
 
     def _run(self, fields, n_steps: int):
         for name in self.field_species:
@@ -158,8 +172,4 @@ class SmoldynHybrid(Process):
         else:
             n_steps = max(1, int(round(interval / self.smoldyn_dt)))
         self._run(state.get("fields", {}), n_steps)
-        counts = self.counts()
-        return {
-            "particle_counts": counts,
-            "particle_totals": {s: float(c.sum()) for s, c in counts.items()},
-        }
+        return self._report()

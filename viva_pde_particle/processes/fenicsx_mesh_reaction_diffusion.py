@@ -44,6 +44,9 @@ class FenicsxMeshReactionDiffusion(Process):
         mesh: ``{"kind": "sphere", "radius", "center", "h"}``.
         pde: the ``pde`` part of a PartitionedModel.
         dt: time step (s).
+        particle_transfer: how particles load the mesh.
+            - ``"grid"`` (default): Pᵀ applied to the grid histogram.
+            - ``"positions"``: the exact P1 load Σ_p φ_j(x_p) from ``particle_positions``.
     """
 
     config_schema = {
@@ -51,6 +54,7 @@ class FenicsxMeshReactionDiffusion(Process):
         "mesh": "map",
         "pde": "map",
         "dt": {"_type": "float", "_default": 0.01},
+        "particle_transfer": {"_type": "string", "_default": "grid"},
     }
 
     def initialize(self, config):
@@ -66,6 +70,13 @@ class FenicsxMeshReactionDiffusion(Process):
         self.dt = float(config["dt"])
         msh = build_mesh(config["mesh"])
         self.transfer = MeshGridTransfer.build(msh, self.grid)
+        self.particle_transfer = config["particle_transfer"]
+        if self.particle_transfer not in ("grid", "positions"):
+            raise ValueError(f"particle_transfer must be 'grid' or 'positions', got {self.particle_transfer!r}")
+        if self.particle_transfer == "positions":
+            from viva_pde_particle.mesh import PointLocator
+
+            self.locator = PointLocator.build(msh, self.transfer.V)
         V = self.transfer.V
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         K = fem.assemble_matrix(fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)).to_scipy().tocsr()
@@ -84,18 +95,26 @@ class FenicsxMeshReactionDiffusion(Process):
         return (self.transfer.P @ dofs).reshape(self.grid.shape)
 
     def inputs(self):
-        return {"field_dofs": "map[array[float]]", "particle_counts": "map[array[float]]"}
+        ins = {"field_dofs": "map[array[float]]", "particle_counts": "map[array[float]]"}
+        if self.config["particle_transfer"] == "positions":
+            ins["particle_positions"] = "map[array[float]]"
+        return ins
+
+    def particle_load(self, state, species: str) -> np.ndarray:
+        """Molecules per DOF (P1 load) for one particle species."""
+        if self.particle_transfer == "positions":
+            pos = (state.get("particle_positions") or {}).get(species)
+            return self.locator.load(np.zeros((0, 3)) if pos is None else np.asarray(pos, dtype=float))
+        counts = (state.get("particle_counts") or {}).get(species)
+        h = np.zeros(self.grid.shape) if counts is None else np.asarray(counts, dtype=float)
+        return self.transfer.P.T @ h.ravel()
 
     def outputs(self):
         return {"field_dofs": "map[overwrite[array[float]]]", "fields": "map[overwrite[array[float]]]"}
 
     def update(self, state, interval):
         u = {s: np.asarray(state["field_dofs"][s], dtype=float) for s in self.species}
-        counts = state.get("particle_counts") or {}
-        pc = {}
-        for p in self.particle_species:
-            load = self.transfer.P.T @ np.asarray(counts.get(p, np.zeros(self.grid.shape)), dtype=float).ravel()
-            pc[p] = load / (self.ml * MOLECULES_PER_UM3_PER_UM)
+        pc = {p: self.particle_load(state, p) / (self.ml * MOLECULES_PER_UM3_PER_UM) for p in self.particle_species}
         for _ in range(max(1, int(round(interval / self.dt)))):
             rates = reaction_rates(self.pde["terms"], self.species, {**pc, **u}, (self.n_dofs,))
             u = {s: self._solvers[s](self.ml * (u[s] + self.dt * rates[s])) for s in self.species}

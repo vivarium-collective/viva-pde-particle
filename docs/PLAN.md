@@ -186,7 +186,7 @@ Each process owns its own unit conversion, using `units.py` and `grid.py`.
     - `start-of-interval`: use `interval = k·dt`, the plain process-bigraph behavior. This is a variant
       worth comparing in its own right.
 - **Alternative orchestration (Phase 5), not possible in fvsolver:**
-  - A `HybridCoupler` Step-based orchestrator for Gauss-Seidel ordering or Strang splitting.
+  - A `HybridCoupler` orchestrator (implemented as one Process owning both engines) for Gauss-Seidel ordering or Strang splitting.
   - A sub-cycled PDE (implicit backward Euler with a larger dt).
 
 ### 3. Model spec and partitioner (`model/`)
@@ -662,7 +662,7 @@ the same coupling. The meaningful test is a comparison with native VCell on the 
 - The mesh volume is −1.4% of the ball.
 
 **Next:**
-- B3 splitting schemes: a `HybridCoupler` Step for Gauss–Seidel and Strang ordering.
+- B3 splitting schemes: a `HybridCoupler` Process for Gauss–Seidel and Strang ordering.
 - Remaining C studies.
 
 ## Phase 4c results (2026-10-03): B2b, the same ball under native VCell and the co-simulation
