@@ -189,18 +189,19 @@ visualizations:
   render: "python sims/run.py"
 
 conclusion: |
-  All checks pass (results/metrics.json, 2026-10-03):
-  - column survival vs exp(-k·B·t): max |z| = 1.76;
-  - decays where B = 0: none;
-  - ensemble-mean A vs continuum: 2.9% relative L2, at the expected sampling-noise level;
-  - total A vs continuum: 0.14%.
-  The field-to-particle direction of the coupling is correct.
+  All checks pass (results/metrics.json, 2026-10-03; re-run after the record-time fix).
 
-  Co-simulation vs native VCell hybrid (Phase 3a, quasi-2D slab 11×11×3, 8 seeds each,
-  matched Poisson initial placement):
+  Co-simulation:
+  - column survival vs exp(-k·B·t): max |z| = 1.56;
+  - decays where B = 0: none;
+  - ensemble-mean A vs continuum: 2.7% relative L2, at the sampling-noise level;
+  - total A vs continuum: 0.05%.
+
+  Co-simulation vs native VCell hybrid (quasi-2D slab 11×11×3, 8 seeds each, matched
+  Poisson initial placement):
   - native column survival vs exp(-k·B·t): max |z| = 1.68;
-  - co-sim vs native static-field survival: max |z| = 1.47;
+  - co-sim vs native static-field survival: max |z| = 1.37;
   - B fields identical to 1e-16;
-  - diffusing case, final x-profiles: max |z| = 2.58;
-  - total survival differs by 0.25%.
+  - diffusing case, final x-profiles: max |z| = 2.54;
+  - total survival differs by 0.04%.
   The two implementations are statistically indistinguishable on this model.

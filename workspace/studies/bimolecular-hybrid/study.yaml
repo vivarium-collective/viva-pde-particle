@@ -1,0 +1,114 @@
+schema_version: 4
+name: bimolecular-hybrid
+title: "A_particle + B_field → C_field: two-way nonlinear coupling, both solvers"
+investigation: cosim-vs-embedded-hybrid
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- two-way-exchange
+
+question: |
+  When particles consume a field (B substantially depleted by A), do the co-simulation
+  and the native VCell hybrid agree with each other and with the deterministic continuum
+  limit?
+hypothesis: |
+  The particle side removes A at rate k·[B](x), and the PDE side removes k·[A_binned]·[B]
+  from B and adds it to C. With 20,000 A, both solvers' ensemble means approach the
+  continuum solution (A treated as a field). The solvers differ only by sampling.
+  B + C is conserved exactly (PDE side).
+objective: |
+  11×11×3 slab; 20,000 A (D = 1, Poisson initial placement in both solvers);
+  B₀ = 0.5 µM (≈30,000 molecules, D = 1); C₀ = 0 (D = 1); k = 1/(µM·s); dt = 0.01;
+  t = 3 s; 16 seeds per solver. Compared:
+  - surviving fraction, produced C and final x-profiles (co-sim vs native);
+  - survival vs the continuum FV solution.
+
+baseline:
+- name: bimolecular-slab
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    n_particles: 20000
+    k: 1.0
+    b0: 0.5
+    dt: 0.01
+
+variants: []
+
+behavior_tests:
+- name: solvers-agree-on-survival
+  classification: primary
+  description: Max over time of the two-sample |z| of the surviving A fraction, co-simulation vs native.
+  measure:
+    kind: derived_scalar
+    field: a4_cosim_vs_native_survival_max_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Same model, mesh and coupling; independent ensembles of 16.
+  requires_simulation: bimolecular-slab
+- name: solvers-agree-on-product
+  classification: primary
+  description: Max over time of the two-sample |z| of produced C (/ initial A), co-simulation vs native.
+  measure:
+    kind: derived_scalar
+    field: a4_cosim_vs_native_c_max_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: C is produced on the PDE side from binned A; any timing or units mismatch shows up here first.
+  requires_simulation: bimolecular-slab
+- name: cosim-near-continuum
+  classification: primary
+  description: Max over time of |survival fraction − continuum survival| for the co-simulation.
+  measure:
+    kind: derived_scalar
+    field: a4_cosim_vs_continuum_survival_max_abs_diff
+  pass_if:
+    op: "<"
+    value: 0.01
+    provenance:
+      kind: theory
+      note: 20,000 molecules per run; the remainder is explicit-coupling lag plus discreteness.
+  requires_simulation: bimolecular-slab
+- name: native-near-continuum
+  classification: secondary
+  description: Max over time of |survival fraction − continuum survival| for the native VCell hybrid.
+  measure:
+    kind: derived_scalar
+    field: a4_native_vs_continuum_survival_max_abs_diff
+  pass_if:
+    op: "<"
+    value: 0.01
+    provenance:
+      kind: theory
+      note: As above.
+  requires_simulation: bimolecular-slab
+
+canonical_runs:
+- name: default
+  script: workspace/studies/bimolecular-hybrid/sims/run.py
+  args: []
+  label: "A_p + B_f → C_f: 16 seeds per solver + continuum limit"
+  default: true
+
+visualizations:
+- name: bimolecular-hybrid
+  chart: viz/bimolecular_hybrid.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - co-sim vs native: survival |z| = 1.79, produced C |z| = 0.85, final profiles |z| = 2.10;
+  - vs the continuum: within 0.29% (co-sim) and 0.18% (native) absolute survival;
+  - B + C conserved to round-off in both.
+
+  This study exposed a harness bug, now fixed. Process-bigraph accumulates process
+  times as float sums (25 × 0.01 > 0.25), so recorded co-sim states were one step
+  behind the record time. Before the fix the solvers appeared to disagree on C
+  (|z| = 71) and on survival (|z| = 5.9). run_hybrid now advances half a step past
+  each record time, and all studies were re-run.

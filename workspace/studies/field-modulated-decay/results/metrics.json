@@ -1,12 +1,12 @@
 {
-  "a2_continuum_rel_l2_err": 0.029134740643246133,
-  "a2_continuum_total_rel_err": 0.001414869012032183,
-  "a2_cosim_vs_native_diffusing_profile_z": 2.581822027261158,
-  "a2_cosim_vs_native_diffusing_survival_rel_diff": 0.0025381087418558878,
+  "a2_continuum_rel_l2_err": 0.02666166042537171,
+  "a2_continuum_total_rel_err": 0.0005153772160079277,
+  "a2_cosim_vs_native_diffusing_profile_z": 2.537105537139302,
+  "a2_cosim_vs_native_diffusing_survival_rel_diff": 0.00039274730597372833,
   "a2_cosim_vs_native_static_b_field_max_abs_diff": 1.1102230246251565e-16,
-  "a2_cosim_vs_native_static_survival_z": 1.4666426859159396,
+  "a2_cosim_vs_native_static_survival_z": 1.3723589313061668,
   "a2_native_static_field_max_abs_z": 1.682851700290091,
-  "a2_static_field_max_abs_z": 1.7619519786827873,
-  "a2_wall_time_s": 7.231871128082275,
+  "a2_static_field_max_abs_z": 1.555162112324151,
+  "a2_wall_time_s": 7.0801379680633545,
   "a2_zero_field_decays": 0.0
 }

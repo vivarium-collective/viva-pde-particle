@@ -82,3 +82,27 @@ def test_both_coupling_modes_agree_for_slow_dynamics(coupling):
     n = counts["A"][-1].sum()
     expected = 3000 * math.exp(-0.5)
     assert abs(n - expected) < 4 * math.sqrt(3000 * math.exp(-0.5) * (1 - math.exp(-0.5)))
+
+
+def test_recorded_state_is_at_the_record_time():
+    """Regression: float accumulation of process times must not leave records one step behind."""
+    from process_bigraph import Composite  # noqa: F401  (import check only)
+
+    from viva_pde_particle.processes.smoldyn_hybrid import SmoldynHybrid
+
+    calls = []
+    original = SmoldynHybrid.update
+
+    def counting(self, state, interval):
+        calls.append(interval)
+        return original(self, state, interval)
+
+    SmoldynHybrid.update = counting
+    try:
+        g = CartesianGrid((0.0, 0.0), (10.0, 10.0), (11, 11))
+        model = HybridModel(g, [Species("A", 1.0, particle=True, initial=50), Species("B", 1.0, initial=0.1)],
+                            [Reaction("decay", {"A": 1, "B": 1}, {"B": 1}, k=1.0)])
+        run_hybrid(model, t_end=1.0, dt=0.01, record_every=0.25)
+    finally:
+        SmoldynHybrid.update = original
+    assert len(calls) == 100  # exactly t_end / dt particle updates by the last record

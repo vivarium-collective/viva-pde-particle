@@ -1,5 +1,5 @@
 {
-  "a3_cosim_creation_ratio": 0.9893595545913476,
+  "a3_cosim_creation_ratio": 0.9940817125636233,
   "a3_cosim_mass_balance_max_rel_dev": 0.01176162261999969,
   "a3_cosim_steady_ratio_rel_err": 0.0031563233256477474,
   "a3_cosim_vs_native_profile_max_z": 153.3187706377357,
@@ -9,5 +9,5 @@
   "a3_native_creation_vs_bug_factor": 0.9988394085879047,
   "a3_native_mass_balance_max_rel_dev": 2.7657361945827397,
   "a3_native_steady_ratio_rel_err": 0.5065521640116144,
-  "a3_wall_time_s": 8.663809061050415
+  "a3_wall_time_s": 8.243252277374268
 }

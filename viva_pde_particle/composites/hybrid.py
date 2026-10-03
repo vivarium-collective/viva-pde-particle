@@ -113,6 +113,13 @@ def run_hybrid(
     n_records = int(round(t_end / every))
     traj = HybridTrajectory()
     traj.record(0.0, sim.state)
+    # Process-bigraph accumulates each process's time as a float sum of its interval, so an
+    # update ending exactly at a record time can land just past it (25 × 0.01 > 0.25) and be
+    # deferred, leaving the recorded state one step behind. Advancing to half a step past
+    # each record time applies every update ending at or before it. The state is piecewise
+    # constant between updates, so the recorded time is still exact.
+    half = 0.5 * dt
+    sim.run(half)
     for i in range(1, n_records + 1):
         sim.run(every)
         traj.record(i * every, sim.state)
