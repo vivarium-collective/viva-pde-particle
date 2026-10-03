@@ -1,0 +1,117 @@
+schema_version: 4
+name: unstructured-geometry
+title: Hybrid co-simulation on an unstructured mesh (ball) with particles confined by a curved surface
+investigation: hybrid-generalizability
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- fenicsx-same-problem
+
+question: |
+  Can the co-simulation run with the PDE on an unstructured mesh of a curved domain,
+  something the embedded vcell-fvsolver (Cartesian voxels only) cannot do, while
+  keeping the particle ↔ field handoff conservative and accurate?
+hypothesis: |
+  The PDE runs as P1 on a gmsh tetrahedral mesh of a ball, and Smoldyn runs inside a
+  reflecting sphere. They couple through a fine background grid with one sparse matrix P:
+  fields are interpolated as P·u, and particle loads are Pᵀ·counts. P's rows sum to 1, so
+  the handoff conserves molecules exactly. The only residual is the mismatch between the
+  particle side's geometry (exact sphere) and the PDE side's (polyhedral mesh, −1.4%
+  volume).
+objective: |
+  Ball R = 4 µm; mesh h = 0.8 µm; background grid 33³ with Δ = 0.25 µm; dt = 0.01; 8 seeds.
+  - Conversion A_p → B_f (k = 0.5 /s, 20,000 A): A against exp decay, A + B conservation,
+    and B against the continuum FEM solution.
+  - Exchange A_p ⇌ B_f with field-dependent creation inside the spherical compartment
+    (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): mass balance and the steady ratio k2/k1.
+
+baseline:
+- name: ball-conversion
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params: {}
+  note: >-
+    Built with viva_pde_particle.composites.hybrid.build_mesh_hybrid_document (sims/run.py);
+    no workbench composite generator is registered for mesh geometries yet.
+
+variants: []
+
+behavior_tests:
+- name: particle-decay-exact-in-ball
+  classification: primary
+  description: Max |z| over time of the mean A against A₀·e^(−kt).
+  measure:
+    kind: derived_scalar
+    field: b2_conversion_decay_max_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: A first-order reaction is unaffected by geometry.
+  requires_simulation: ball-conversion
+- name: handoff-conserves-in-ball
+  classification: primary
+  description: Max relative deviation of mean (A + B) from the initial total, conversion case.
+  measure:
+    kind: derived_scalar
+    field: b2_conversion_mass_balance_max_rel_dev
+  pass_if:
+    op: "<"
+    value: 0.02
+    provenance:
+      kind: theory
+      note: Pᵀ conserves counts exactly; the residual is explicit-coupling lag plus sampling.
+  requires_simulation: ball-conversion
+- name: field-matches-continuum-in-ball
+  classification: primary
+  description: Relative L2 (mesh-weighted) of mean B against the continuum FEM solution at t = 2 s.
+  measure:
+    kind: derived_scalar
+    field: b2_conversion_b_vs_continuum_rel_l2
+  pass_if:
+    op: "<"
+    value: 0.05
+    provenance:
+      kind: theory
+      note: 20,000 particles over 643 DOFs, 8 seeds.
+  requires_simulation: ball-conversion
+- name: exchange-steady-state-in-ball
+  classification: primary
+  description: Relative error of the late-time ratio of total A to total B against k2/k1.
+  measure:
+    kind: derived_scalar
+    field: b2_exchange_steady_ratio_rel_err
+  pass_if:
+    op: "<"
+    value: 0.05
+    provenance:
+      kind: theory
+      note: Detailed balance; field-dependent creation inside the spherical compartment.
+  requires_simulation: ball-conversion
+
+canonical_runs:
+- name: default
+  script: workspace/studies/unstructured-geometry/sims/run.py
+  args: []
+  label: "Ball (R = 4 µm, unstructured P1): conversion + exchange, 8 seeds each"
+  default: true
+
+visualizations:
+- name: unstructured-geometry
+  chart: viz/unstructured_geometry.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - **Conversion:** A follows exp(−kt) (|z| ≤ 1.8); A + B is conserved to 0.4%; B matches
+    the continuum FEM to 1.0% relative L2.
+  - **Exchange:** mass balance to 1.0%; steady ratio within 0.33% of k2/k1.
+  - **Geometry:** the polyhedral mesh is 1.4% smaller in volume than the ball, which
+    bounds the geometry-representation mismatch between the two sides.
+  The co-simulation runs on an unstructured mesh with curved particle confinement, and
+  the handoff stays conservative.
+  Follow-ups:
+  - membrane-bound particles;
+  - a native VCell comparison on a voxelized ball;
+  - higher-order (P2) PDE.

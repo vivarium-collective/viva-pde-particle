@@ -39,5 +39,6 @@ executive:
   verdict_status: pending
 studies:
 - fenicsx-same-problem
+- unstructured-geometry
 expert_docs: []
 acceptance_criteria: []

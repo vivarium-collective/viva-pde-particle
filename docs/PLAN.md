@@ -632,6 +632,30 @@ C studies (Fokker–Planck, gated binding).
 **Next (Phase 4b):** unstructured geometry B2. That needs particle → mesh-cell binning, and field → particle values on
 non-grid meshes, either a mesh-based ValueProvider or interpolation onto a HybridGrid. Then splitting schemes B3.
 
+## Phase 4b results (2026-10-03): unstructured geometry (B2)
+
+**`viva_pde_particle/mesh.py`:**
+- gmsh ball meshes (gmsh/python-gmsh added to pixi; used as a meshing tool).
+- `MeshGridTransfer`: one sparse P1 interpolation matrix P from a background grid to mesh DOFs. Fields go
+  mesh → grid as P·u; particle counts go grid → mesh as Pᵀ·h. Rows sum to 1, so the handoff conserves molecules.
+
+**`FenicsxMeshReactionDiffusion`:**
+- P1 on the unstructured mesh, lumped mass.
+- The authoritative state is `field_dofs`. It outputs grid-sampled `fields`, so `SmoldynHybrid` is unchanged apart
+  from the geometry.
+- Smoldyn config gains `geometry={"kind": "sphere"}` (reflecting `panel sph`, inside compartment) and explicit
+  initial positions.
+- Built by `build_mesh_hybrid_document`, run by `run_document`.
+
+**B2 `unstructured-geometry`** (ball R = 4 µm):
+- Conversion: decay |z| ≤ 1.8; A + B conserved to 0.4%; B vs continuum FEM 1.0% L2.
+- Exchange: mass balance 1.0%; steady ratio 0.33%.
+- The mesh volume is −1.4% of the ball.
+
+**Next:**
+- B3 splitting schemes: a `HybridCoupler` Step for Gauss–Seidel and Strang ordering.
+- Remaining C studies.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

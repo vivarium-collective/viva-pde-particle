@@ -83,9 +83,12 @@ class HybridTrajectory:
     times: list[float] = field(default_factory=list)
     fields: dict[str, list[np.ndarray]] = field(default_factory=dict)
     particle_counts: dict[str, list[np.ndarray]] = field(default_factory=dict)
+    field_dofs: dict[str, list[np.ndarray]] = field(default_factory=dict)  # unstructured-mesh engine only
 
     def record(self, t: float, state: dict):
         self.times.append(t)
+        for s, v in (state.get("field_dofs") or {}).items():
+            self.field_dofs.setdefault(s, []).append(np.array(v, dtype=float))
         for s, v in state["fields"].items():
             self.fields.setdefault(s, []).append(np.array(v, dtype=float))
         for s, v in state["particle_counts"].items():
@@ -113,12 +116,16 @@ def run_hybrid(
     pde_options: dict | None = None,
 ) -> HybridTrajectory:
     """Run the composite to ``t_end``, recording state every ``record_every`` (default k·dt)."""
+    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed, particle_init, pde_engine, pde_options)
+    return run_document(doc, t_end, dt, record_every or step_multiplier * dt, core)
+
+
+def run_document(doc: dict, t_end: float, dt: float, every: float, core=None) -> HybridTrajectory:
+    """Run a hybrid composite document, recording ``fields`` and ``particle_counts`` every ``every``."""
     from viva_pde_particle.core import build_core
 
     core = core or build_core()
-    doc = build_hybrid_document(model, dt, step_multiplier, coupling, seed, particle_init, pde_engine, pde_options)
     sim = Composite({"state": doc}, core=core)
-    every = record_every or step_multiplier * dt
     n_records = int(round(t_end / every))
     traj = HybridTrajectory()
     traj.record(0.0, sim.state)
@@ -133,3 +140,65 @@ def run_hybrid(
         sim.run(every)
         traj.record(i * every, sim.state)
     return traj
+
+
+def uniform_in_sphere(n: int, center, radius: float, rng: np.random.Generator) -> np.ndarray:
+    """n points uniformly distributed in a ball."""
+    pts = rng.normal(size=(n, 3))
+    pts /= np.linalg.norm(pts, axis=1, keepdims=True)
+    return np.asarray(center) + pts * radius * rng.random(n)[:, None] ** (1.0 / 3.0)
+
+
+def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step_multiplier: int = 1,
+                               coupling: str = "fvsolver", seed: int = 1) -> dict:
+    """Hybrid co-simulation in a ball: unstructured FEniCSx PDE + Smoldyn confined to the sphere.
+
+    ``model.grid`` is the background Cartesian grid (it must contain the ball). Particle
+    species need scalar initial totals, placed uniformly in the ball, and continuous species
+    scalar initial concentrations. ``sphere``: ``{"center", "radius", "h"}``.
+    """
+    from viva_pde_particle.processes.fenicsx_mesh_reaction_diffusion import FenicsxMeshReactionDiffusion
+
+    parts = partition(model)
+    rng = np.random.default_rng(seed)
+    g = model.grid
+    positions = {s.name: uniform_in_sphere(int(s.initial), sphere["center"], sphere["radius"], rng)
+                 for s in model.species if s.particle}
+    counts0 = {name: g.histogram(p) for name, p in positions.items()}
+    geometry = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"]}
+    mesh_spec = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"],
+                 "h": sphere.get("h", sphere["radius"] / 6)}
+    pde_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "pde": parts.pde, "dt": dt}
+    # initial field DOFs (scalar initial conditions only)
+    from process_bigraph import allocate_core
+
+    probe = FenicsxMeshReactionDiffusion(config=pde_cfg, core=allocate_core())
+    dofs0 = probe.initial_dofs({s.name: float(s.initial) for s in model.species if not s.particle})
+    config_text = write_smoldyn_config(parts.particles, g, counts0, time_step=step_multiplier * dt, seed=seed,
+                                       geometry=geometry, positions=positions)
+    return {
+        "field_dofs": dofs0,
+        "fields": {s: probe.to_grid(v) for s, v in dofs0.items()},
+        "particle_counts": {s: c.copy() for s, c in counts0.items()},
+        "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
+        "pde": {
+            "_type": "process",
+            "address": "local:FenicsxMeshReactionDiffusion",
+            "config": pde_cfg,
+            "interval": dt,
+            "inputs": {"field_dofs": ["field_dofs"], "particle_counts": ["particle_counts"]},
+            "outputs": {"field_dofs": ["field_dofs"], "fields": ["fields"]},
+        },
+        "particles": {
+            "_type": "process",
+            "address": "local:SmoldynHybrid",
+            "config": {
+                "grid": g.to_config(), "config_text": config_text, "particle_species": model.particle_species,
+                "field_species": parts.particles["field_species"], "dt": dt,
+                "step_multiplier": step_multiplier, "coupling": coupling,
+            },
+            "interval": interval_for(coupling, dt, step_multiplier),
+            "inputs": {"fields": ["fields"]},
+            "outputs": {"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]},
+        },
+    }

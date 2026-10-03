@@ -61,14 +61,28 @@ def _molecules(grid: CartesianGrid, name: str, counts: np.ndarray) -> list[str]:
     return lines
 
 
+def _sphere_surface(center, radius) -> list[str]:
+    c = " ".join(_fmt(v) for v in center)
+    return ["start_surface walls", "action both all reflect", f"panel sph {c} {_fmt(radius)} 30 30",
+            "end_surface", f"start_compartment {DOMAIN}", "surface walls", f"point {c}", "end_compartment"]
+
+
 def write_smoldyn_config(
     particles: dict,
     grid: CartesianGrid,
     initial_counts: dict[str, np.ndarray],
     time_step: float,
     seed: int,
+    geometry: dict | None = None,
+    positions: dict[str, np.ndarray] | None = None,
 ) -> str:
-    """Return the configuration text for the particle half (from :func:`partition`)."""
+    """Return the configuration text for the particle half (from :func:`partition`).
+
+    ``geometry``: None (the grid box) or ``{"kind": "sphere", "center", "radius"}``. A sphere
+    adds a reflecting spherical surface and the ``domain`` compartment inside it.
+    ``positions``: explicit initial molecule positions per species (n, dim), which replace
+    the per-node placement from ``initial_counts``.
+    """
     if any(o < 0 for o in grid.origin):
         # Smoldyn writes position ranges as 'lo-hi', which is ambiguous for negative values.
         raise ValueError("grid origin must be non-negative for Smoldyn 'mol lo-hi' placement")
@@ -90,14 +104,21 @@ def write_smoldyn_config(
         f"random_seed {int(seed)}",
     ]
     reactions = particles["reactions"]
-    if any(rx["order"] == 0 and rx["fields"] for rx in reactions):
+    if geometry is not None:
+        if geometry.get("kind") != "sphere":
+            raise ValueError(f"unsupported geometry {geometry!r}")
+        lines += _sphere_surface(geometry["center"], geometry["radius"])
+    elif any(rx["order"] == 0 and rx["fields"] for rx in reactions):
         lines += _domain_surface(grid)
     for rx in reactions:
         rct = " + ".join(rx["reactants"]) or "0"
         prd = " + ".join(rx["products"]) or "0"
-        keyword = f"reaction_cmpt {DOMAIN}" if (rx["order"] == 0 and rx["fields"]) else "reaction"
+        keyword = f"reaction_cmpt {DOMAIN}" if (rx["order"] == 0 and (rx["fields"] or geometry)) else "reaction"
         lines.append(f"{keyword} {rx['name']} {rct} -> {prd} {_rate(rx)}")
     for s in species:
-        lines += _molecules(grid, s, initial_counts.get(s, np.zeros(grid.shape)))
+        if positions is not None and s in positions:
+            lines += [f"mol 1 {s} " + " ".join(_fmt(v) for v in p) for p in positions[s]]
+        else:
+            lines += _molecules(grid, s, initial_counts.get(s, np.zeros(grid.shape)))
     lines.append("end_file")
     return "\n".join(lines) + "\n"
