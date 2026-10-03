@@ -32,6 +32,10 @@ class Species:
     #: continuous: µM (scalar or array of grid shape); particle: total count (int,
     #: placed uniformly) or per-node counts (array of grid shape)
     initial: float | np.ndarray = 0.0
+    #: optional VCell expression in x, y, z for a spatially varying continuous initial
+    #: condition, used by the native VCell reference (which cannot take arrays). It must
+    #: agree with ``initial`` at the grid nodes.
+    initial_expression: str | None = None
 
 
 @dataclass
@@ -110,6 +114,8 @@ def partition(model: HybridModel) -> PartitionedModel:
         p_prd = {s: n for s, n in r.products.items() if s in particle}
         if not p_rct and not p_prd:
             continue  # continuous-only: PDE side
+        if p_rct == p_prd:
+            continue  # particles unchanged (e.g. O -> O + U, a source): PDE side only
         c_rct = {s: n for s, n in r.reactants.items() if s not in particle}
         order = sum(p_rct.values())
         reactants = [s for s, n in p_rct.items() for _ in range(n)]
@@ -144,12 +150,17 @@ def initial_fields(model: HybridModel) -> dict[str, np.ndarray]:
     }
 
 
-def initial_particle_counts(model: HybridModel, rng: np.random.Generator) -> dict[str, np.ndarray]:
+def initial_particle_counts(model: HybridModel, rng: np.random.Generator,
+                            mode: str = "exact") -> dict[str, np.ndarray]:
     """Initial per-node molecule counts for each particle species.
 
-    A scalar total is spread uniformly by volume (multinomial over element volumes,
-    matching uniform random placement); an array is taken as per-node counts.
+    A scalar total ``N`` is spread uniformly by volume. In ``exact`` mode it is a
+    multinomial over element volumes (exactly N, as uniform random placement gives). In
+    ``poisson`` mode each node gets Poisson(N·V_i/ΣV), as VCell does for an initial
+    concentration. An array is taken as per-node counts in either mode.
     """
+    if mode not in ("exact", "poisson"):
+        raise ValueError(f"mode must be 'exact' or 'poisson', got {mode!r}")
     g = model.grid
     out = {}
     for s in model.species:
@@ -158,7 +169,10 @@ def initial_particle_counts(model: HybridModel, rng: np.random.Generator) -> dic
         init = np.asarray(s.initial)
         if init.ndim == 0:
             p = (g.volume_fraction / g.volume_fraction.sum()).ravel()
-            out[s.name] = rng.multinomial(int(init), p).reshape(g.shape).astype(float)
+            if mode == "poisson":
+                out[s.name] = rng.poisson(float(init) * p).reshape(g.shape).astype(float)
+            else:
+                out[s.name] = rng.multinomial(int(init), p).reshape(g.shape).astype(float)
         else:
             if init.shape != g.shape:
                 raise ValueError(f"species {s.name}: initial counts shape {init.shape} != grid {g.shape}")

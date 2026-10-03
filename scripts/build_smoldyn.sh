@@ -13,7 +13,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/external/Smoldyn"
 VCELL="${SMOLDYN_VCELL:-ON}"
-BUILD="$ROOT/build/smoldyn-vcell-$VCELL"
+# one build tree per pixi environment (the CMake cache pins the Python interpreter)
+ENV_NAME="$(basename "${CONDA_PREFIX:-default}")"
+BUILD="$ROOT/build/smoldyn-vcell-$VCELL-$ENV_NAME"
 PY="$(command -v python)"
 
 [ -f "$SRC/CMakeLists.txt" ] || { echo "external/Smoldyn missing: git submodule update --init external/Smoldyn" >&2; exit 1; }
