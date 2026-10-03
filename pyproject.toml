@@ -2,7 +2,7 @@
 name = "viva-pde-particle"
 version = "0.0.0"
 description = "PDE/particle hybrid co-simulation (finite volume / FEniCSx + Smoldyn) with process-bigraph, benchmarked against vcell-fvsolver"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
     # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server
@@ -27,8 +27,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
-# VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. Needs Python >=3.12.
-reference = ["pyvcell[solver,native]>=0.3.3"]
+# VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. pyvcell needs Python >=3.12;
+# the marker keeps the 3.11 resolution (workspace-ci, publish workflows) satisfiable.
+reference = ["pyvcell[solver,native]>=0.3.3; python_version >= '3.12'"]
 
 [build-system]
 requires = ["hatchling"]
