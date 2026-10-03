@@ -571,6 +571,26 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
 - A6 performance;
 - Investigation B (FEniCSx, Phase 4).
 
+## Phase 3d results (2026-10-03): record-time fix and A4
+
+**Harness bug, now fixed:**
+- **Cause:** process-bigraph accumulates each process's time as a float sum of its interval, and
+  25 × 0.01 = 0.25000000000000006 > 0.25. The update ending at a record time was deferred, so every
+  co-simulation state recorded at t was really at t − dt (99 updates by t = 1.0).
+- **Fix:** `run_hybrid` advances half a step past each record time. A regression test is in
+  `tests/test_hybrid_cosim.py`.
+- **Effect:** all studies were re-run.
+  - A1 binned variance vs 2Dt: 0.96% → 0.13%.
+  - A2 total vs continuum: 0.14% → 0.05%.
+  - A4's apparent solver disagreement disappeared (C |z| 71 → 0.85).
+- **Lesson:** process-bigraph composites need care with time arithmetic when results are sampled at exact
+  times. Worth an upstream note: an integer-tick or rational-time scheduler would avoid it.
+
+**A4 `bimolecular-hybrid`** (A_p + B_f → C_f, B substantially depleted):
+- co-sim vs native: survival |z| = 1.79, C |z| = 0.85, profiles |z| = 2.10;
+- both within 0.3% of the continuum survival;
+- B + C conserved to round-off.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

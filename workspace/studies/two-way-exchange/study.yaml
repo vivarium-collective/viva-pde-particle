@@ -124,7 +124,7 @@ visualizations:
 conclusion: |
   Results (results/metrics.json, 2026-10-03):
   - **Co-simulation:** conserves A + B to 1.2%; steady-state ratio within 0.3% of k2/k1;
-    creation at 0.989 of the exact expectation.
+    creation at 0.994 of the exact expectation.
   - **Native VCell:** creation at 1.813× the expectation, matching the predicted
     boundary-volume overproduction (1.815×) to 0.1%. As a result A + B grows 177%
     in 5 s and the steady state is 51% off; the two solvers disagree strongly

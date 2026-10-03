@@ -117,10 +117,10 @@ visualizations:
   render: "python sims/run.py"
 
 conclusion: |
-  All four checks pass (results/metrics.json, 2026-10-03):
+  All four checks pass (results/metrics.json, 2026-10-03; re-run after the record-time fix):
   - FV vs analytic: 6.0e-4 relative error;
-  - binned particle variance vs 2Dt: 0.96%;
+  - binned particle variance vs 2Dt: 0.13% (0.96% before the fix, which was the one-step record lag);
   - histogram mismatch: 0 molecules;
-  - node classes vs volume shares: max |z| = 1.15. Corner and edge concentrations are
-    within 1.3% of interior.
-  Both halves and the handoff behave as specified, so coupled studies can build on them.
+  - node classes vs volume shares: max |z| = 0.48. Corner and edge concentrations are
+    within 0.4% of interior.
+  Both halves and the handoff behave as specified.

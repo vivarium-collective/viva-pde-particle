@@ -168,3 +168,33 @@ def two_way_exchange_model(k1: float = 1.0, k2: float = 0.5, b0: float = 0.2, d_
 def two_way_exchange(core=None, *, k1=1.0, k2=0.5, b0=0.2, dt=0.01, step_multiplier=1,
                      coupling="fvsolver", seed=1):
     return build_hybrid_document(two_way_exchange_model(k1, k2, b0), dt, step_multiplier, coupling, seed)
+
+
+# ---------------------------------------------------------------- bimolecular hybrid
+
+def bimolecular_model(n_particles: int = 20000, k: float = 1.0, b0: float = 0.5, d_a: float = 1.0,
+                      d_b: float = 1.0, d_c: float = 1.0, length: float = 10.0, num: int = 11,
+                      thickness: float | None = 1.0) -> HybridModel:
+    """A_particle + B_field -> C_field at k (1/(µM·s)). B is consumed, so the coupling is two-way."""
+    g = square_grid(length, num, thickness)
+    return HybridModel(
+        g,
+        [Species("A", d_a, particle=True, initial=n_particles), Species("B", d_b, initial=b0),
+         Species("C", d_c, initial=0.0)],
+        [Reaction("bind", {"A": 1, "B": 1}, {"C": 1}, k=k)],
+    )
+
+
+@composite_generator(
+    name="bimolecular_hybrid",
+    description="A_particle + B_field -> C_field: particles consume a field (two-way, nonlinear coupling).",
+    parameters={
+        "n_particles": {"type": "integer", "default": 20000, "description": "Initial A molecules"},
+        "k": {"type": "float", "default": 1.0, "description": "Rate constant (1/(µM·s))"},
+        "b0": {"type": "float", "default": 0.5, "description": "Initial B (µM)"},
+        **_COUPLING_PARAMS,
+    },
+)
+def bimolecular_hybrid(core=None, *, n_particles=20000, k=1.0, b0=0.5, dt=0.01, step_multiplier=1,
+                       coupling="fvsolver", seed=1):
+    return build_hybrid_document(bimolecular_model(n_particles, k, b0), dt, step_multiplier, coupling, seed)

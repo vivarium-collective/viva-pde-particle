@@ -1,0 +1,10 @@
+{
+  "a4_cosim_mass_balance_max_rel_dev": 3.597122599785507e-14,
+  "a4_cosim_vs_continuum_survival_max_abs_diff": 0.0029478015050906636,
+  "a4_cosim_vs_native_c_max_z": 0.8461630719524582,
+  "a4_cosim_vs_native_profile_max_z": 2.095331872746837,
+  "a4_cosim_vs_native_survival_max_z": 1.7894984249778536,
+  "a4_native_mass_balance_max_rel_dev": 3.197442310920451e-14,
+  "a4_native_vs_continuum_survival_max_abs_diff": 0.001793097234381258,
+  "a4_wall_time_s": 7.375601053237915
+}
