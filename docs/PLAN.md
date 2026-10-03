@@ -612,6 +612,26 @@ investigation's executive summary).
 **Next:** Investigation B (Phase 4: FEniCSx PDE process, unstructured meshes, splitting schemes), and the remaining
 C studies (Fokker–Planck, gated binding).
 
+## Phase 4a results (2026-10-03): FEniCSx engine and B1
+
+**`FenicsxReactionDiffusion`** (`processes/fenicsx_reaction_diffusion.py`):
+- Q1 Lagrange elements on a structured quad/hex mesh whose vertices are the grid nodes, built with dolfinx 0.10.
+  Q1 rather than P1 tetrahedra because P1-tet lumped masses depend on the diagonal orientation.
+- The Q1 lumped mass equals the FV dual-cell volumes exactly, so particle binning and units are shared with FV.
+- Same ports and time scheme as FV; mass is `lumped` or `consistent`.
+- Selected by `build_hybrid_document(pde_engine="fenicsx")`.
+- Reaction terms are shared with FV through `processes.fv_reaction_diffusion.reaction_rates`.
+
+**B1 `fenicsx-same-problem`:**
+- **Discretization:** all three engines are second order on the cosine mode.
+- **Coupled:** with the same seeds, the engine swap is invisible (paired |z| ≤ 1.5; survival differences ≤ 3·10⁻⁴),
+  and all engines are within 0.27% of the continuum.
+- **Analysis note:** comparisons that share seeds must use `analysis.paired_z` (common random numbers). The
+  two-sample z drastically understates their sensitivity.
+
+**Next (Phase 4b):** unstructured geometry B2. That needs particle → mesh-cell binning, and field → particle values on
+non-grid meshes, either a mesh-based ValueProvider or interpolation onto a HybridGrid. Then splitting schemes B3.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

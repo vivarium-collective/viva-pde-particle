@@ -1,0 +1,18 @@
+{
+  "b1_fem_consistent_coupled_vs_continuum_max_abs": 0.0025438866340780075,
+  "b1_fem_consistent_err_n81": 4.683908582287759e-06,
+  "b1_fem_consistent_h_order": 2.0375682979650533,
+  "b1_fem_consistent_vs_fv_c_max_abs_diff": 1.1812294443636073e-05,
+  "b1_fem_consistent_vs_fv_survival_max_abs_diff": 0.00011168654695303815,
+  "b1_fem_consistent_vs_fv_survival_max_paired_z": 0.7625442177593579,
+  "b1_fem_lumped_coupled_vs_continuum_max_abs": 0.0026936951680739396,
+  "b1_fem_lumped_err_n81": 1.5606755023601243e-05,
+  "b1_fem_lumped_h_order": 1.9833000687366116,
+  "b1_fem_lumped_vs_fv_c_max_abs_diff": 7.635535086869538e-06,
+  "b1_fem_lumped_vs_fv_survival_max_abs_diff": 0.0002614950809489702,
+  "b1_fem_lumped_vs_fv_survival_max_paired_z": 1.5017006890426667,
+  "b1_fv_coupled_vs_continuum_max_abs": 0.0024322000871249694,
+  "b1_fv_err_n81": 5.462675273474246e-06,
+  "b1_fv_h_order": 1.9650239145269741,
+  "b1_wall_time_s": 12.883005142211914
+}

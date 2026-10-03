@@ -1,0 +1,102 @@
+schema_version: 4
+name: fenicsx-same-problem
+title: PDE engine swap, FV (VCell FV_SOLVER scheme) vs FEniCSx Q1 under the same coupling
+investigation: hybrid-generalizability
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+
+question: |
+  Can the PDE half of the co-simulation be swapped for a different discretization
+  (FEniCSx, Q1 finite elements) without changing anything else, and does that change the
+  coupled result beyond discretization error?
+hypothesis: |
+  FenicsxReactionDiffusion exposes the same ports as FVReactionDiffusion. On a structured
+  mesh whose vertices are the grid nodes, its lumped mass equals the FV control volumes, so
+  particle binning and units are unchanged. Q1 and FV are both second order. On matched
+  grids, the coupled hybrid results should agree to within sampling.
+objective: |
+  Part 1: cosine-mode diffusion on N×N grids (N = 11 ... 81) for three engines (FV, Q1
+  lumped mass, Q1 consistent mass), each compared to the analytic decay; h-orders fitted.
+  Part 2: A4's A_p + B_f → C_f on the 11×11×3 slab, 16 seeds per engine with the same
+  seeds (common random numbers, so paired comparison); survival and produced C compared.
+description: |
+  The swap is one composite argument (build_hybrid_document(pde_engine="fenicsx")); the
+  SmoldynHybrid process, the coupling and the model are untouched. That kind of
+  modularity is not available in the embedded vcell-fvsolver.
+
+baseline:
+- name: engine-swap-bimolecular
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    n_particles: 20000
+    dt: 0.01
+
+variants: []
+
+behavior_tests:
+- name: fem-second-order
+  classification: primary
+  description: Fitted h-order of the Q1 lumped-mass engine on the cosine mode.
+  measure:
+    kind: derived_scalar
+    field: b1_fem_lumped_h_order
+  pass_if:
+    op: range
+    low: 1.8
+    high: 2.2
+    provenance:
+      kind: theory
+      note: Q1 Lagrange elements are second order in L∞ for smooth solutions.
+  requires_simulation: engine-swap-bimolecular
+- name: fv-second-order
+  classification: primary
+  description: Fitted h-order of the FV engine on the cosine mode.
+  measure:
+    kind: derived_scalar
+    field: b1_fv_h_order
+  pass_if:
+    op: range
+    low: 1.8
+    high: 2.2
+    provenance:
+      kind: theory
+      note: Node-centred FV with a 5/7-point stencil is second order.
+  requires_simulation: engine-swap-bimolecular
+- name: engine-swap-preserves-coupled-result
+  classification: primary
+  description: Max paired |z| of survival, FEniCSx (lumped) vs FV engine, same seeds.
+  measure:
+    kind: derived_scalar
+    field: b1_fem_lumped_vs_fv_survival_max_paired_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: On matched grids the engines differ only by O(h²) discretization, far below the coupling error.
+  requires_simulation: engine-swap-bimolecular
+
+canonical_runs:
+- name: default
+  script: workspace/studies/fenicsx-same-problem/sims/run.py
+  args: []
+  label: "Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds)"
+  default: true
+
+visualizations:
+- name: engine-swap
+  chart: viz/engine_swap.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - **All three engines are second order:** h-orders 1.97 (FV), 1.98 (Q1 lumped) and
+    2.04 (Q1 consistent).
+  - **Error at N = 81:** 5.5e-6 (FV), 1.6e-5 (lumped) and 4.7e-6 (consistent).
+  - **Coupled, the swap changes nothing measurable:**
+    - paired |z| = 1.50 (lumped) and 0.76 (consistent) against FV;
+    - mean survival differences of 3·10⁻⁴ and 1·10⁻⁴;
+    - all three within 0.27% of the continuum.
+  The PDE engine is interchangeable under the co-simulation, and discretization effects
+  are cleanly separable from coupling effects.

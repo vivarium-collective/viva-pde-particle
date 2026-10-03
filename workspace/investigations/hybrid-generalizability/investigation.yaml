@@ -2,7 +2,7 @@ schema_version: 2
 name: hybrid-generalizability
 title: What the modular hybrid co-simulation enables beyond the embedded solver
 created: '2026-10-03'
-status: planned
+status: running
 question: >-
   Once the co-simulation reproduces the embedded hybrid solver, which capabilities does
   the modular decomposition add, such as unstructured meshes, alternative splitting
@@ -37,6 +37,7 @@ executive:
     process-bigraph processes.
   verdict: Not yet run.
   verdict_status: pending
-studies: []
+studies:
+- fenicsx-same-problem
 expert_docs: []
 acceptance_criteria: []
