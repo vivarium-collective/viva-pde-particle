@@ -86,7 +86,7 @@ viva-pde-particle/
     composites/*.composite.yaml
   workspace/
     investigations/<inv>/investigation.yaml
-    investigations/<inv>/studies/<study>/study.yaml (+ sims/run.py, viz/)
+    studies/<study>/study.yaml (+ sims/run.py, results/metrics.json, viz/); `investigation:` back-reference
     references/papers.bib, notes/
   tests/
 ```
@@ -270,7 +270,7 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
 2. **Core co-sim.**
    - **2a, done 2026-10-03:** `grid.py`, `units.py`, `HybridModel` + partitioner, `FVReactionDiffusion`,
      `SmoldynHybrid` and the composite builder. See "Phase 2a results" below.
-   - **2b:** Studies A1–A2 as workbench studies.
+   - **2b, done 2026-10-03:** Studies A1–A2 as workbench studies. See "Phase 2b results" below.
 3. **Reference path:** teach pyvcell (and, as needed, libvcell and pyvcell-fvsolver) to build, generate and run
    hybrid VCell applications headlessly (see §4). This phase runs Studies A3–A6.
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
@@ -380,6 +380,44 @@ Results go to study-local parquet runs. Figures are produced with `/viva-viz`, a
   - `A_p → B_f` conserves A+B molecules within 2%;
   - with `fvsolver` coupling and k = 4, particle counts change only every 4th PDE step;
   - both coupling modes agree for slow dynamics.
+
+## Phase 2b results (2026-10-03)
+
+**Study layout:**
+- Studies live flat in `workspace/studies/<slug>/` with an `investigation:` back-reference, as in viva-fenics.
+- The template's lint scans only the flat layout, while the workbench resolves both.
+
+**Each study holds:**
+- `study.yaml` (schema v4), whose baseline is a `@composite_generator` composite (`viva_pde_particle.composites.examples.*`);
+- `sims/run.py`, the canonical run, which records events in `.pbg/runs.jsonl`;
+- `results/metrics.json`;
+- `viz/*.html` (plotly).
+
+**Grading:** `viva_pde_particle/evaluators.py` registers each metric as a derived scalar, so the workbench's
+`study_evaluator.evaluate_test` grades `behavior_tests` natively. All 8 tests pass through it.
+
+**A1 `handoff-units-and-binning`:**
+- FV vs analytic diffusion: 6.0e-4 relative error.
+- Binned Smoldyn variance vs 2Dt: 0.96%.
+- Histogram molecule mismatch: 0.
+- Node-class counts vs element-volume shares: max |z| = 1.15. Corner and edge µM are within 1.3% of interior.
+
+**A2 `field-modulated-decay`:**
+- Static-field column survival vs `exp(-k·B·t)`: max |z| = 1.76.
+- Decays where B = 0: none.
+- Diffusing A and B, ensemble-mean A vs the continuum FV solution: 2.9% relative L2 (at the sampling-noise level).
+- Total A vs continuum: 0.14%.
+
+**Support code:**
+- `viva_pde_particle/analysis.py`:
+  - `run_ensemble`;
+  - `continuum_model` + `run_continuum` (the deterministic limit through the FV process alone);
+  - `histogram_variance`;
+  - `write_metrics`.
+
+**Next:**
+- Phase 3, the reference path through pyvcell/libvcell/pyvcell-fvsolver. A3–A6 compare against it.
+- The coupling-only checks of A3 (`two-way-exchange`) can run on the co-simulation before that.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
