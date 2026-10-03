@@ -40,6 +40,7 @@ executive:
 studies:
 - fenicsx-same-problem
 - unstructured-geometry
+- sphere-cosim-vs-native
 - splitting-schemes
 expert_docs: []
 acceptance_criteria: []

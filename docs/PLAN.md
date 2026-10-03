@@ -656,6 +656,19 @@ non-grid meshes, either a mesh-based ValueProvider or interpolation onto a Hybri
 - B3 splitting schemes: a `HybridCoupler` Step for Gauss–Seidel and Strang ordering.
 - Remaining C studies.
 
+## Phase 4c results (2026-10-03): B2b, the same ball under native VCell and the co-simulation
+
+`to_biomodel(geometry={"kind": "sphere"})` builds VCell analytic geometry: a `cell` sphere in an `ec` background,
+with a membrane.
+
+**Results** (box [0,9]³, Δ = 0.25, R = 4, 8 seeds):
+- **Volume:** VCell's representation of the ball is more accurate (−0.47%) than the co-sim mesh at h = 0.8 (−1.4%).
+- **Conversion:** the solvers agree (|z| = 0.73; radial B within 3.5%).
+- **Exchange:** an open discrepancy. Native A + B grows 6.8%, and native total A is 6.5% above the co-sim.
+  - Creation alone is a few percent low in both (0.960 native, 0.974 co-sim), so creation doesn't explain it.
+  - The cause is under investigation, likely near-membrane voxel treatment on the native PDE side.
+  - Not claimed as a VCell defect.
+
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 
 **`HybridCoupler`** (`processes/hybrid_coupler.py`):
