@@ -59,6 +59,23 @@ commented out. They are **not** part of this coupling.
   holds the value at `T+(k-1)·dt`. That is the most recent completed PDE step before the current one, not
   the start of the Smoldyn step. For k = 1 the two coincide.
 
+## PDE scheme in hybrid runs (`FV_SOLVER`)
+
+Hybrid runs use the non-Sundials `FV_SOLVER`. `FVSolver.cpp:345-347` builds a `SparseVolumeEqnBuilder` and a
+`SparseLinearSolver` (PCG). Per volume element `i` with volume fraction `s_i` (1, ½, ¼, ⅛ for interior, face,
+edge, corner; `getVolumeOfElement_cu`):
+
+    s_i·uᵢⁿ⁺¹ + Σⱼ D·(dt/dx²)·aᵢⱼ·(uᵢⁿ⁺¹ − uⱼⁿ⁺¹) = s_i·(uᵢⁿ + Rᵢⁿ·dt)
+
+- **Diffusion** is backward Euler.
+- **Reactions** are forward Euler. `R` comes from the old values, and `computeRHS` adds `R·dt` before scaling
+  by `volumeScale`.
+- **Face fractions `aᵢⱼ`** are halved for each transverse axis on which the element lies on a boundary
+  (`computeLHS`: an X-boundary element halves its Y and Z lambdas, and so on).
+- **Zero-flux faces** at the domain boundary contribute nothing.
+
+`viva_pde_particle.processes.FVReactionDiffusion` implements exactly this.
+
 ## PDE → particles (`VCellValueProvider::getValue`)
 
 **Lookup:**
