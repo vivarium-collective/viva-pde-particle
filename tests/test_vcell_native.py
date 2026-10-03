@@ -12,7 +12,7 @@ import pytest
 
 from viva_pde_particle.composites.examples import field_modulated_decay_model
 from viva_pde_particle.grid import CartesianGrid
-from viva_pde_particle.model import HybridModel, Species
+from viva_pde_particle.model import HybridModel, Reaction, Species
 from viva_pde_particle.reference.vcell_native import hybrid_support_available, validate_for_native
 
 needs_hybrid = pytest.mark.skipif(not hybrid_support_available(), reason="pyvcell without spatial-hybrid support")
@@ -114,3 +114,19 @@ def test_zero_reactant_reactions_become_general_kinetics():
     assert [(p.name, float(p.value)) for p in leak.kinetics.kinetics_parameters] == [("J", 0.1)]
     pump = next(r for r in bm.model.reactions if r.name == "pump")
     assert pump.kinetics.kinetics_type == "MassAction"
+
+
+@needs_hybrid
+def test_sphere_geometry_biomodel():
+    from viva_pde_particle.reference.vcell_native import to_biomodel
+
+    g = CartesianGrid((0, 0, 0), (9.0, 9.0, 9.0), (10, 10, 10))
+    m = HybridModel(g, [Species("A", 1.0, particle=True, initial=1000), Species("B", 1.0, initial=0.2)],
+                    [Reaction("convert", {"A": 1}, {"B": 1}, k=0.5)])
+    bm = to_biomodel(m, t_end=0.1, dt=0.01, output_dt=0.1,
+                     geometry={"kind": "sphere", "center": [4.5, 4.5, 4.5], "radius": 4.0})
+    app = bm.applications[0]
+    assert {c.compartment_name for c in app.compartment_mappings} == {"cell", "ec", "pm"}
+    assert {c.name for c in bm.model.compartments} == {"cell", "ec", "pm"}
+    a_conc = float(app.get_species_mapping("A").init_conc)
+    assert a_conc * 602.214076 * (4 / 3 * np.pi * 4.0**3) == pytest.approx(1000)  # N over the ball volume

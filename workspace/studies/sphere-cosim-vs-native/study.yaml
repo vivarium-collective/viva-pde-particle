@@ -106,22 +106,31 @@ visualizations:
   render: "python sims/run.py"
 
 conclusion: |
-  Results (results/metrics.json, 2026-10-03):
+  Results (results/metrics.json, 2026-10-03; re-run with signed diagnostics):
 
   **Geometry.** VCell's representation of the ball is more accurate at this resolution:
   −0.47% volume error, against −1.4% for the co-sim mesh at h = 0.8 µm.
 
   **Conversion: the solvers agree.** Both decay as exp(−kt) (|z| ≤ 0.99) and conserve
-  A + B to 0.6–0.8%. Survival agrees (|z| = 0.73), and the final radial B profiles agree to
-  3.5%.
+  A + B to under 1% (native −0.57%, co-sim +0.79%). Survival agrees (|z| = 0.73), and the
+  final radial B profiles agree to 3.5%.
 
-  **Exchange: an open discrepancy.**
-  - Co-sim: mass balance 1.3%, steady ratio 1.3%.
-  - Native: A + B grows 6.8%, and its total A ends 6.5% above the co-sim (|z| = 8.5).
-  - Field-dependent creation alone (B a static catalyst, 2 s) is a few percent low in both
-    solvers: 0.960 (native) and 0.974 (co-sim) of the exact expectation. That is
-    grid-based creation at a curved boundary, plus the co-sim's ~1% start-up artifact.
-    So creation does not explain the native growth.
-  - The cause is not yet identified. Candidates are how the native PDE side treats
-    particle concentrations and B consumption in membrane-adjacent voxels, relative to
-    Smoldyn's creation. This is under investigation and is not claimed as a VCell defect.
+  **Exchange: the native solver loses molecules at the curved membrane.**
+  - Signed mass balance at t = 5 s: native −6.8%, co-sim −1.2%. Native total A ends
+    6.1% below the co-sim (|z| = 8.5). An earlier version of this study read the
+    unsigned deviation as growth; that was wrong.
+  - The loss is consistent with two native mechanisms. Their rough budget, about
+    −1.6% plus −5 to −6%, matches the observed −6.8%:
+    1. **Exterior binning:** 1.2% of native A is binned to grid nodes outside the
+       voxelized cell. Smoldyn confines particles with a triangulated membrane, so
+       particles just inside it can be nearest to an exterior node. B is not solved
+       there, so their PDE source k1·[A] is dropped.
+    2. **Creation deficit:** field-dependent creation in the cell runs at 0.960 of the
+       exact expectation (B a static catalyst). VCell's in-compartment test with the
+       high-resolution voxel map plausibly excludes cells next to the membrane.
+  - The co-sim also has a smaller creation deficit (0.974: ~1% one-time start-up plus
+    ~1.6% at the boundary), but avoids exterior binning: its Pᵀ transfer folds
+    exterior-node counts into the nearest mesh DOF.
+  - These are hybrid-coupling details at curved membranes, not a limitation of VCell's
+    geometry or PDE numerics. Possible fixes on the native side: bin particles to the
+    voxel's region rather than the nearest node, or redistribute exterior counts.
