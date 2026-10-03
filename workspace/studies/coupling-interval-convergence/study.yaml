@@ -107,7 +107,8 @@ conclusion: |
   - **"start-of-interval" coupling** (plain process-bigraph scheduling) roughly halves the
     error at large k: 0.0049 at k = 16 and 0.0110 at k = 32, against 0.0110 and 0.0218 for
     fvsolver mode. Reading the field at the start of the particle step appears to partly
-    cancel the PDE side's lag. That's an improvement the hard-coded solver cannot offer;
+    cancel the PDE side's lag. vcell-fvsolver's hybrid loop fixes one ordering, so that
+    choice is not available there without changing the solver;
     higher-order splitting is Investigation B.
   - **Native crash:** VCell's native solver crashed at k = 32 (Smoldyn step 0.16 s, equal to
     the output interval), so native results stop at k = 16.

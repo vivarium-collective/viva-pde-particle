@@ -1,30 +1,34 @@
 schema_version: 2
 name: hybrid-generalizability
-title: What the modular hybrid co-simulation enables beyond the embedded solver
+title: What decomposing the hybrid solver into processes adds, and what it costs
 created: '2026-10-03'
 status: running
 question: >-
-  Once the co-simulation reproduces the embedded hybrid solver, which capabilities does
-  the modular decomposition add, such as unstructured meshes, alternative splitting
-  schemes and swappable engines, and what do they cost in accuracy and performance?
+  Once the co-simulation reproduces the embedded hybrid solver, what does expressing the
+  method as interchangeable processes add (alternative PDE discretizations, alternative
+  splitting orders, swappable engines), and what do those choices cost in accuracy and
+  performance compared with VCell's own discretization of the same problems?
 hypothesis: >-
   Swapping the finite volume PDE process for a FEniCSx process changes results only by
-  the PDE discretization error. Particle-to-mesh-cell binning extends the method to
-  non-box geometries. Higher-order splitting (Strang) reduces the coupling error at
-  modest extra cost, which the hard-coded solver cannot offer.
+  the PDE discretization error. A body-fitted unstructured mesh is an alternative
+  discretization of curved domains, which VCell itself handles with a Cartesian volume
+  grid and tangent-plane/Voronoi membrane numerics; the two should agree to
+  discretization error. Higher-order splitting (Strang) reduces the coupling error at
+  modest extra cost. vcell-fvsolver's hybrid loop (SimTool.cpp) implements one fixed
+  splitting order, so trying another there means changing the solver.
 description: |
   Builds on cosim-vs-embedded-hybrid. Every study reuses the same HybridModel and
   partitioner and changes one component at a time:
 
   - the PDE engine (numpy finite volume vs FEniCSx),
-  - the geometry (box vs unstructured),
+  - the PDE discretization of a curved domain (VCell Cartesian/staircase vs body-fitted P1),
   - the splitting scheme (lagged Jacobi as in fvsolver, Gauss-Seidel, Strang),
   - optionally, the particle engine.
 at_a_glance:
 - study: fenicsx-same-problem
   role: FEniCSx PDE process on a mesh matched to the FV grid; separates discretization error from coupling error.
 - study: unstructured-geometry
-  role: Non-box geometry using bounding-box-tree particle-to-cell binning and Smoldyn surfaces generated from the mesh boundary.
+  role: A ball discretized as a body-fitted P1 mesh coupled through a background grid; to be compared with native VCell on the same analytic sphere.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
 - study: engine-swap

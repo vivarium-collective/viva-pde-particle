@@ -63,7 +63,7 @@ executive:
     - A second hybrid solve in one process segfaults (vcell-fvsolver#23).
     - The native solver crashes at a large step multiplier.
     The co-simulation's "start-of-interval" scheduling halves the coupling error at large
-    k, which the hard-coded solver cannot do.
+    k. vcell-fvsolver's hybrid loop fixes a single splitting order.
   verdict_status: supported
 studies:
 - handoff-units-and-binning

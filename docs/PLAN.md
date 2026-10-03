@@ -236,12 +236,14 @@ solver to within its stochastic error, and at what cost?
 | `performance-scaling` | Grid size × particle count × k | Wall time, per-component breakdown (PDE, Smoldyn, marshaling, scheduler overhead) |
 
 ### Investigation B: `hybrid-generalizability`
-**Question:** what does the modular co-simulation enable that the embedded solver cannot?
+**Question:** what does decomposing the hybrid solver into interchangeable processes add (alternative PDE
+discretizations, splitting orders, engines), and at what cost relative to VCell's own discretization of the same
+problems?
 
 | Study | Content |
 |---|---|
 | `fenicsx-same-problem` | FEniCSx PDE process on a matched mesh, compared with the numpy FV result (separates discretization from coupling) |
-| `unstructured-geometry` | Non-box geometry: particle → cell binning via `dolfinx.geometry` bounding-box tree; Smoldyn surfaces generated from the mesh boundary |
+| `unstructured-geometry` | Curved domain with a body-fitted P1 mesh, compared with native VCell's Cartesian/staircase discretization of the same analytic geometry |
 | `splitting-schemes` | Lagged Jacobi (fvsolver) vs Gauss-Seidel vs Strang; accuracy vs cost |
 | `engine-swap` | Same composite with the PDE engine swapped (FV ↔ FEniCSx) and, optionally, the particle engine swapped (Smoldyn ↔ simple python BD) |
 | `membrane-particles` (stretch) | Membrane-bound particles and surface actions using panel-indexed binning |
@@ -634,6 +636,13 @@ non-grid meshes, either a mesh-based ValueProvider or interpolation onto a Hybri
 
 ## Phase 4b results (2026-10-03): unstructured geometry (B2)
 
+**Correction (2026-10-03):** an earlier version of this section, and of the B2 study, framed the unstructured mesh as
+something VCell cannot do. That's wrong. VCell handles analytic, image-segmented and CSG geometries. Its Cartesian
+volume grid is coupled to a membrane grid that is geometrically a staircase surface but numerically uses local
+tangent-plane projections and Voronoi neighbours, and it converges well. pyvcell and VCell can also turn FV output
+into smoothed VTK unstructured grids for analysis. B2 demonstrates an alternative, body-fitted discretization under
+the same coupling. The meaningful test is a comparison with native VCell on the same analytic sphere (B2b).
+
 **`viva_pde_particle/mesh.py`:**
 - gmsh ball meshes (gmsh/python-gmsh added to pixi; used as a meshing tool).
 - `MeshGridTransfer`: one sparse P1 interpolation matrix P from a background grid to mesh DOFs. Fields go
@@ -667,8 +676,9 @@ non-grid meshes, either a mesh-based ValueProvider or interpolation onto a Hybri
 **B3 `splitting-schemes`** (k ∈ {2…32}, 64 seeds):
 - Jacobi and the two Gauss–Seidel orderings are first order (1.0–1.23).
 - Strang keeps the error near the sampling floor up to τ = 0.16 s: 25× smaller than Jacobi there.
-- So the particle side can step ~32× less often at fvsolver-level accuracy. That's a direct consequence of the
-  modular coupling, and a candidate default for particle-heavy models.
+- So the particle side can step ~32× less often at fvsolver-level accuracy. vcell-fvsolver's hybrid loop
+  (`SimTool.cpp`) implements one fixed order, so trying Strang there would mean changing the solver; in the
+  co-simulation it is a coupler option. It's a candidate default for particle-heavy models.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

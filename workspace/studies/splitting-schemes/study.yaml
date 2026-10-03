@@ -100,5 +100,6 @@ conclusion: |
     fit an order; more seeds or larger τ would resolve it.
   - **Consequence:** for this model, Strang splitting lets the particle side step about 32×
     less often than the PDE side at roughly the accuracy fvsolver's scheme reaches with
-    k ≈ 1–2. That's a large potential speed-up for particle-dominated runs (A6), and one
-    only a modular coupling can offer.
+    k ≈ 1–2. That's a large potential speed-up for particle-dominated runs (A6).
+    vcell-fvsolver's hybrid loop (SimTool.cpp) fixes one splitting order, so adopting
+    Strang there would mean modifying the solver; here it is a coupler option.
