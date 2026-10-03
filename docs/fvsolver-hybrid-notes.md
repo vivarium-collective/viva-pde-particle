@@ -54,6 +54,10 @@ commented out. They are **not** part of this coupling.
   - The PDE sees particle concentrations from the last Smoldyn step, held fixed for k PDE steps.
 - The fully implicit Sundials PDE solver is refused for hybrid runs (`SimulationExpression.cpp:254`).
 - The Smoldyn `time_step` is PDE `dt × k` (`SmoldynFileWriter.java:1135-1138`).
+- **Field read for k > 1:** the Smoldyn step runs after the k-th PDE `iterate()` and before `update()`
+  (`SimTool.cpp:889-893`). A Smoldyn step over `[T, T+k·dt]` therefore reads the field's old array, which
+  holds the value at `T+(k-1)·dt`. That is the most recent completed PDE step before the current one, not
+  the start of the Smoldyn step. For k = 1 the two coincide.
 
 ## PDE → particles (`VCellValueProvider::getValue`)
 
