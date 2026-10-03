@@ -10,7 +10,7 @@ from viva_pde_particle import evaluators
 from viva_pde_particle.composites import examples
 
 
-@pytest.mark.parametrize("name", ["particle_diffusion", "field_modulated_decay"])
+@pytest.mark.parametrize("name", ["particle_diffusion", "field_modulated_decay", "calcium_sparks"])
 def test_generators_registered_under_spec_ids(name):
     spec_id = f"viva_pde_particle.composites.examples.{name}"
     assert spec_id in _REGISTRY

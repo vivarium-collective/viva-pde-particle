@@ -2,7 +2,7 @@ schema_version: 2
 name: vcell-hybrid-paper-benchmarks
 title: Reproducing the VCell hybrid methods paper (Schaff et al. 2016) with the native solver and the co-simulation
 created: '2026-10-03'
-status: planned
+status: running
 question: >-
   Do VCell's native PDE/particle hybrid solver (vcell-fvsolver with embedded Smoldyn) and
   the process-bigraph co-simulation both reproduce the validation results of Schaff et al.
@@ -42,6 +42,7 @@ executive:
     established cases.
   verdict: Not yet run.
   verdict_status: pending
-studies: []
+studies:
+- separable-calcium-sparks
 expert_docs: []
 acceptance_criteria: []

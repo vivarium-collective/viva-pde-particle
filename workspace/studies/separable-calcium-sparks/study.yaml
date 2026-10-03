@@ -1,0 +1,136 @@
+schema_version: 4
+name: separable-calcium-sparks
+title: "Schaff et al. 2016, Test 1 / Fig 1B: separable calcium sparks on both solvers"
+investigation: vcell-hybrid-paper-benchmarks
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+
+question: |
+  Do the native VCell hybrid solver and the process-bigraph co-simulation both reproduce
+  Fig 1B of Schaff et al. (2016)? The error of the trial-mean calcium against its exact
+  expectation should fall as N^-1/2 with the number of trials, and be statistically
+  dominated at small Δt.
+hypothesis: |
+  The channels' gating is independent of calcium, so E[U] solves the linear PDE driven by
+  the exact open probability p(t) = k_on/(k_on+k_off)·(1 − e^-(k_on+k_off)t). Both solvers'
+  trial means converge to it with ε ∝ N^-1/2. At N = 128 the statistical error dominates
+  the Δt error for Δt ≤ 0.02 s. The two solvers differ only by sampling.
+objective: |
+  Model (Eq. 1 of the paper): ∂U/∂t = D∇²U + J·Σᵢ ξᵢ δ(r − rᵢ) − V_p(U − U₀), no-flux
+  boundaries. D = 1 µm²/s, J = 10 µM·µm³/s, U₀ = 0.1 µM, V_p = 1 s⁻¹, k_on = 1 s⁻¹,
+  k_off = 5 s⁻¹, 24 channels starting closed, T = 5 s.
+  Geometry: [0, 10.1]×[0, 2.1]×[0, 0.5] µm³, Δx = Δy = 0.1.
+  Runs: 128 trials per solver at Δt ∈ {0.02, 0.01, 0.005} s. ε(N) is taken from nested
+  subsets at Δt = 0.005, and ε is the RMS over space and time of (trial mean − E[U]),
+  relative to max(E[U] − U₀).
+description: |
+  Channels are immobile particle species C (closed) and O (open), one per channel node.
+  Calcium U is a PDE field, and influx is a PDE source k·[O] with k = J·602.214.
+  - The native reference goes through VCell's own math generation (pyvcell → libvcell
+    → vcell-fvsolver/Smoldyn 2.38), with two documented .smoldynInput post-processing
+    steps (viva_pde_particle.reference.vcell_native):
+    1. channels are placed at their nodes, because a BioModel cannot express per-node
+       particle counts;
+    2. VCell's no-op jump process O → O (from the influx) is dropped. In Smoldyn it would
+       suppress channel closing (competing first-order reactions), which raises the open
+       fraction from 1/6 to about 0.9.
+  - The reference E[U] is computed on the same grid with a fine step (dt_ref = 1e-4).
+
+  Deviations from the paper, both PROVISIONAL:
+  - Δz = 0.25 (3 z-nodes). Current VCell requires at least 3 nodes per axis; the paper
+    used Δz = 0.5.
+  - Channel coordinates: the paper shows 4 columns of 6 (Fig 1A) without coordinates.
+    Here, x = 2, 4, 6, 8 µm and y = 0.3 ... 1.8 µm on the z = 0 layer (approved by the
+    author for now).
+
+baseline:
+- name: calcium-sparks-test1
+  composite: viva_pde_particle.composites.examples.calcium_sparks
+  params:
+    test: 1
+    dt: 0.005
+
+variants: []
+
+behavior_tests:
+- name: cosim-error-falls-as-inverse-sqrt-n
+  classification: primary
+  description: Log-log slope of ε vs N for the co-simulation (Δt = 0.005 s).
+  measure:
+    kind: derived_scalar
+    field: c1_cosim_eps_slope
+  pass_if:
+    op: range
+    low: -0.75
+    high: -0.25
+    provenance:
+      kind: literature
+      note: Schaff et al. 2016, Fig 1B; Monte Carlo error ∝ N^-1/2 when statistical error dominates.
+  requires_simulation: calcium-sparks-test1
+- name: native-error-falls-as-inverse-sqrt-n
+  classification: primary
+  description: Log-log slope of ε vs N for the native VCell hybrid (Δt = 0.005 s).
+  measure:
+    kind: derived_scalar
+    field: c1_native_eps_slope
+  pass_if:
+    op: range
+    low: -0.75
+    high: -0.25
+    provenance:
+      kind: literature
+      note: Schaff et al. 2016, Fig 1B.
+  requires_simulation: calcium-sparks-test1
+- name: cosim-error-small-at-128-trials
+  classification: secondary
+  description: ε of the co-simulation at N = 128, Δt = 0.005 s.
+  measure:
+    kind: derived_scalar
+    field: c1_cosim_eps_n128
+  pass_if:
+    op: "<"
+    value: 0.03
+    provenance:
+      kind: theory
+      note: About 4% at N = 16 scales to about 1.4% at N = 128 under N^-1/2.
+  requires_simulation: calcium-sparks-test1
+- name: solvers-differ-only-by-sampling
+  classification: primary
+  description: >-
+    ε between the co-simulation and native trial means, divided by the combined
+    statistical error sqrt(ε_cosim² + ε_native²), at N = 128 and Δt = 0.005 s.
+  measure:
+    kind: derived_scalar
+    field: c1_cosim_vs_native_eps_ratio
+  pass_if:
+    op: "<"
+    value: 1.5
+    provenance:
+      kind: theory
+      note: Independent ensembles of the same expectation; the ratio is about 1 when only sampling differs.
+  requires_simulation: calcium-sparks-test1
+
+canonical_runs:
+- name: default
+  script: workspace/studies/separable-calcium-sparks/sims/run.py
+  args: []
+  label: "Fig 1B: ε(N), ε(Δt), co-sim vs native (128 trials × 3 Δt × 2 solvers)"
+  default: true
+
+visualizations:
+- name: calcium-sparks-fig1b
+  chart: viz/calcium_sparks_fig1b.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Reproduced on both solvers (results/metrics.json, 2026-10-03; run in the dev pixi env):
+  - ε vs N slopes: −0.46 (co-sim) and −0.43 (native), against −1/2;
+  - ε at N = 128: 1.4% (co-sim) and 1.6% (native);
+  - ε is flat across Δt = 0.02–0.005 s (1.3–1.6%), i.e. statistically dominated, as in the paper;
+  - co-sim vs native difference: 0.75× the combined statistical error.
+
+  Finding about VCell's hybrid math generation: a particle catalysing a continuous source
+  (channel influx) yields a no-op Smoldyn reaction that suppresses the channel's real
+  transitions. It must be removed (done here in post-processing) or fixed in
+  ParticleMathMapping.combineHybrid.
