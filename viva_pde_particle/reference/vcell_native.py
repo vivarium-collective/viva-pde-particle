@@ -83,8 +83,15 @@ def validate_for_native(model: HybridModel) -> None:
 
 
 def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float,
-                step_multiplier: int = 1, seed: int | None = None, name: str = "hybrid"):
-    """Build the pyvcell BioModel (one hybrid application, one simulation named ``sim``)."""
+                step_multiplier: int = 1, seed: int | None = None, name: str = "hybrid",
+                geometry: dict | None = None):
+    """Build the pyvcell BioModel (one hybrid application, one simulation named ``sim``).
+
+    ``geometry``: None (the species fill the grid box) or ``{"kind": "sphere", "center",
+    "radius"}``. A sphere becomes VCell analytic geometry: the ``cell`` subvolume inside an
+    ``ec`` background, with a ``cell_ec_membrane`` surface. All species live in ``cell``,
+    and VCell discretizes it on its Cartesian grid with its membrane numerics.
+    """
     validate_for_native(model)
     import pyvcell.vcml as vc
     from pyvcell.vcml.models import (
@@ -101,6 +108,9 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
 
     m = Model(name=name)
     m.add_compartment(COMPARTMENT, dim=3)
+    if geometry is not None:
+        m.add_compartment("ec", dim=3)
+        m.add_compartment("pm", dim=2)
     for s in model.species:
         m.add_species(s.name, COMPARTMENT)
     for r in model.reactions:
@@ -124,11 +134,23 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
         m.reactions.append(rx)
 
     geo = vc.Geometry(name=f"{name}_box", dim=3, extent=tuple(g.size), origin=(0.0, 0.0, 0.0))
-    geo.add_background(SUBVOLUME)
+    if geometry is None:
+        geo.add_background(SUBVOLUME)
+        domain_volume = float(g.element_volumes.sum())
+    elif geometry.get("kind") == "sphere":
+        geo.add_sphere(SUBVOLUME, radius=float(geometry["radius"]), center=tuple(geometry["center"]))
+        geo.add_background("ec")
+        geo.add_surface("cell_ec_membrane", SUBVOLUME, "ec")
+        domain_volume = 4.0 / 3.0 * np.pi * float(geometry["radius"]) ** 3
+    else:
+        raise ValueError(f"unsupported geometry {geometry!r}")
 
     bm = Biomodel(name=name, model=m)
     app = bm.add_application("hybrid", geometry=geo, stochastic=True)
     app.map_compartment(COMPARTMENT, SUBVOLUME)
+    if geometry is not None:
+        app.map_compartment("ec", "ec")
+        app.map_compartment("pm", "cell_ec_membrane")
     for s in model.species:
         if s.particle:
             init = np.asarray(s.initial)
@@ -138,7 +160,7 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
                 continue
             # Concentration mode (UseConcentration, the default): VCell seeds each node with
             # Poisson(conc·602.214·V_node) molecules, so a total N becomes the equivalent uniform µM.
-            conc = float(init) / (g.element_volumes.sum() * MOLECULES_PER_UM3_PER_UM)
+            conc = float(init) / (domain_volume * MOLECULES_PER_UM3_PER_UM)
             app.map_species(s.name, init_conc=conc, diff_coef=s.diffusion)
         else:
             init = np.asarray(s.initial)
@@ -237,7 +259,7 @@ class NativeTrajectory:
 
 def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float | None = None,
                step_multiplier: int = 1, seed: int | None = None, workdir: Path | None = None,
-               isolate: bool = True) -> NativeTrajectory:
+               isolate: bool = True, geometry: dict | None = None) -> NativeTrajectory:
     """Generate inputs with libvcell, solve with pyvcell-fvsolver, and read back fields and counts.
 
     ``isolate`` (default) runs the solve in a fresh spawned process. vcell-fvsolver cannot run
@@ -245,7 +267,7 @@ def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float 
     child process also keeps a solver crash from taking down the caller.
     """
     kwargs = dict(t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed,
-                  workdir=workdir)
+                  workdir=workdir, geometry=geometry)
     if not isolate:
         return _run_native_inprocess(model, **kwargs)
     with ProcessPoolExecutor(max_workers=1, mp_context=mp.get_context("spawn")) as pool:
@@ -253,7 +275,7 @@ def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float 
 
 
 def run_native_ensemble(model: HybridModel, seeds, *, t_end: float, dt: float, output_dt: float | None = None,
-                        step_multiplier: int = 1, workers: int | None = None):
+                        step_multiplier: int = 1, workers: int | None = None, geometry: dict | None = None):
     """One native run per seed, in parallel, each in its own process.
 
     Returns ``(times, fields, counts)`` with arrays of shape (n_seeds, n_times, *grid.shape),
@@ -261,7 +283,8 @@ def run_native_ensemble(model: HybridModel, seeds, *, t_end: float, dt: float, o
     """
     seeds = [int(s) for s in seeds]
     workers = workers or min(len(seeds), os.cpu_count() or 1)
-    kwargs = dict(t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, cleanup=True)
+    kwargs = dict(t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, cleanup=True,
+                  geometry=geometry)
     with ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn"),
                              max_tasks_per_child=1) as pool:
         runs = list(pool.map(_run_seed, [(model, s, kwargs) for s in seeds]))
@@ -278,7 +301,7 @@ def _run_seed(args):
 
 def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output_dt: float | None = None,
                           step_multiplier: int = 1, seed: int | None = None, workdir: Path | None = None,
-                          cleanup: bool = False) -> NativeTrajectory:
+                          cleanup: bool = False, geometry: dict | None = None) -> NativeTrajectory:
     from libvcell import vcml_to_finite_volume_input
     from pyvcell._internal.simdata.simdata_models import PdeDataSet, VariableType
     from pyvcell._internal.solvers.fvsolver import solve as fvsolve
@@ -288,7 +311,8 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
 
     t0 = time.perf_counter()
     output_dt = output_dt or step_multiplier * dt
-    bm = to_biomodel(model, t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed)
+    bm = to_biomodel(model, t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed,
+                     geometry=geometry)
     vcml = to_vcml_str(bio_model=bm)
     out = Path(workdir or tempfile.mkdtemp(prefix="vcell-native-"))
     out.mkdir(parents=True, exist_ok=True)
