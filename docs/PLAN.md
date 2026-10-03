@@ -656,6 +656,20 @@ non-grid meshes, either a mesh-based ValueProvider or interpolation onto a Hybri
 - B3 splitting schemes: a `HybridCoupler` Step for Gauss–Seidel and Strang ordering.
 - Remaining C studies.
 
+## Phase 5 results (2026-10-03): splitting schemes (B3)
+
+**`HybridCoupler`** (`processes/hybrid_coupler.py`):
+- One process composes the FV and Smoldyn engines and orders their substeps per coupling interval:
+  `jacobi`, `gs_particles_first`, `gs_pde_first` or `strang`.
+- `jacobi` reproduces the two-process `coupling="fvsolver"` composite exactly (regression test).
+- Built by `build_coupler_document`.
+
+**B3 `splitting-schemes`** (k ∈ {2…32}, 64 seeds):
+- Jacobi and the two Gauss–Seidel orderings are first order (1.0–1.23).
+- Strang keeps the error near the sampling floor up to τ = 0.16 s: 25× smaller than Jacobi there.
+- So the particle side can step ~32× less often at fvsolver-level accuracy. That's a direct consequence of the
+  modular coupling, and a candidate default for particle-heavy models.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

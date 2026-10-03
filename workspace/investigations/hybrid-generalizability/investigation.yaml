@@ -40,5 +40,6 @@ executive:
 studies:
 - fenicsx-same-problem
 - unstructured-geometry
+- splitting-schemes
 expert_docs: []
 acceptance_criteria: []
