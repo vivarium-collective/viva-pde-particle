@@ -1,0 +1,13 @@
+{
+  "c2_cosim_max_l2_n": 0.05214983221449519,
+  "c2_cosim_max_l2_u": 0.12209175986661817,
+  "c2_cosim_max_mean_z": 1.573760983369379,
+  "c2_cosim_min_ks_pvalue": 0.0007703274484603763,
+  "c2_cosim_vs_native_min_ks_pvalue": 0.03479508043637821,
+  "c2_native_max_l2_n": 0.047854571359484586,
+  "c2_native_max_l2_u": 0.1378982074080135,
+  "c2_native_max_mean_z": 0.6371187704961769,
+  "c2_native_min_ks_pvalue": 0.0006869369320580494,
+  "c2_trials_per_solver": 500.0,
+  "c2_wall_time_s": 1914.4808201789856
+}

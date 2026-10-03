@@ -1,0 +1,137 @@
+schema_version: 4
+name: coupled-sparks-fast-diffusion
+title: "Schaff et al. 2016, Test 2 / Fig 2: coupled calcium sparks in the fast-diffusion limit, both solvers"
+investigation: vcell-hybrid-paper-benchmarks
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- separable-calcium-sparks
+
+question: |
+  With channel opening coupled to local calcium (k_on·U(rᵢ)/U₀) and fast diffusion
+  (D = 1000 µm²/s), do both hybrid solvers reproduce the distributions of calcium and
+  open-channel number given by the exact well-mixed process, as in Fig 2 of the paper?
+hypothesis: |
+  At D = 1000 the cell is effectively well mixed. The spatial hybrid's volume-averaged
+  U and open count n then follow the well-mixed piecewise-deterministic process, which
+  the paper sampled with the Gibson–Bruck method; here it is sampled exactly by
+  event-driven simulation (viva_pde_particle.benchmarks.pdmp).
+objective: |
+  Parameters as in Test 1, except k_on = 0.1 s⁻¹ (opening at k_on·U/U₀), D = 1000 µm²/s
+  and Δt = 0.2 ms; 500 trials per solver.
+  The reference is 20,000 exact realizations of the well-mixed process with
+  V = 10.1×2.1×0.5 µm³.
+  At t = 1, 2, 3 s the comparison uses:
+  - mean |z| of U and n against the reference;
+  - the L2 distance between histograms, as in the paper;
+  - two-sample KS tests, against the reference and between the solvers.
+description: |
+  The native solver is driven as in C1 (VCell math generation, channels placed at their
+  nodes, VCell's no-op O → O process dropped). One fix found here also applies to C1:
+  VCell mass action with no reactants drops Kf, so the constant leak V_p·U₀ vanished
+  from the native PDE. Before that fix the native solver was biased (mean |z| = 11.5);
+  it is now written as General kinetics.
+  Deviations (provisional) as in C1: Δz = 0.25; channel coordinates are author-approved
+  defaults.
+
+baseline:
+- name: calcium-sparks-test2
+  composite: viva_pde_particle.composites.examples.calcium_sparks
+  params:
+    test: 2
+    dt: 0.0002
+
+variants: []
+
+behavior_tests:
+- name: cosim-matches-well-mixed-means
+  classification: primary
+  description: Max over t ∈ {1, 2, 3} s and over {U, n} of |z| of the co-simulation mean vs the exact well-mixed process.
+  measure:
+    kind: derived_scalar
+    field: c2_cosim_max_mean_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Fast-diffusion limit; 500 trials against 20,000 exact realizations.
+  requires_simulation: calcium-sparks-test2
+- name: native-matches-well-mixed-means
+  classification: primary
+  description: Max |z| of the native VCell hybrid mean vs the exact well-mixed process.
+  measure:
+    kind: derived_scalar
+    field: c2_native_max_mean_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: As above.
+  requires_simulation: calcium-sparks-test2
+- name: cosim-channel-distribution-l2
+  classification: primary
+  description: Max over t of the L2 distance between the P(n, t) histograms of the co-simulation and the reference.
+  measure:
+    kind: derived_scalar
+    field: c2_cosim_max_l2_n
+  pass_if:
+    op: "<"
+    value: 0.1
+    provenance:
+      kind: literature
+      note: The paper's metric (Fig 2, 10,000 realizations gave about 0.002–0.003). With 500 trials the sampling floor is about 0.05.
+  requires_simulation: calcium-sparks-test2
+- name: native-channel-distribution-l2
+  classification: primary
+  description: Max over t of the L2 distance between the P(n, t) histograms of native VCell and the reference.
+  measure:
+    kind: derived_scalar
+    field: c2_native_max_l2_n
+  pass_if:
+    op: "<"
+    value: 0.1
+    provenance:
+      kind: literature
+      note: As above.
+  requires_simulation: calcium-sparks-test2
+- name: solvers-agree
+  classification: primary
+  description: Min KS p-value over t and {U, n}, co-simulation vs native.
+  measure:
+    kind: derived_scalar
+    field: c2_cosim_vs_native_min_ks_pvalue
+  pass_if:
+    op: ">"
+    value: 0.001
+    provenance:
+      kind: theory
+      note: The two solvers should agree; 6 comparisons with ties in n make KS conservative.
+  requires_simulation: calcium-sparks-test2
+
+canonical_runs:
+- name: default
+  script: workspace/studies/coupled-sparks-fast-diffusion/sims/run.py
+  args: []
+  label: "Fig 2: p(U,t), P(n,t) at t = 1, 2, 3 s; 500 trials per solver vs 20,000 exact realizations"
+  default: true
+
+visualizations:
+- name: calcium-sparks-fig2
+  chart: viz/calcium_sparks_fig2.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03; 500 trials per solver):
+  - both solvers match the exact well-mixed process in mean: max |z| = 1.57 (co-sim)
+    and 0.64 (native);
+  - P(n, t) L2 distance: 0.052 (co-sim) and 0.048 (native), at the 500-trial sampling floor;
+  - the solvers agree with each other (min KS p = 0.035).
+
+  Open observation: both solvers show the same marginal minimum KS p against the
+  well-mixed reference (about 7·10⁻⁴), so the effect is shared and not a solver
+  artifact. A plausible cause is residual spatial structure: at D = 1000 the local U at
+  an open channel slightly exceeds the volume mean, raising its opening rate.
+  Larger ensembles, or a D → ∞ check, would settle it (follow-up).

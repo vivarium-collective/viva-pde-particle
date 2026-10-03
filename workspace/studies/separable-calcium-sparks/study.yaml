@@ -125,12 +125,15 @@ visualizations:
 
 conclusion: |
   Reproduced on both solvers (results/metrics.json, 2026-10-03; run in the dev pixi env):
-  - ε vs N slopes: −0.46 (co-sim) and −0.43 (native), against −1/2;
-  - ε at N = 128: 1.4% (co-sim) and 1.6% (native);
+  - ε vs N slopes: −0.46 for both solvers, against −1/2;
+  - ε at N = 128: 1.37% (co-sim) and 1.32% (native);
   - ε is flat across Δt = 0.02–0.005 s (1.3–1.6%), i.e. statistically dominated, as in the paper;
   - co-sim vs native difference: 0.75× the combined statistical error.
 
-  Finding about VCell's hybrid math generation: a particle catalysing a continuous source
-  (channel influx) yields a no-op Smoldyn reaction that suppresses the channel's real
-  transitions. It must be removed (done here in post-processing) or fixed in
-  ParticleMathMapping.combineHybrid.
+  Two VCell findings for the native path, both handled in vcell_native.to_biomodel and
+  in post-processing:
+  - **No-op jump process** (virtualcell/vcell#2158): a particle catalysing a continuous
+    source produces a no-op Smoldyn reaction that suppresses channel closing.
+  - **Zero-reactant mass action:** VCell keeps only −Kr·Π(products) and discards Kf, so
+    the constant leak V_p·U₀ vanished. It is now written as General kinetics. An earlier
+    run without this fix gave a native ε(128) of 1.6%.

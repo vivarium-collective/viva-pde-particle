@@ -53,5 +53,6 @@ executive:
 studies:
 - handoff-units-and-binning
 - field-modulated-decay
+- two-way-exchange
 expert_docs: []
 acceptance_criteria: []

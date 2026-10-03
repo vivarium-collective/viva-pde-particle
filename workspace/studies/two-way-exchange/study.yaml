@@ -1,0 +1,134 @@
+schema_version: 4
+name: two-way-exchange
+title: Mass balance across the particle ↔ field handoff
+investigation: cosim-vs-embedded-hybrid
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- field-modulated-decay
+
+question: |
+  When molecules move both ways between particle and field representations (A_particle
+  → B_field and B_field → A_particle by field-dependent creation), is total A + B
+  conserved and is the right steady state reached? Do both solvers agree?
+hypothesis: |
+  Each side applies only its own half of each mixed reaction, so A + B is conserved in
+  expectation up to the O(dt) lag of the explicit coupling, and total A / total B → k2 / k1.
+  Field-dependent creation must use each grid node's actual cell volume (1/2–1/8 at
+  boundaries); otherwise creation is overproduced by Σ(full cells)/Σ(actual cells).
+objective: |
+  11×11×3 slab (10×10×1 µm); k1 = 1 s⁻¹, k2 = 0.5 s⁻¹; B₀ = 0.2 µM (12,044 molecules);
+  D_A = D_B = 1; dt = 0.01; t = 5 s; 16 seeds per solver. Measured:
+  - mass balance and steady-state ratio;
+  - co-sim vs native totals and profiles;
+  - a creation-only experiment (B a static catalyst, 2 s, 8 seeds), comparing created
+    A with the exact expectation k2·[B]·V·602.214·t.
+description: |
+  This study found two defects in Smoldyn's grid-based 0th-order creation (the
+  OPTION_VCELL path), both now fixed in our fork (virtualcell/Smoldyn pyhybrid):
+  1. **Full-cell volume:** the count used the full cell volume at boundary nodes, as in
+     vcell-fvsolver's embedded Smoldyn 2.38 (reported as virtualcell/vcell-fvsolver#24).
+  2. **Skipped boundary nodes:** nodes on the domain walls failed the geometric
+     compartment test, so boundary cells never produced. VCell's voxel-map compartments
+     avoid this.
+  A remaining Smoldyn start-up artifact skips creation for about the first 2 steps
+  (about 1% over 2 s).
+  The native solver still has defect 1, so it does not conserve mass here. This study
+  quantifies the native bias rather than masking it.
+
+baseline:
+- name: two-way-exchange-slab
+  composite: viva_pde_particle.composites.examples.two_way_exchange
+  params:
+    k1: 1.0
+    k2: 0.5
+    b0: 0.2
+    dt: 0.01
+
+variants: []
+
+behavior_tests:
+- name: cosim-conserves-mass
+  classification: primary
+  description: Max over time of |ensemble-mean (A + B) / initial − 1| for the co-simulation.
+  measure:
+    kind: derived_scalar
+    field: a3_cosim_mass_balance_max_rel_dev
+  pass_if:
+    op: "<"
+    value: 0.03
+    provenance:
+      kind: theory
+      note: Conserved in expectation; the residual comes from the explicit-coupling lag plus the ~2-step creation start-up artifact.
+  requires_simulation: two-way-exchange-slab
+- name: cosim-reaches-steady-state
+  classification: primary
+  description: Relative error of the late-time (t ≥ 4 s) ratio of total A to total B vs k2/k1 for the co-simulation.
+  measure:
+    kind: derived_scalar
+    field: a3_cosim_steady_ratio_rel_err
+  pass_if:
+    op: "<"
+    value: 0.03
+    provenance:
+      kind: theory
+      note: Detailed balance of A ⇌ B; 16 seeds.
+  requires_simulation: two-way-exchange-slab
+- name: cosim-creation-is-exact
+  classification: primary
+  description: Created A / exact expectation for the co-simulation (creation only, static B).
+  measure:
+    kind: derived_scalar
+    field: a3_cosim_creation_ratio
+  pass_if:
+    op: range
+    low: 0.97
+    high: 1.02
+    provenance:
+      kind: theory
+      note: Exact expectation k2·[B]·V·602.214·t; the lower slack covers the ~2-step start-up artifact.
+  requires_simulation: two-way-exchange-slab
+- name: native-overproduction-matches-boundary-volume-defect
+  classification: secondary
+  description: >-
+    Native created-A ratio divided by Σ(full cells)/Σ(actual cells), the predicted
+    overproduction of vcell-fvsolver's full-volume boundary creation.
+  measure:
+    kind: derived_scalar
+    field: a3_native_creation_vs_bug_factor
+  pass_if:
+    op: range
+    low: 0.95
+    high: 1.05
+    provenance:
+      kind: theory
+      note: >-
+        Characterizes the reported defect (virtualcell/vcell-fvsolver#24). This test will
+        fail once the defect is fixed upstream; then replace it with a mass-balance test
+        for the native solver.
+  requires_simulation: two-way-exchange-slab
+
+canonical_runs:
+- name: default
+  script: workspace/studies/two-way-exchange/sims/run.py
+  args: []
+  label: "Two-way exchange (16 seeds per solver) + creation-only check (8 seeds per solver)"
+  default: true
+
+visualizations:
+- name: two-way-exchange
+  chart: viz/two_way_exchange.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - **Co-simulation:** conserves A + B to 1.2%; steady-state ratio within 0.3% of k2/k1;
+    creation at 0.989 of the exact expectation.
+  - **Native VCell:** creation at 1.813× the expectation, matching the predicted
+    boundary-volume overproduction (1.815×) to 0.1%. As a result A + B grows 177%
+    in 5 s and the steady state is 51% off; the two solvers disagree strongly
+    (|z| ~ 200).
+  This is a defect in the embedded solver (virtualcell/vcell-fvsolver#24), not in the
+  coupling method. With field-dependent creation the co-simulation is the more
+  accurate of the two.
