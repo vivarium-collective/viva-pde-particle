@@ -1,0 +1,14 @@
+{
+  "b2c_cosim_interior_rel": -0.0037157111154201283,
+  "b2c_cosim_shell_bias": 0.01273006727910514,
+  "b2c_cosim_shell_bias_z": 10.274451701978501,
+  "b2c_native_interior_rel": 0.004891595133809545,
+  "b2c_native_shell_bias": -0.022718919807029444,
+  "b2c_native_shell_bias_z": -20.124944263880057,
+  "b2c_native_staircase_shell_bias": -0.022892177104667327,
+  "b2c_node_centred_smoothed_volume_rel_err": -0.005018413013605838,
+  "b2c_pyvcell_vtk_as_is_volume_rel_err": -0.08353180585957476,
+  "b2c_smoothed_surface_r_rms_err": 0.06540943723701738,
+  "b2c_staircase_surface_r_rms_err": 0.10843126578381153,
+  "b2c_wall_time_s": 52.52394485473633
+}

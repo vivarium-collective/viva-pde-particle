@@ -29,6 +29,8 @@ at_a_glance:
   role: FEniCSx PDE process on a mesh matched to the FV grid; separates discretization error from coupling error.
 - study: unstructured-geometry
   role: A ball discretized as a body-fitted P1 mesh coupled through a background grid; to be compared with native VCell on the same analytic sphere.
+- study: near-membrane-fields
+  role: Fields next to the membrane; native VCell on pyvcell's smoothed grid vs co-sim on the body-fitted mesh.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
 - study: engine-swap
@@ -45,6 +47,7 @@ studies:
 - fenicsx-same-problem
 - unstructured-geometry
 - sphere-cosim-vs-native
+- near-membrane-fields
 - splitting-schemes
 expert_docs: []
 acceptance_criteria: []

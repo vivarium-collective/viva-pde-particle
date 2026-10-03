@@ -681,6 +681,19 @@ with a membrane.
   - **Creation deficit:** native creation runs at 0.960 of exact (co-sim 0.974).
   The rough budget matches. These are coupling details at curved membranes, not VCell geometry/PDE limitations.
 
+### Study B2c: near-membrane fields (`near-membrane-fields`)
+Ball conversion with A uniform, so E[B] is uniform. Native fields are mapped onto pyvcell's smoothed unstructured grid
+by the new `reference/vcell_vtk.py`. The co-sim uses P1 DOFs. 32 seeds per solver.
+- **Exporter convention:** pyvcell and VCell's Java vis exporter draw element i as `[i·L/N, (i+1)·L/N]`, but the fvsolver
+  mesh is node-centred (`i·L/(N−1)`). On 37³ the exported domain is 8.4% too small. `smoothed_domain(node_centred=True)`
+  corrects this on the analysis side, giving −0.50% volume error. Smoothing cuts the surface RMS radial error from 0.108
+  to 0.065 µm.
+- **Interior:** both solvers match E[B] (native +0.5%, co-sim −0.4%).
+- **Outer shell (r > R − 2Δ), opposite-sign artifacts:**
+  - Native is 2.3% low (z −20): B2b's exterior-binning loss, localized.
+  - Co-sim is 1.3% high (z 10): Pᵀ folds exterior counts onto boundary DOFs.
+  - Smoothing does not change the native bias; the artifact is in the particle→field binning, not the geometry/PDE.
+
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 
 **`HybridCoupler`** (`processes/hybrid_coupler.py`):
