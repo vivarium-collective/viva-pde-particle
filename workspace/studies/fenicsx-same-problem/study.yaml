@@ -22,8 +22,9 @@ objective: |
   seeds (common random numbers, so paired comparison); survival and produced C compared.
 description: |
   The swap is one composite argument (build_hybrid_document(pde_engine="fenicsx")); the
-  SmoldynHybrid process, the coupling and the model are untouched. That kind of
-  modularity is not available in the embedded vcell-fvsolver.
+  SmoldynHybrid process, the coupling and the model are untouched. In VCell the PDE
+  discretization is part of the solver (vcell-fvsolver's FV scheme, or vcell-fenics as a
+  separate solver), rather than an interchangeable component of the hybrid coupling.
 
 baseline:
 - name: engine-swap-bimolecular

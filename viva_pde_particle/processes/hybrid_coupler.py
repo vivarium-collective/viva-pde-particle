@@ -14,8 +14,8 @@ them over one coupling interval τ = k·dt per update, with the substeps ordered
   mid-interval field, then the PDE takes k/2 substeps with the new particles (k even).
 
 The engines are the same classes used in the two-process composites; only the ordering
-differs. A different splitting is therefore a different coupler, not a different solver,
-which the hard-coded embedded solver cannot offer.
+differs. A different splitting is therefore a different coupler, not a different solver.
+(vcell-fvsolver's hybrid loop in SimTool.cpp implements one fixed order.)
 """
 from __future__ import annotations
 

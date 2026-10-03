@@ -1,6 +1,6 @@
 schema_version: 4
 name: unstructured-geometry
-title: Hybrid co-simulation on an unstructured mesh (ball) with particles confined by a curved surface
+title: Hybrid co-simulation with a body-fitted unstructured PDE mesh (ball)
 investigation: hybrid-generalizability
 created: '2026-10-03'
 status: ran
@@ -9,9 +9,9 @@ parent_studies:
 - fenicsx-same-problem
 
 question: |
-  Can the co-simulation run with the PDE on an unstructured mesh of a curved domain,
-  something the embedded vcell-fvsolver (Cartesian voxels only) cannot do, while
-  keeping the particle ↔ field handoff conservative and accurate?
+  Can the co-simulation use a body-fitted unstructured mesh for the PDE half of a curved
+  domain, as an alternative to VCell's own Cartesian volume grid with staircase-membrane
+  numerics, while keeping the particle ↔ field handoff conservative and accurate?
 hypothesis: |
   The PDE runs as P1 on a gmsh tetrahedral mesh of a ball, and Smoldyn runs inside a
   reflecting sphere. They couple through a fine background grid with one sparse matrix P:
@@ -113,5 +113,7 @@ conclusion: |
   the handoff stays conservative.
   Follow-ups:
   - membrane-bound particles;
-  - a native VCell comparison on a voxelized ball;
+  - a native VCell comparison on the same analytic sphere. VCell handles curved
+    geometries (analytic, image and CSG) with tangent-plane/Voronoi membrane
+    numerics, so this is a discretization comparison, not a capability gap;
   - higher-order (P2) PDE.

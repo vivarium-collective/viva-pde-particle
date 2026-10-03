@@ -16,8 +16,9 @@ Part 2, exchange: A_p → B_f (k1 = 1) and B_f → A_p by field-dependent creati
   The residual measures the mismatch between the particle side's geometry (voxel cells
   ∩ ball) and the PDE side's (polyhedral mesh).
 
-The embedded vcell-fvsolver hybrid cannot use an unstructured PDE mesh; native VCell
-on a voxelized ball is a possible follow-up comparison.
+This is an alternative discretization, not a new capability: VCell represents the same ball
+as an analytic geometry on its Cartesian volume grid with tangent-plane/Voronoi membrane
+numerics. The native comparison on that analytic sphere is a follow-up.
 """
 from __future__ import annotations
 
