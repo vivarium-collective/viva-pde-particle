@@ -471,16 +471,16 @@ Both directions go through one sparse matrix **P** (grid nodes × mesh DOFs), bu
 - **(b)** The positions route of [§11](#11-approach-5-particles-loaded-from-positions-membrane-from-the-mesh). Each
   particle splits one molecule over the vertices of its own cell.
 
-The particle process is unchanged: it still sees a grid. Smoldyn is confined by a reflecting sphere
-(`panel sph`), the exact membrane.
+The particle process is unchanged: it still sees a grid. In this approach Smoldyn is confined by a reflecting sphere
+(`panel sph`), the exact membrane. Since B2d, the default is the mesh's own boundary instead (§11).
 
 **Outcome (Studies B2, B2b, B2c).**
 - The ball runs conservatively, and the co-sim agrees with native VCell on conversion.
-- **Artifact:** the two-stage transfer (particle → nearest grid node → mesh DOFs) piles counts onto the boundary.
-  - Exterior grid nodes send their whole count to one boundary DOF.
-  - The exact sphere also holds about 1.4% more volume than the inscribed polyhedral mesh, and those particles
-    load the boundary too.
-  - In B2c this makes the co-sim's outer shell 1.3% high (z = 10).
+- **Artifact (with the sphere membrane):** the outer shell runs 1.3% high (B2c, z = 10).
+  - B2c first blamed the two-stage transfer: exterior grid nodes send their whole count to one boundary DOF.
+  - B2d showed the cause is the **domain mismatch** instead. The exact sphere holds about 1.4% more volume than the
+    inscribed polyhedral mesh, and particles in that sliver load the boundary DOFs.
+  - Giving Smoldyn the mesh boundary as its membrane removes the bias even with the grid route (§11).
 
 ## 11. Approach 5: particles loaded from positions, membrane from the mesh
 
@@ -536,8 +536,25 @@ flowchart LR
 B2b ball). Particles then never leave the PDE domain. The ~1.4% sliver between sphere and mesh is gone, and so is
 the boundary load it caused.
 
-**Outcome (Study B2d, cosim-boundary-transfer).** In progress: it compares the three combinations on the B2c
-problem.
+**Outcome (Study B2d, cosim-boundary-transfer).** The four combinations on the B2c problem, 32 seeds each:
+
+| transfer / membrane | outer-shell bias (z) | exchange mass balance | wall s per sim s |
+|---|---|---|---|
+| grid / sphere | +1.27% (10.3) | +2.9% | 0.71 |
+| positions / sphere | +1.24% (10.0) | +2.9% | 2.98 |
+| **grid / mesh (default)** | **+0.12% (1.2)** | **+0.69%** | 1.07 |
+| positions / mesh | +0.07% (0.7) | +1.0% | 3.56 |
+
+**What the table shows:**
+- **The membrane matters, not the transfer.** The bias came from the domain mismatch: particles in the sphere-mesh
+  sliver are projected onto boundary DOFs. With matching domains the grid route is as good as the exact load, at
+  about a third of its cost. The default is therefore `membrane="mesh"` with grid transfer.
+- **A second bug surfaced along the way, in field-dependent creation inside a curved compartment.** Our Smoldyn
+  fork, like VCell's vendored Smoldyn, drew molecules only in grid cells whose *centre* lies inside the compartment.
+  Creation fell 2.4% short in this ball, which is B2b's "creation deficit". Every cell now draws, and the existing
+  inside-test thinning makes the count exact.
+- **Two errors had been cancelling.** Before the fix, the sphere variants' small exchange error (−1.2%) was the
+  creation deficit offset by the sphere's extra 1.4% of volume.
 
 ## 12. The native VCell reference as a pipeline
 
@@ -601,7 +618,7 @@ the overhead with the B2d workload.
 | 2. Coupler | `HybridCoupler` (one Process owning both engines) | jacobi / GS / Strang | FV, Cartesian | nearest node | Strang 25× more accurate at τ = 0.16 s (B3) |
 | 3. Engine swap | `FenicsxReactionDiffusion` + `SmoldynHybrid` | Jacobi | FEniCSx Q1 on the grid | nearest node | differs only by PDE discretization (B1) |
 | 4. Unstructured mesh | `FenicsxMeshReactionDiffusion` + `SmoldynHybrid` | Jacobi | FEniCSx P1, body-fitted | grid histogram, then `Pᵀ` / `P` | conservative; boundary shell +1.3% (B2c) |
-| 5. Positions + mesh membrane | same, with the `particle_positions` store | Jacobi | FEniCSx P1, body-fitted | exact P1 load from positions | B2d (in progress) |
+| 5. Mesh membrane (± positions) | same; optional `particle_positions` store | Jacobi | FEniCSx P1, body-fitted | grid `Pᵀ` (default) or exact P1 load | mesh membrane removes the bias (+0.12%, z 1.2); positions not needed (B2d) |
 
 ## 15. File map
 

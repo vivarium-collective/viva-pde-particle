@@ -151,7 +151,7 @@ def uniform_in_sphere(n: int, center, radius: float, rng: np.random.Generator) -
 
 def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step_multiplier: int = 1,
                                coupling: str = "fvsolver", seed: int = 1, particle_transfer: str = "grid",
-                               membrane: str = "sphere") -> dict:
+                               membrane: str = "mesh") -> dict:
     """Hybrid co-simulation in a ball: unstructured FEniCSx PDE + Smoldyn confined to the ball.
 
     ``model.grid`` is the background Cartesian grid (it must contain the ball). Particle
@@ -160,9 +160,12 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
 
     - ``particle_transfer``: ``"grid"`` (Pᵀ of the grid histogram) or ``"positions"`` (exact P1
       load from molecule positions); see FenicsxMeshReactionDiffusion.
-    - ``membrane``: the reflecting surface confining the particles. ``"sphere"`` is the exact
-      sphere. ``"mesh"`` is the PDE mesh's boundary triangles, so the particle and PDE domains
-      coincide.
+    - ``membrane``: the reflecting surface confining the particles.
+      - ``"mesh"`` (default): the PDE mesh's boundary triangles, so the particle and PDE
+        domains coincide.
+      - ``"sphere"``: the exact sphere, about 1.4% larger than the inscribed mesh at
+        h = R/5. Particles in that sliver load the boundary DOFs (+1.3% outer-shell bias,
+        and +2.9% exchange mass balance; Study B2d).
     """
     from viva_pde_particle.processes.fenicsx_mesh_reaction_diffusion import FenicsxMeshReactionDiffusion
 

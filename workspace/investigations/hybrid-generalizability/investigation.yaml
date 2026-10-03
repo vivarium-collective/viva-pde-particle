@@ -31,6 +31,8 @@ at_a_glance:
   role: A ball discretized as a body-fitted P1 mesh coupled through a background grid; to be compared with native VCell on the same analytic sphere.
 - study: near-membrane-fields
   role: Fields next to the membrane; native VCell on pyvcell's smoothed grid vs co-sim on the body-fitted mesh.
+- study: cosim-boundary-transfer
+  role: Removes the co-sim's boundary artifact (mesh membrane) and fixes curved-compartment creation in the Smoldyn fork.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
 - study: engine-swap
@@ -48,6 +50,7 @@ studies:
 - unstructured-geometry
 - sphere-cosim-vs-native
 - near-membrane-fields
+- cosim-boundary-transfer
 - splitting-schemes
 expert_docs: []
 acceptance_criteria: []

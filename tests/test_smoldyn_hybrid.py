@@ -183,3 +183,32 @@ def test_zeroth_order_creation_per_grid_node(tmp_path):
     assert abs(len(pos) - expected) < 4 * math.sqrt(expected), len(pos)
     # created within the producing nodes' cells (x in [4.5, 10])
     assert (pos[:, 0] >= 4.5).all()
+
+
+def test_zeroth_order_creation_matches_curved_compartment_area(tmp_path):
+    """Field-dependent creation in a disk equals rate × the disk's area, not its voxelized area.
+
+    Each grid cell draws Poisson(rate·dt·cell) placed in the cell, keeping only those inside
+    the compartment. That thinning is exact only if every cell that overlaps the compartment
+    draws, including those whose centre lies outside it (fork fix; VCell tests the centre only).
+    """
+    disk = """\
+    start_surface membrane
+    action both all reflect
+    panel sph 5 5 3.3 60
+    end_surface
+    start_compartment cell
+    surface membrane
+    point 5 5
+    end_compartment
+"""
+    model = _write_model(tmp_path, _BOX_2D + disk + "reaction_cmpt cell make 0 -> A 200.0*B;\n")
+    grid = _grid()
+    sim = _smoldyn.Simulation(model, "q", grid)
+    grid.setField("B", np.full((10, 10), 1.0))
+    sim.runUntil(1.0, 0.01, display=False)
+
+    pos = sim.getMoleculePositions("A")
+    expected = 200.0 * math.pi * 3.3**2  # k·B·area·T
+    assert abs(len(pos) - expected) < 4 * math.sqrt(expected), (len(pos), expected)
+    assert (np.hypot(pos[:, 0] - 5, pos[:, 1] - 5) <= 3.3 + 1e-9).all()

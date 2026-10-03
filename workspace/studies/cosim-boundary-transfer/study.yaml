@@ -1,0 +1,153 @@
+schema_version: 4
+name: cosim-boundary-transfer
+title: "Removing the co-simulation's boundary artifact: particle transfer, membrane geometry and curved-compartment creation"
+investigation: hybrid-generalizability
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- near-membrane-fields
+
+question: |
+  B2c found the co-simulation's ensemble-mean B 1.3% too high in the outer shell of the ball.
+  Two causes were candidates:
+  - the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+  - the domain mismatch: Smoldyn's exact sphere holds about 1.4% more volume than the
+    inscribed P1 mesh.
+  Which is it, and what does removing it cost?
+hypothesis: |
+  B2c attributed the bias to the transfer, so the exact P1 load from molecule positions
+  should remove it.
+objective: |
+  Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
+  Variants (particle_transfer / membrane):
+  - grid / sphere (B2b/B2c);
+  - positions / sphere;
+  - grid / mesh;
+  - positions / mesh.
+  Cases and measures:
+  - Conversion (uniform A, so E[B] is uniform): interior level against
+    E[B] = A₀(1 − e^(−kt))/(V_mesh·N_A), and the outer-shell bias (r > R − 2Δ vs r < R/2).
+  - Exchange with field-dependent creation in the cell: final mass balance and steady ratio.
+  - Wall time per simulated second.
+description: |
+  Infrastructure (feature PR #21):
+  - the particle_positions store;
+  - FenicsxMeshReactionDiffusion(particle_transfer="positions"), the exact P1 load Σ_p φ_j(x_p);
+  - mesh.PointLocator, the voxel → tet lookup;
+  - mesh.boundary_triangles, with the Smoldyn "triangles" geometry (membrane="mesh").
+
+  Found while running this study: a Smoldyn-fork bug in field-dependent 0th-order creation
+  inside a compartment (virtualcell/Smoldyn pyhybrid a773562).
+  - zeroreact drew Poisson(rate·dt·cell) only in cells whose **centre** is inside the
+    compartment, then discarded molecules placed outside it.
+  - Cells that partly overlap a curved compartment with their centre outside never created.
+  - Monte Carlo on this geometry: creation was 0.976 of the compartment volume. That is the
+    0.974 creation deficit measured in B2b.
+  - The fix: every cell draws, and the existing thinning makes the count exactly
+    Poisson(rate·dt·|cell ∩ compartment|).
+  - tests/test_smoldyn_hybrid.py::test_zeroth_order_creation_matches_curved_compartment_area
+    fails without the fix (−7.8%) and passes with it.
+  - vcell-fvsolver's vendored Smoldyn has the same centre test. It plausibly accounts for
+    the native 0.960 creation in B2b. Not filed upstream yet.
+
+baseline:
+- name: ball-transfer-variants
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params: {}
+  note: >-
+    Built in sims/run.py: build_mesh_hybrid_document(..., particle_transfer=, membrane=)
+    with the B2b model.
+
+variants: []
+
+behavior_tests:
+- name: mesh-membrane-removes-shell-bias
+  classification: primary
+  description: Outer-shell bias of the default co-sim (grid transfer, mesh membrane).
+  measure:
+    kind: derived_scalar
+    field: b2d_grid_mesh_shell_bias
+  pass_if:
+    op: range
+    low: -0.005
+    high: 0.005
+    provenance:
+      kind: theory
+      note: E[B] is uniform; 32 seeds give an SE of about 0.1%.
+  requires_simulation: ball-transfer-variants
+- name: mesh-membrane-exchange-balance
+  classification: primary
+  description: Exchange mass balance of the default co-sim at t = 5 s, signed.
+  measure:
+    kind: derived_scalar
+    field: b2d_grid_mesh_exchange_mass_balance_final_signed
+  pass_if:
+    op: range
+    low: -0.015
+    high: 0.015
+    provenance:
+      kind: theory
+      note: >-
+        First-order coupling error only. The box-domain baseline (A3, two-way-exchange) is
+        1.2%.
+  requires_simulation: ball-transfer-variants
+- name: sphere-membrane-shell-bias
+  classification: secondary
+  description: Outer-shell bias with the exact-sphere membrane. Expected to FAIL; it documents the domain mismatch.
+  measure:
+    kind: derived_scalar
+    field: b2d_grid_sphere_shell_bias
+  pass_if:
+    op: range
+    low: -0.005
+    high: 0.005
+    provenance:
+      kind: theory
+      note: Kept so the artifact stays visible in the report card.
+  requires_simulation: ball-transfer-variants
+
+canonical_runs:
+- name: default
+  script: workspace/studies/cosim-boundary-transfer/sims/run.py
+  args: []
+  label: "Ball: 4 transfer/membrane variants × conversion + exchange, 32 seeds each"
+  default: true
+
+visualizations:
+- name: cosim-boundary-transfer
+  chart: viz/cosim_boundary_transfer.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03; 32 seeds per variant; Smoldyn with the creation fix):
+
+  | transfer / membrane | shell bias (z) | interior vs E[B] | exchange balance | wall s per sim s |
+  |---|---|---|---|---|
+  | grid / sphere | +1.27% (10.3) | −0.37% | +2.9% | 0.71 |
+  | positions / sphere | +1.24% (10.0) | −0.36% | +2.9% | 2.98 |
+  | grid / mesh | +0.12% (1.2) | +0.25% | +0.69% | 1.07 |
+  | positions / mesh | +0.07% (0.7) | +0.27% | +1.0% | 3.56 |
+
+  **The hypothesis was wrong: the membrane matters, not the transfer.**
+  - With the sphere membrane, the exact P1 load leaves the shell bias unchanged.
+  - The cause is the domain mismatch. Particles in the ~1.4% sliver between the sphere and the
+    inscribed mesh are projected onto the boundary DOFs.
+  - Confining Smoldyn by the mesh's own boundary triangles removes the bias, with either
+    transfer.
+  - With the mesh membrane, exchange mass balance is at the box-domain level (A3: 1.2%), so
+    the curved geometry adds nothing.
+  - With the sphere membrane, the PDE removes B over the smaller mesh while creation covers
+    the full sphere, so the balance is +2.9%.
+
+  **Creation fix (Smoldyn fork).** Before it, the sphere variants showed −1.2 to −1.4%
+  exchange balance. That was two errors cancelling: a creation deficit of about −2.4% and
+  the sphere's extra +1.4% of volume. The mesh membrane exposed the deficit (−3.2%); the fix
+  removes it.
+
+  **Cost.** The mesh membrane costs about 1.5× the sphere (806 triangle panels instead of one
+  sphere panel). Positions transfer costs about 4× (locating 20k particles every step), and
+  buys nothing here once the membrane matches.
+
+  **Default changed:** build_mesh_hybrid_document now uses membrane="mesh" with grid
+  transfer. B2, B2b and B2c are re-run with it.

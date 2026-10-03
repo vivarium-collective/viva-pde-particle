@@ -674,11 +674,13 @@ with a membrane.
 - **Volume:** VCell's representation of the ball is more accurate (−0.47%) than the co-sim mesh at h = 0.8 (−1.4%).
 - **Conversion:** the solvers agree (|z| = 0.73; radial B within 3.5%).
 - **Exchange: the native solver loses molecules at the curved membrane.** Signed balance at 5 s: native −6.8%,
-  co-sim −1.2%. Native A is 6.1% below the co-sim. An earlier version said "grows"; that misread an unsigned metric.
+  co-sim −1.2% (+0.51% after the B2d fixes). Native A is 6.1% below the co-sim (8.1% after B2d). An earlier
+  version said "grows"; that misread an unsigned metric.
   The loss is consistent with two mechanisms:
   - **Exterior binning:** 1.2% of native A is binned to nodes outside the voxelized cell, where its PDE source is
     dropped.
-  - **Creation deficit:** native creation runs at 0.960 of exact (co-sim 0.974).
+  - **Creation deficit:** native creation runs at 0.960 of exact (co-sim 0.974 before B2d). B2d found the cause:
+    Smoldyn's hybrid `zeroreact` creates only in cells whose centre is inside the compartment.
   The rough budget matches. These are coupling details at curved membranes, not VCell geometry/PDE limitations.
 
 ### Study B2c: near-membrane fields (`near-membrane-fields`)
@@ -688,14 +690,39 @@ by the new `reference/vcell_vtk.py`. The co-sim uses P1 DOFs. 32 seeds per solve
   mesh is node-centred (`i·L/(N−1)`). On 37³ the exported domain is 8.4% too small. `smoothed_domain(node_centred=True)`
   corrects this on the analysis side, giving −0.50% volume error. Smoothing cuts the surface RMS radial error from 0.108
   to 0.065 µm.
-- **Interior:** both solvers match E[B] (native +0.5%, co-sim −0.4%).
+- **Interior:** both solvers match E[B] (native +0.5%, co-sim −0.4%; +0.25% after B2d).
 - **Outer shell (r > R − 2Δ), opposite-sign artifacts:**
   - Native is 2.3% low (z −20): B2b's exterior-binning loss, localized.
-  - Co-sim is 1.3% high (z 10): Pᵀ folds exterior counts onto boundary DOFs.
+  - Co-sim is 1.3% high (z 10) with Smoldyn confined by the exact sphere. B2d traced this to the sphere/mesh domain
+    mismatch, not to Pᵀ; with the mesh membrane it is +0.12% (z 1.2).
   - Smoothing does not change the native bias; the artifact is in the particle→field binning, not the geometry/PDE.
   - **Code:** `VCellSmoldynOutput::computeHistogram` (vcell-fvsolver `bridgeVCellSmoldyn/VCellSmoldynOutput.cpp:476–548`)
     bins to the nearest node. Its same-compartment neighbour correction is present but commented out, and is the
     likely native fix.
+
+### Study B2d: co-sim boundary transfer (`cosim-boundary-transfer`)
+Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32 seeds each:
+
+| transfer / membrane | shell bias (z) | exchange balance | wall s per sim s |
+|---|---|---|---|
+| grid / sphere | +1.27% (10.3) | +2.9% | 0.71 |
+| positions / sphere | +1.24% (10.0) | +2.9% | 2.98 |
+| grid / mesh | +0.12% (1.2) | +0.69% | 1.07 |
+| positions / mesh | +0.07% (0.7) | +1.0% | 3.56 |
+
+- **The cause is the membrane, not the transfer.** The fix is to confine Smoldyn by the mesh's boundary triangles,
+  now the default (`build_mesh_hybrid_document(membrane="mesh")`). B2, B2b and B2c were re-run with it:
+  - B2 conversion balance 0.11%, B vs continuum 0.53% L2;
+  - B2b co-sim exchange +0.51%;
+  - B2c co-sim shell +0.12%.
+- **Smoldyn fork fix (pyhybrid a773562).** Field-dependent 0th-order creation in a compartment only drew in cells whose
+  centre was inside. That gave a −2.4% deficit for this ball, the B2b "creation deficit", which had been cancelling
+  the sphere's +1.4% extra volume. Every cell now draws, with exact thinning.
+  `test_zeroth_order_creation_matches_curved_compartment_area` covers it.
+- **Upstream candidate:** vcell-fvsolver's vendored Smoldyn has the same centre test, plausibly the native 0.960.
+  Not filed yet.
+- **New infrastructure:** positions transfer, the voxel→tet `PointLocator`, and the mesh membrane (PR #21).
+  `docs/DESIGN.md` explains all approaches.
 
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 
