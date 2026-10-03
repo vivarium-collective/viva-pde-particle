@@ -202,3 +202,23 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
             "outputs": {"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]},
         },
     }
+
+
+def build_coupler_document(model: HybridModel, dt: float, step_multiplier: int, scheme: str, seed: int = 1,
+                           particle_init: str = "exact") -> dict:
+    """One HybridCoupler process (PDE + particles with a chosen splitting) instead of two processes."""
+    doc = build_hybrid_document(model, dt, step_multiplier, "start-of-interval", seed, particle_init)
+    return {
+        "fields": doc["fields"],
+        "particle_counts": doc["particle_counts"],
+        "particle_totals": doc["particle_totals"],
+        "coupler": {
+            "_type": "process",
+            "address": "local:HybridCoupler",
+            "config": {"pde": doc["pde"]["config"], "particles": doc["particles"]["config"], "scheme": scheme},
+            "interval": step_multiplier * dt,
+            "inputs": {"fields": ["fields"], "particle_counts": ["particle_counts"]},
+            "outputs": {"fields": ["fields"], "particle_counts": ["particle_counts"],
+                        "particle_totals": ["particle_totals"]},
+        },
+    }

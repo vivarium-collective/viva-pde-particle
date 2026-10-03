@@ -1,0 +1,104 @@
+schema_version: 4
+name: splitting-schemes
+title: "Operator-splitting schemes for PDE/particle coupling: Jacobi (fvsolver), Gauss–Seidel, Strang"
+investigation: hybrid-generalizability
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- coupling-interval-convergence
+
+question: |
+  The embedded vcell-fvsolver hard-codes one lagged (Jacobi-type) splitting. With the
+  coupling expressed as process-bigraph processes, can other splittings be used, and how
+  much accuracy do they buy at a given coupling interval?
+hypothesis: |
+  Jacobi and both Gauss–Seidel orderings are first order in the coupling interval τ.
+  Symmetric Strang splitting (half the PDE substeps, the particle step, the other half) is
+  second order in the mean dynamics and much more accurate at large τ.
+objective: |
+  A5's A_p + B_f → C_f (k = 2/(µM·s), 20,000 A, 11×11×3 slab); Δt = 0.005;
+  τ = k·Δt with k ∈ {2, 4, 8, 16, 32}; 64 seeds per point.
+  Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4.
+description: |
+  HybridCoupler composes the same FVReactionDiffusion and SmoldynHybrid engines and only
+  orders their substeps. Its jacobi scheme reproduces the two-process composite with
+  coupling="fvsolver" exactly (same seeds give identical counts; regression test in
+  tests/test_hybrid_cosim.py).
+
+baseline:
+- name: splitting-bimolecular
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    k: 2.0
+    dt: 0.005
+  note: Built with viva_pde_particle.composites.hybrid.build_coupler_document(scheme=...) in sims/run.py.
+
+variants: []
+
+behavior_tests:
+- name: jacobi-first-order
+  classification: primary
+  description: Fitted order of the Jacobi (fvsolver) scheme.
+  measure:
+    kind: derived_scalar
+    field: b3_jacobi_order
+  pass_if:
+    op: range
+    low: 0.7
+    high: 1.5
+    provenance:
+      kind: theory
+      note: Explicit lagged splitting is first order.
+  requires_simulation: splitting-bimolecular
+- name: gauss-seidel-first-order
+  classification: secondary
+  description: Fitted order of Gauss–Seidel (particles first).
+  measure:
+    kind: derived_scalar
+    field: b3_gs_particles_first_order
+  pass_if:
+    op: range
+    low: 0.7
+    high: 1.5
+    provenance:
+      kind: theory
+      note: Sequential (Lie) splitting is first order.
+  requires_simulation: splitting-bimolecular
+- name: strang-much-more-accurate
+  classification: primary
+  description: Strang error / Jacobi error at the largest coupling interval (k = 32, τ = 0.16 s).
+  measure:
+    kind: derived_scalar
+    field: b3_strang_over_jacobi_err_k32
+  pass_if:
+    op: "<"
+    value: 0.25
+    provenance:
+      kind: theory
+      note: Symmetric splitting cancels the leading splitting error.
+  requires_simulation: splitting-bimolecular
+
+canonical_runs:
+- name: default
+  script: workspace/studies/splitting-schemes/sims/run.py
+  args: []
+  label: "4 splitting schemes × 5 coupling intervals × 64 seeds"
+  default: true
+
+visualizations:
+- name: splitting-schemes
+  chart: viz/splitting_schemes.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - **First-order schemes:** Jacobi (fvsolver) has order 1.23, Gauss–Seidel orders are
+    1.01 and 1.08. At τ = 0.16 s their errors are about 0.021–0.023.
+  - **Strang:** the error stays within about 2× of the sampling floor (4–11·10⁻⁴) for every
+    τ up to 0.16 s, 25× smaller than Jacobi at τ = 0.16 s. It is too close to the floor to
+    fit an order; more seeds or larger τ would resolve it.
+  - **Consequence:** for this model, Strang splitting lets the particle side step about 32×
+    less often than the PDE side at roughly the accuracy fvsolver's scheme reaches with
+    k ≈ 1–2. That's a large potential speed-up for particle-dominated runs (A6), and one
+    only a modular coupling can offer.

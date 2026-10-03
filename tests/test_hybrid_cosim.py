@@ -106,3 +106,30 @@ def test_recorded_state_is_at_the_record_time():
     finally:
         SmoldynHybrid.update = original
     assert len(calls) == 100  # exactly t_end / dt particle updates by the last record
+
+
+def test_coupler_jacobi_equals_two_process_fvsolver_composite():
+    """HybridCoupler(jacobi) and the two-process composite (coupling="fvsolver") are the same scheme."""
+    from viva_pde_particle.composites.hybrid import build_coupler_document, build_hybrid_document, run_document
+
+    g = CartesianGrid((0.0, 0.0), (10.0, 10.0), (11, 11))
+    model = HybridModel(g, [Species("A", 1.0, particle=True, initial=2000), Species("B", 1.0, initial=0.5),
+                            Species("C", 1.0)], [Reaction("bind", {"A": 1, "B": 1}, {"C": 1}, k=2.0)])
+    a = run_document(build_coupler_document(model, 0.01, 4, "jacobi", seed=5), 0.4, 0.01, 0.2)
+    b = run_document(build_hybrid_document(model, 0.01, 4, "fvsolver", 5), 0.4, 0.01, 0.2)
+    np.testing.assert_array_equal(np.stack(a.particle_counts["A"]), np.stack(b.particle_counts["A"]))
+    np.testing.assert_allclose(np.stack(a.fields["C"]), np.stack(b.fields["C"]), rtol=1e-12, atol=1e-15)
+
+
+@pytest.mark.parametrize("scheme", ["gs_particles_first", "gs_pde_first", "strang"])
+def test_other_schemes_run_and_conserve(scheme):
+    from viva_pde_particle.analysis import molecules
+    from viva_pde_particle.composites.hybrid import build_coupler_document, run_document
+
+    g = CartesianGrid((0.0, 0.0), (10.0, 10.0), (11, 11))
+    model = HybridModel(g, [Species("A", 1.0, particle=True, initial=2000), Species("B", 1.0, initial=0.5),
+                            Species("C", 1.0)], [Reaction("bind", {"A": 1, "B": 1}, {"C": 1}, k=2.0)])
+    tr = run_document(build_coupler_document(model, 0.01, 4, scheme, seed=5), 0.4, 0.01, 0.2)
+    b, c = np.stack(tr.fields["B"]), np.stack(tr.fields["C"])
+    np.testing.assert_allclose(molecules(g, b + c), molecules(g, b[0] + c[0]), rtol=1e-12)  # B + C conserved
+    assert np.stack(tr.particle_counts["A"])[-1].sum() < 2000
