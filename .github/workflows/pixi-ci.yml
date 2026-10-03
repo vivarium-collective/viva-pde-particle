@@ -23,6 +23,9 @@ jobs:
       # Every `pixi run` uses pixi.lock as committed, without re-solving. The `dev`
       # environment points at a sibling ../pyvcell checkout that does not exist on CI.
       PIXI_FROZEN: "true"
+      # MPICH's UCX transport may try InfiniBand verbs devices present on some runner VMs and
+      # abort MPI init (dolfinx imports MPI). Single-process tests only need shm/tcp.
+      UCX_TLS: "self,sm,tcp"
     steps:
       - uses: actions/checkout@v6
         with:
