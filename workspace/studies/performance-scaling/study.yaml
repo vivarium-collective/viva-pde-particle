@@ -1,0 +1,93 @@
+schema_version: 4
+name: performance-scaling
+title: Wall time of the co-simulation vs the native VCell hybrid, with breakdown
+investigation: cosim-vs-embedded-hybrid
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- bimolecular-hybrid
+
+question: |
+  What does decomposing the hybrid solver into process-bigraph processes cost? How does
+  the co-simulation's wall time compare with the native embedded solver as the grid and
+  the particle count grow, and how much of it is framework overhead?
+hypothesis: |
+  The co-simulation pays a per-step framework overhead (scheduling, state updates and
+  data marshaling between processes) that matters most for small problems. For large
+  problems, PDE and particle work dominate in both implementations.
+objective: |
+  A4 model (A_p + B_f → C_f) on N×N×3 slabs, dt = 0.01, t = 1 s (100 steps), one process,
+  median of 3 runs. Sweeps:
+  - N ∈ {11, 21, 41, 81} with 20,000 particles;
+  - particles ∈ {2·10³, 2·10⁴, 2·10⁵} on 21×21×3.
+  Co-sim time is split into PDE update, particle update and framework (the remainder).
+  Native time is split into input generation, solve and read.
+
+baseline:
+- name: bimolecular-perf
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    n_particles: 20000
+    dt: 0.01
+
+variants: []
+
+behavior_tests:
+- name: framework-overhead-bounded
+  classification: primary
+  description: Largest co-sim framework overhead per step (ms) across all configurations.
+  measure:
+    kind: derived_scalar
+    field: a6_cosim_framework_ms_per_step_max
+  pass_if:
+    op: "<"
+    value: 10.0
+    provenance:
+      kind: theory
+      note: >-
+        A two-process composite should cost no more than a few milliseconds per step to
+        schedule and marshal.
+  requires_simulation: bimolecular-perf
+- name: cosim-not-slower-than-native-at-scale
+  classification: secondary
+  description: Co-sim total time / native solve time on the largest grid (81×81×3).
+  measure:
+    kind: derived_scalar
+    field: a6_grid_n81_cosim_over_native_solve
+  pass_if:
+    op: "<"
+    value: 2.0
+    provenance:
+      kind: theory
+      note: The modular decomposition should not cost more than 2× the embedded solver at scale.
+  requires_simulation: bimolecular-perf
+
+canonical_runs:
+- name: default
+  script: workspace/studies/performance-scaling/sims/run.py
+  args: []
+  label: "Wall time vs grid size and particle count, co-sim breakdown vs native"
+  default: true
+
+visualizations:
+- name: performance
+  chart: viz/performance.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03; Apple Silicon, single process):
+  - **The co-simulation is faster than the native solve** in every configuration:
+    0.25–0.93× of the native solve time alone. Native total time also includes about
+    0.5 s of input generation (libvcell math generation) and a process spawn.
+    - Grid sweep, 20k particles: co-sim 0.14 s → 0.90 s; native solve 0.48 s → 0.97 s.
+    - 200k particles: co-sim 2.6 s, native solve 3.8 s.
+    - Likely causes: modern Smoldyn 2.7x vs 2.38, the direct sparse LU in
+      FVReactionDiffusion vs VCell's PCG, and VCell's per-output file writes.
+  - **Framework overhead** is at most 3.0 ms per step: 3–42% of co-sim time, largest for
+    the smallest problems (2k particles on 21×21×3).
+  - **Where the co-sim time goes:** particles dominate at high particle counts (96%); the
+    PDE dominates on the largest grid (50%).
+  The modular co-simulation costs nothing in performance on these problems, and is in
+  fact faster. The overhead to watch is process-bigraph's per-step scheduling, for very
+  small, many-step problems.

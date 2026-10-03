@@ -591,6 +591,27 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
 - both within 0.3% of the continuum survival;
 - B + C conserved to round-off.
 
+## Phase 3e results (2026-10-03): A5, A6; Investigation A complete
+
+**A5 `coupling-interval-convergence`** (A_p + B_f → C_f, k ∈ {1…32}, 64 seeds):
+- Both fvsolver-semantics solvers are first order in k·Δt: fitted order 1.23 (co-sim) and 1.07 (native).
+- Their errors match: ratio 1.05 at k = 16.
+- `start-of-interval` coupling roughly halves the error at large k.
+- Native crashes at k = 32 (Smoldyn step = output interval).
+
+**A6 `performance-scaling`:**
+- The co-sim is faster than the native solve in every configuration: 0.25–0.93×.
+  - Grid sweep 11→81 (20k particles): 0.14→0.90 s, against native 0.48→0.97 s.
+  - 200k particles: 2.6 s, against native 3.8 s.
+- process-bigraph overhead is ≤ 3 ms per step (3–42%, worst for tiny problems).
+
+**Investigation A verdict:** supported. The co-simulation reproduces the embedded solver within stochastic error,
+with the same coupling error and at lower cost. Where they differ, the embedded solver has defects (see the
+investigation's executive summary).
+
+**Next:** Investigation B (Phase 4: FEniCSx PDE process, unstructured meshes, splitting schemes), and the remaining
+C studies (Fokker–Planck, gated binding).
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively

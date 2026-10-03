@@ -231,6 +231,8 @@ class NativeTrajectory:
     fields: dict[str, np.ndarray] = field(default_factory=dict)          # (T, *grid.shape), µM
     particle_counts: dict[str, np.ndarray] = field(default_factory=dict)  # (T, *grid.shape), counts
     workdir: Path | None = None
+    #: wall-clock seconds per phase: "generate" (pyvcell + libvcell), "solve", "read"
+    timings: dict[str, float] = field(default_factory=dict)
 
 
 def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float | None = None,
@@ -282,6 +284,9 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
     from pyvcell._internal.solvers.fvsolver import solve as fvsolve
     from pyvcell.vcml.utils import to_vcml_str
 
+    import time
+
+    t0 = time.perf_counter()
     output_dt = output_dt or step_multiplier * dt
     bm = to_biomodel(model, t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed)
     vcml = to_vcml_str(bio_model=bm)
@@ -300,7 +305,9 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
     positions = particle_positions(model)
     if positions:
         place_particles(smoldyn_input, positions)
+    t1 = time.perf_counter()
     rc = fvsolve(input_file=fv, vcg_file=vcg, output_dir=out)
+    t2 = time.perf_counter()
     if rc != 0:
         raise RuntimeError(f"pyvcell-fvsolver returned {rc}")
 
@@ -318,6 +325,7 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
             continue
         name = info.var_name.split("::", 1)[1]
         target[name] = np.stack([np.asarray(ds.get_data(info, t), dtype=float).reshape(shape) for t in times])
+    traj.timings = {"generate": t1 - t0, "solve": t2 - t1, "read": time.perf_counter() - t2}
     if cleanup:
         shutil.rmtree(out, ignore_errors=True)
         traj.workdir = None

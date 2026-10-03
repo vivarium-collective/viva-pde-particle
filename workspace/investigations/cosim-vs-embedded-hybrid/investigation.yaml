@@ -2,7 +2,7 @@ schema_version: 2
 name: cosim-vs-embedded-hybrid
 title: Process-bigraph co-simulation vs the embedded vcell-fvsolver hybrid solver
 created: '2026-10-03'
-status: running
+status: complete
 question: >-
   Can a process-bigraph co-simulation of a PDE process and a Smoldyn process reproduce
   the hybrid PDE/particle solver embedded in vcell-fvsolver to within its stochastic
@@ -48,12 +48,29 @@ executive:
   what_is_this: >-
     A head-to-head comparison of a modular (process-bigraph) and a hard-coded
     (vcell-fvsolver) implementation of the same PDE/particle hybrid algorithm.
-  verdict: Not yet run.
-  verdict_status: pending
+  verdict: >-
+    Yes. The process-bigraph co-simulation reproduces the embedded vcell-fvsolver hybrid
+    to within its stochastic error on every like-for-like test, with the same first-order
+    coupling error.
+    - A2: field-to-particle coupling, |z| < 2.6.
+    - A4: two-way bimolecular coupling, |z| < 2.1.
+    - A5: coupling error 1.05× the native error at k = 16.
+    It is also faster: 0.25–0.93× of the native solve time (A6).
+    Where they differ, the native solver is wrong:
+    - A3: boundary cells overproduce field-dependent particle creation by Σfull/Σactual
+      (virtualcell/vcell-fvsolver#24).
+    - VCell math generation keeps no-op particle processes (virtualcell/vcell#2158).
+    - A second hybrid solve in one process segfaults (vcell-fvsolver#23).
+    - The native solver crashes at a large step multiplier.
+    The co-simulation's "start-of-interval" scheduling halves the coupling error at large
+    k, which the hard-coded solver cannot do.
+  verdict_status: supported
 studies:
 - handoff-units-and-binning
 - field-modulated-decay
 - two-way-exchange
 - bimolecular-hybrid
+- coupling-interval-convergence
+- performance-scaling
 expert_docs: []
 acceptance_criteria: []
