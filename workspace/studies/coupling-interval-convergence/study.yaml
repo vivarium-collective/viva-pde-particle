@@ -1,0 +1,113 @@
+schema_version: 4
+name: coupling-interval-convergence
+title: Coupling error vs Smoldyn step multiplier, co-simulation (two schemes) and native VCell
+investigation: cosim-vs-embedded-hybrid
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- bimolecular-hybrid
+
+question: |
+  How does the error of the lagged explicit coupling grow with the coupling interval
+  k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
+  fvsolver's coupling error, and does process-bigraph's plain scheduling
+  ("start-of-interval") do better or worse?
+hypothesis: |
+  Explicit lagged coupling is first order in k·Δt. The co-sim "fvsolver" mode applies the
+  same lag as the embedded solver, so it has the same error. "start-of-interval" reads
+  the field at the start of the Smoldyn step instead of at T+(k−1)Δt, so its error
+  differs; its sign and size are to be measured.
+objective: |
+  A4 model with k = 2/(µM·s), 20,000 A, Δt = 0.005, t = 1.6 s, 64 seeds per
+  configuration, step multiplier k ∈ {1, 2, 4, 8, 16, 32}.
+  The error is the max over time of |mean surviving fraction − continuum limit|
+  (A continuous, Δt/10). The order is fitted for k ≥ 4, above the sampling floor
+  (~5·10⁻⁴).
+
+baseline:
+- name: bimolecular-k2
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    k: 2.0
+    dt: 0.005
+    step_multiplier: 1
+
+variants:
+- name: step-multiplier-sweep
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params:
+    k: 2.0
+    dt: 0.005
+    step_multiplier: 16
+
+behavior_tests:
+- name: cosim-fvsolver-mode-first-order
+  classification: primary
+  description: Fitted order (k ≥ 4) of the co-sim error with coupling="fvsolver".
+  measure:
+    kind: derived_scalar
+    field: a5_cosim_fvsolver_order
+  pass_if:
+    op: range
+    low: 0.7
+    high: 1.5
+    provenance:
+      kind: theory
+      note: Explicit lagged operator splitting is first order in the coupling interval.
+  requires_simulation: step-multiplier-sweep
+- name: native-first-order
+  classification: primary
+  description: Fitted order (k ≥ 4) of the native VCell hybrid error.
+  measure:
+    kind: derived_scalar
+    field: a5_native_order
+  pass_if:
+    op: range
+    low: 0.7
+    high: 1.5
+    provenance:
+      kind: theory
+      note: Same scheme (SimTool.cpp main loop).
+  requires_simulation: step-multiplier-sweep
+- name: cosim-reproduces-native-coupling-error
+  classification: primary
+  description: Co-sim (fvsolver mode) error / native error at k = 16.
+  measure:
+    kind: derived_scalar
+    field: a5_fvsolver_mode_vs_native_err_ratio_k16
+  pass_if:
+    op: range
+    low: 0.8
+    high: 1.25
+    provenance:
+      kind: theory
+      note: Same lag semantics (verified in tests/test_scheduling_semantics.py), so the same coupling error.
+  requires_simulation: step-multiplier-sweep
+
+canonical_runs:
+- name: default
+  script: workspace/studies/coupling-interval-convergence/sims/run.py
+  args: []
+  label: "Error vs k·Δt: co-sim (fvsolver, start-of-interval) and native; 64 seeds each"
+  default: true
+
+visualizations:
+- name: coupling-convergence
+  chart: viz/coupling_convergence.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-03):
+  - **Both fvsolver-semantics solvers are first order** in the coupling interval:
+    fitted order 1.23 (co-sim fvsolver mode) and 1.07 (native).
+  - **Their errors match:** at k = 16 (0.08 s) the co-sim error is 0.0110 and native
+    0.0104 (ratio 1.05). The co-simulation reproduces the embedded solver's coupling
+    error, not only its results.
+  - **"start-of-interval" coupling** (plain process-bigraph scheduling) roughly halves the
+    error at large k: 0.0049 at k = 16 and 0.0110 at k = 32, against 0.0110 and 0.0218 for
+    fvsolver mode. Reading the field at the start of the particle step appears to partly
+    cancel the PDE side's lag. That's an improvement the hard-coded solver cannot offer;
+    higher-order splitting is Investigation B.
+  - **Native crash:** VCell's native solver crashed at k = 32 (Smoldyn step 0.16 s, equal to
+    the output interval), so native results stop at k = 16.
