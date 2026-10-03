@@ -1,0 +1,9 @@
+{
+  "a1_boundary_class_max_abs_z": 1.1527011529525741,
+  "a1_corner_to_interior_conc_ratio": 1.013144318750502,
+  "a1_edge_to_interior_conc_ratio": 1.0041780707661703,
+  "a1_fv_cosine_rel_err": 0.0005994812487151916,
+  "a1_histogram_count_mismatch": 0.0,
+  "a1_particle_variance_rel_err": 0.009630660833333304,
+  "a1_wall_time_s": 3.887953996658325
+}

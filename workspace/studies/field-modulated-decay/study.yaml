@@ -1,0 +1,133 @@
+schema_version: 4
+name: field-modulated-decay
+title: Field-to-particle coupling, A_particle -> 0 at rate k·[B](x)
+investigation: cosim-vs-embedded-hybrid
+created: '2026-10-03'
+status: ran
+phase: Evaluate
+parent_studies:
+- handoff-units-and-binning
+
+question: |
+  Does the Smoldyn process read the PDE field at each molecule as vcell-fvsolver does
+  (nearest node, value from the previous coupling step)? Does the coupled model approach
+  its deterministic continuum limit?
+hypothesis: |
+  With a static field and immobile particles, each grid column survives as exp(-k·B·t)
+  exactly in expectation, and nothing decays where B = 0. With diffusing A and B, the
+  ensemble-mean particle concentration matches the all-continuous FV solution of the same
+  model, to within sampling noise.
+objective: |
+  Part 1: B rises linearly from 0 to 1 µM across x; 4,000 immobile A per run; k = 1/(µM·s);
+  8 seeds; t = 1 s. Compare per-column survival to exp(-k·B_col·t) with binomial z-scores.
+  Part 2: B is a Gaussian (1 µM peak, D_B = 0.5); 20,000 A with D_A = 1; 8 seeds. Compare
+  the ensemble-mean A (µM) at t = 1 s to continuum_model() solved by FVReactionDiffusion
+  alone (relative L2 over the grid, and total A).
+description: |
+  The reaction is written once in the HybridModel (A + B -> B, k). partition() sends the
+  PDE side nothing (B is a catalyst), and sends the particle side A -> 0 with the rate
+  k*B; that Smoldyn evaluates through GridValueProvider at each molecule's nearest node.
+  Coupling is coupling: fvsolver with k = 1 (dt = 0.01).
+
+baseline:
+- name: field-modulated-decay-baseline
+  composite: viva_pde_particle.composites.examples.field_modulated_decay
+  params:
+    n_particles: 4000
+    k: 1.0
+    d_a: 0.0
+    d_b: 0.0
+    b_profile: linear
+    dt: 0.01
+
+variants:
+- name: continuum-limit
+  composite: viva_pde_particle.composites.examples.field_modulated_decay
+  params:
+    n_particles: 20000
+    k: 1.0
+    d_a: 1.0
+    d_b: 0.5
+    b_profile: gaussian
+    dt: 0.01
+
+behavior_tests:
+- name: survival-follows-local-field
+  classification: primary
+  description: Max |z| over x-columns of survivors vs N0·exp(-k·B_col·t) (static B, immobile A).
+  measure:
+    kind: derived_scalar
+    field: a2_static_field_max_abs_z
+  pass_if:
+    op: "<"
+    value: 4.0
+    provenance:
+      kind: theory
+      note: Smoldyn's first-order reaction probability per step is 1-exp(-rate·dt), so survival is exp(-k·B·t) exactly in expectation.
+  requires_simulation: field-modulated-decay-baseline
+- name: no-decay-where-field-is-zero
+  classification: primary
+  description: Molecules lost from the B = 0 column.
+  measure:
+    kind: derived_scalar
+    field: a2_zero_field_decays
+  pass_if:
+    op: "=="
+    value: 0
+    provenance:
+      kind: theory
+      note: Rate k·0 = 0 at the B = 0 nodes.
+  requires_simulation: field-modulated-decay-baseline
+- name: approaches-continuum-limit
+  classification: primary
+  description: Relative L2 error of the ensemble-mean A (µM) vs the continuum FV solution at t = 1 s.
+  measure:
+    kind: derived_scalar
+    field: a2_continuum_rel_l2_err
+  pass_if:
+    op: "<"
+    value: 0.06
+    provenance:
+      kind: theory
+      note: Per-node sampling noise of the 8-run mean is about 1/sqrt(8·165), roughly 2.8%; the threshold allows about 2x that.
+  requires_simulation: continuum-limit
+- name: total-matches-continuum
+  classification: secondary
+  description: Relative error of the ensemble-mean total A vs the continuum total at t = 1 s.
+  measure:
+    kind: derived_scalar
+    field: a2_continuum_total_rel_err
+  pass_if:
+    op: "<"
+    value: 0.02
+    provenance:
+      kind: theory
+      note: 160,000 total molecule samples give ~0.3% sampling error on the total.
+  requires_simulation: continuum-limit
+
+pipeline_gate:
+  prerequisites:
+  - handoff-units-and-binning
+  enables:
+  - two-way-exchange
+  proceed_condition: The particle side reads fields correctly and the coupled model converges to its continuum limit.
+
+canonical_runs:
+- name: default
+  script: workspace/studies/field-modulated-decay/sims/run.py
+  args: []
+  label: "Static-field column survival + continuum-limit comparison (8 seeds each)"
+  default: true
+
+visualizations:
+- name: field-modulated-decay
+  chart: viz/field_modulated_decay.html
+  render: "python sims/run.py"
+
+conclusion: |
+  All checks pass (results/metrics.json, 2026-10-03):
+  - column survival vs exp(-k·B·t): max |z| = 1.76;
+  - decays where B = 0: none;
+  - ensemble-mean A vs continuum: 2.9% relative L2, at the expected sampling-noise level;
+  - total A vs continuum: 0.14%.
+  The field-to-particle direction of the coupling is correct.

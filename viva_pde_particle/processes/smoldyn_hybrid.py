@@ -41,20 +41,26 @@ def interval_for(coupling: str, dt: float, step_multiplier: int) -> float:
 
 @contextlib.contextmanager
 def _quiet_stdout():
-    """Silence Smoldyn's C-level stdout chatter (it bypasses sys.stdout)."""
+    """Silence Smoldyn's C-level log output on stdout and stderr (it bypasses sys.stdout).
+
+    Errors still surface: a failed load or run raises a Python exception after the
+    file descriptors are restored.
+    """
     try:
-        fd = os.dup(1)
+        saved = [os.dup(1), os.dup(2)]
     except OSError:
         yield
         return
     devnull = os.open(os.devnull, os.O_WRONLY)
     try:
         os.dup2(devnull, 1)
+        os.dup2(devnull, 2)
         yield
     finally:
-        os.dup2(fd, 1)
-        os.close(fd)
-        os.close(devnull)
+        os.dup2(saved[0], 1)
+        os.dup2(saved[1], 2)
+        for fd in (*saved, devnull):
+            os.close(fd)
 
 
 class SmoldynHybrid(Process):

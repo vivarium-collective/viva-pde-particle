@@ -2,7 +2,7 @@ schema_version: 2
 name: cosim-vs-embedded-hybrid
 title: Process-bigraph co-simulation vs the embedded vcell-fvsolver hybrid solver
 created: '2026-10-03'
-status: planned
+status: running
 question: >-
   Can a process-bigraph co-simulation of a PDE process and a Smoldyn process reproduce
   the hybrid PDE/particle solver embedded in vcell-fvsolver to within its stochastic
@@ -50,6 +50,8 @@ executive:
     (vcell-fvsolver) implementation of the same PDE/particle hybrid algorithm.
   verdict: Not yet run.
   verdict_status: pending
-studies: []
+studies:
+- handoff-units-and-binning
+- field-modulated-decay
 expert_docs: []
 acceptance_criteria: []
