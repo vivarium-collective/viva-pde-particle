@@ -1,0 +1,47 @@
+schema_version: 2
+name: vcell-hybrid-paper-benchmarks
+title: Reproducing the VCell hybrid methods paper (Schaff et al. 2016) with the native solver and the co-simulation
+created: '2026-10-03'
+status: planned
+question: >-
+  Do VCell's native PDE/particle hybrid solver (vcell-fvsolver with embedded Smoldyn) and
+  the process-bigraph co-simulation both reproduce the validation results of Schaff et al.
+  (2016, PLoS Comput Biol 12:e1005236), and where do they differ?
+hypothesis: >-
+  On the paper's calcium-spark benchmarks, both solvers match the analytic, Gibson-Bruck
+  and Fokker-Planck references to within the paper's reported accuracy (L2 about 1-3% of
+  maximum, statistical error proportional to N^-1/2). Residual differences between the two
+  solvers come from the Smoldyn version (2.38 vs 2.7x) and coupling details, which are
+  measurable.
+description: |
+  The paper validates the VCell hybrid method (finite volume PDE plus Smoldyn, fixed-step
+  operator splitting) on calcium sparks, with stochastic two-state channels coupled to a
+  diffusing Ca2+ field:
+  - Test 1 (separable) against an analytic expectation;
+  - Test 2 (fast diffusion) against a non-spatial Gibson-Bruck SSA;
+  - Tests 3-5 against direct functional Fokker-Planck solutions;
+  - Test 6, stochastically gated binding in 3D, and Test 7, cell polarization.
+  Each study here re-runs a test through both solvers and regenerates the matching figure
+  with both results overlaid. The native solver is driven headlessly through pyvcell /
+  libvcell / pyvcell-fvsolver (Phase 3).
+at_a_glance:
+- study: separable-calcium-sparks
+  role: Test 1 / Fig 1, error vs number of trials and time step against the analytic expectation.
+- study: coupled-sparks-fast-diffusion
+  role: Tests 2 / Figs 2-3, distributions p(U,t) and P(n,t) against a Gibson-Bruck SSA in the fast-diffusion limit.
+- study: single-channel-fokker-planck
+  role: Tests 3-5 / Figs 4-6, single-channel densities against direct Fokker-Planck solutions.
+- study: gated-binding-3d
+  role: Test 6 / Fig 7, relaxation and t^-3/2 tail; documents the point-particle limitation.
+- study: cell-polarization
+  role: Stretch goal, Test 7 / Fig 8, membrane receptor clustering (needs membrane particles).
+executive:
+  what_is_this: >-
+    A reproduction of the published validation of VCell's hybrid solver, used both to
+    validate the headless native reference path and to benchmark the co-simulation on
+    established cases.
+  verdict: Not yet run.
+  verdict_status: pending
+studies: []
+expert_docs: []
+acceptance_criteria: []
