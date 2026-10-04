@@ -1,0 +1,144 @@
+schema_version: 4
+name: dumbbell-three-ways
+title: "One non-convex GeometryDescription, three solver paths: native VCell, co-sim on VCell's geometry, co-sim on a Netgen mesh"
+investigation: hybrid-generalizability
+created: '2026-10-04'
+status: ran
+phase: Evaluate
+parent_studies:
+- vcell-geometry-cosim
+
+question: |
+  Phase 7e end to end on a non-sphere: does one geometry description drive the native VCell solver
+  and both co-simulation paths, and do the accessible-volume correction and the body-fitted mesh
+  stay unbiased and conservative on a thin-necked, non-convex shape?
+hypothesis: |
+  The ball's ~1.8% smooth-vs-staircase mismatch grows with surface-to-volume ratio and thin
+  features, so the uncorrected paths (native VCell; the co-sim with `none`) should degrade much
+  more on a dumbbell. `adapters+volumes` and the Netgen mesh should stay at the coupling-lag level.
+objective: |
+  A vcell-fenics GeometryDescription: two balls (R = 1.5 µm, centres 2.8 µm apart) joined by a
+  neck (radius 0.6 µm), in an 8 × 6 × 6 µm box, Δ = 0.25 µm (33 × 25 × 25 grid). The four paths:
+  - **native:** the description converted to VCML; vcell-fvsolver with embedded Smoldyn; 8 seeds.
+  - **vcell_none, vcell_corrected:** the co-simulation on VCell's own realization, with
+    correction `none` or `adapters+volumes`; 16 seeds each.
+  - **mesh:** the co-simulation on a Netgen tet mesh (h = 0.3); 16 seeds.
+
+  Cases and measures:
+  - conversion (k = 0.5, 20,000 A uniform; 2 s): A + B balance; near-membrane bias (mean B within
+    0.5 µm of the membrane against deeper B; E[B] is uniform); lobe asymmetry;
+  - exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM; 5 s): A + B balance and the steady ratio.
+description: |
+  Shows that one description drives every path: `to_vcml_geometry` for the native solver,
+  `VCellFVRealization` for the co-sim on VCell's geometry, and `realize_fenics` (Netgen) for the
+  mesh path. The native runners now pass `geometry`, `region` and `domain_volume` through
+  (`run_native`, `run_native_ensemble`).
+
+  Each method's B is measured on its own PDE volumes. The membrane distance is taken from the
+  Netgen surface, the closest to the analytic shape.
+
+baseline:
+- name: dumbbell
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params: {}
+  note: Built in sims/run.py from one GeometryDescription for all four paths.
+
+variants: []
+
+behavior_tests:
+- name: corrected-exchange-conserves
+  classification: primary
+  description: A + B balance at 5 s, co-sim on VCell's geometry with adapters+volumes.
+  measure:
+    kind: derived_scalar
+    field: b2f_vcell_corrected_exchange_balance
+  pass_if:
+    op: range
+    low: -0.015
+    high: 0.015
+    provenance:
+      kind: theory
+      note: First-order coupling error only.
+  requires_simulation: dumbbell
+- name: corrected-near-membrane-unbiased
+  classification: primary
+  description: Near-membrane B bias, co-sim on VCell's geometry with adapters+volumes.
+  measure:
+    kind: derived_scalar
+    field: b2f_vcell_corrected_band_bias
+  pass_if:
+    op: range
+    low: -0.005
+    high: 0.005
+    provenance:
+      kind: theory
+      note: E[B] is spatially uniform.
+  requires_simulation: dumbbell
+- name: mesh-exchange-conserves
+  classification: primary
+  description: A + B balance at 5 s, co-sim on the Netgen mesh.
+  measure:
+    kind: derived_scalar
+    field: b2f_mesh_exchange_balance
+  pass_if:
+    op: range
+    low: -0.015
+    high: 0.015
+    provenance:
+      kind: theory
+      note: The particle domain is the mesh (B2d).
+  requires_simulation: dumbbell
+- name: native-exchange-conserves
+  classification: secondary
+  description: >-
+    A + B balance at 5 s, native VCell. Expected to FAIL; it documents the smooth-vs-staircase
+    mismatch plus the vcell-fvsolver#25/#26 defects on a thin-necked shape.
+  measure:
+    kind: derived_scalar
+    field: b2f_native_exchange_balance
+  pass_if:
+    op: range
+    low: -0.015
+    high: 0.015
+    provenance:
+      kind: theory
+      note: Kept so the native defect stays visible in the report card.
+  requires_simulation: dumbbell
+
+canonical_runs:
+- name: default
+  script: workspace/studies/dumbbell-three-ways/sims/run.py
+  args: []
+  label: "Dumbbell: native VCell, co-sim on VCell geometry (none / corrected), co-sim on Netgen mesh (dev env)"
+  default: true
+
+visualizations:
+- name: dumbbell-three-ways
+  chart: viz/dumbbell_three_ways.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-04). The analytic cell volume is 28.11 µm³ (Monte Carlo).
+
+  **Geometry:**
+  - VCell's staircase is −1.6%.
+  - VCell's smooth membrane is **−12.4%**: smoothing shrinks the thin neck and the small lobes.
+  - The Netgen mesh (h = 0.3) is −3.0%.
+
+  | path | near-membrane bias (z) | lobe asym (z) | conversion | exchange | steady ratio err |
+  |---|---|---|---|---|---|
+  | native VCell | −0.81% (−118) | +0.07% (0.2) | −0.65% | **−25.9%** | 8.9% |
+  | co-sim, VCell geometry, none | −0.74% (−43) | +0.15% (0.4) | +0.06% | **−18.2%** | 7.8% |
+  | co-sim, VCell geometry, adapters+volumes | −0.02% (−1.2) | +0.33% (0.9) | +0.06% | −0.07% | 0.39% |
+  | co-sim, Netgen mesh | +0.04% (2.8) | +0.60% (1.9) | +0.34% | −0.12% | 0.61% |
+
+  - **On a thin-necked shape the uncorrected smooth-vs-staircase mismatch is severe.** Native VCell
+    loses a quarter of A + B in exchange and misses the steady ratio by 9%.
+    - The co-sim with VCell's own volumes (`none`) isolates the volume effect: −18.2%.
+    - The rest of the native loss is consistent with the binning (vcell-fvsolver#25) and creation
+      (#26) defects measured on the ball.
+  - **The accessible-volume correction removes it entirely.** Exchange is −0.07%, the near-membrane
+    bias is gone and the steady ratio is accurate, on exactly VCell's geometry.
+  - **The body-fitted Netgen path** is also conservative and unbiased. Its slight lobe asymmetry
+    (0.6%, z = 1.9) is borderline at 16 seeds.
+  - One description drove all four paths; no solver-specific geometry code was needed.

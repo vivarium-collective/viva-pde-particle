@@ -289,7 +289,8 @@ class NativeTrajectory:
 
 def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float | None = None,
                step_multiplier: int = 1, seed: int | None = None, workdir: Path | None = None,
-               isolate: bool = True, geometry: dict | None = None) -> NativeTrajectory:
+               isolate: bool = True, geometry=None, region: str | None = None,
+               domain_volume: float | None = None) -> NativeTrajectory:
     """Generate inputs with libvcell, solve with pyvcell-fvsolver, and read back fields and counts.
 
     ``isolate`` (default) runs the solve in a fresh spawned process. vcell-fvsolver cannot run
@@ -297,7 +298,7 @@ def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float 
     child process also keeps a solver crash from taking down the caller.
     """
     kwargs = dict(t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed,
-                  workdir=workdir, geometry=geometry)
+                  workdir=workdir, geometry=geometry, region=region, domain_volume=domain_volume)
     if not isolate:
         return _run_native_inprocess(model, **kwargs)
     with ProcessPoolExecutor(max_workers=1, mp_context=mp.get_context("spawn")) as pool:
@@ -305,7 +306,8 @@ def run_native(model: HybridModel, *, t_end: float, dt: float, output_dt: float 
 
 
 def run_native_ensemble(model: HybridModel, seeds, *, t_end: float, dt: float, output_dt: float | None = None,
-                        step_multiplier: int = 1, workers: int | None = None, geometry: dict | None = None):
+                        step_multiplier: int = 1, workers: int | None = None, geometry=None,
+                        region: str | None = None, domain_volume: float | None = None):
     """One native run per seed, in parallel, each in its own process.
 
     Returns ``(times, fields, counts)`` with arrays of shape (n_seeds, n_times, *grid.shape),
@@ -314,7 +316,7 @@ def run_native_ensemble(model: HybridModel, seeds, *, t_end: float, dt: float, o
     seeds = [int(s) for s in seeds]
     workers = workers or min(len(seeds), os.cpu_count() or 1)
     kwargs = dict(t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, cleanup=True,
-                  geometry=geometry)
+                  geometry=geometry, region=region, domain_volume=domain_volume)
     with ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn"),
                              max_tasks_per_child=1) as pool:
         runs = list(pool.map(_run_seed, [(model, s, kwargs) for s in seeds]))
@@ -331,7 +333,8 @@ def _run_seed(args):
 
 def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output_dt: float | None = None,
                           step_multiplier: int = 1, seed: int | None = None, workdir: Path | None = None,
-                          cleanup: bool = False, geometry: dict | None = None) -> NativeTrajectory:
+                          cleanup: bool = False, geometry=None, region: str | None = None,
+                          domain_volume: float | None = None) -> NativeTrajectory:
     from libvcell import vcml_to_finite_volume_input
     from pyvcell._internal.simdata.simdata_models import PdeDataSet, VariableType
     from pyvcell._internal.solvers.fvsolver import solve as fvsolve
@@ -342,7 +345,7 @@ def _run_native_inprocess(model: HybridModel, *, t_end: float, dt: float, output
     t0 = time.perf_counter()
     output_dt = output_dt or step_multiplier * dt
     bm = to_biomodel(model, t_end=t_end, dt=dt, output_dt=output_dt, step_multiplier=step_multiplier, seed=seed,
-                     geometry=geometry)
+                     geometry=geometry, region=region, domain_volume=domain_volume)
     vcml = to_vcml_str(bio_model=bm)
     out = Path(workdir or tempfile.mkdtemp(prefix="vcell-native-"))
     out.mkdir(parents=True, exist_ok=True)

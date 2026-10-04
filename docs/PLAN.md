@@ -957,7 +957,15 @@ The two compilers:
   - **VTK finding:** `vtkSelectEnclosedPoints` misclassifies lattice-aligned points against VCell's surface,
     depending on process state. The VCell realization now uses `geometry/inside.py` (vertical-ray parity). The B2c
     forward model was re-checked: unchanged.
-- **7e.6:** a non-sphere geometry (CSG or image) end to end.
+- **7e.6 (done):** a non-sphere geometry end to end: Study B2f (`dumbbell-three-ways`).
+  - One non-convex description (two balls joined by a thin neck) drove the native VCell solver (via VCML), the
+    co-sim on VCell's geometry and the co-sim on a Netgen mesh.
+  - VCell's smooth membrane is −12.4% of the analytic volume.
+  - Native VCell loses 25.9% of A + B in exchange. The co-sim with `none` loses 18.2%, which is the volume mismatch
+    alone.
+  - `adapters+volumes` gives −0.07%, with no near-membrane bias. The Netgen path gives −0.12%.
+  - The native runners now pass `geometry`, `region` and `domain_volume` through.
+  - Remaining for later: CSG and image subvolumes in the VCML adapter, and the SBML-Spatial adapter (Phase 6).
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
