@@ -14,9 +14,17 @@ Domains are simplicial meshes with P1 point data:
 - a **mesh** domain is the P1 space's own cells, with points in DOF order (:func:`mesh_domain`);
 - a **membrane** domain is a triangulated surface (:func:`membrane_domain`).
 
-Particle positions are an extension outside the vcell-fenics manifest (readers ignore it): the root
-``.zattrs`` key ``viva_pde_particle.particles`` maps each species to ``particles/<species>/xyz``
-``(T, cap, 3)`` (NaN-padded) and ``particles/<species>/count`` ``(T,)``.
+Particle positions are an extension next to the vcell-fenics manifest (readers ignore unknown keys).
+The root ``.zattrs`` key ``particles`` is ``{"schema": 1, "species": {name: {"xyz": path, "count":
+path}}}``:
+
+- ``particles/<species>/xyz``: ``(T, cap, 3)`` float64 lab-frame positions, NaN-padded past the
+  row's count;
+- ``particles/<species>/count``: ``(T, 1)`` float64, the molecules in each row.
+
+Both are stored like the field arrays (one whole row per chunk, zlib), so a reader of field rows
+reads them too (VCell's ``FenicsBundle``). Rows are global output rows. When a row has more molecules
+than ``cap``, ``xyz`` is rewritten with a larger ``cap``.
 
 Write discipline (as vcell-fenics): a row's arrays are written before its time is appended to the
 manifest's ``times``, and the manifest is replaced atomically, so a reader polling a running
@@ -33,7 +41,7 @@ from pathlib import Path
 
 import numpy as np
 
-EXTENSION_KEY = "viva_pde_particle"
+EXTENSION_KEY = "particles"
 VTK_TRIANGLE, VTK_TETRA = 5, 10
 # Kuhn (Freudenthal) split of a hex into 6 tets along its main diagonal: conforming across neighbours.
 _PERMUTATIONS = ((0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0))
@@ -212,7 +220,8 @@ class SpatialBundleWriter:
                 self._arrays[("stats", name, v)] = self._create(group, f"stats/{name}/{v}", (rows, 4), ("time", "stat"))
         for s in self.particle_species:
             self._arrays[("xyz", s)] = self._create(group, f"particles/{s}/xyz", (rows, 1024, 3), ("time", "molecule", "xyz"))
-            self._arrays[("count", s)] = self._create(group, f"particles/{s}/count", (rows,), ("time",))
+            self._arrays[("count", s)] = self._create(group, f"particles/{s}/count", (rows, 1), ("time", "one"))
+        self._group = group
         try:
             from importlib.metadata import version
 
@@ -265,12 +274,18 @@ class SpatialBundleWriter:
             raw = np.asarray((particles or {}).get(s, np.empty((0, 3))), dtype=float)
             xyz = _pad3(raw.reshape(len(raw), -1)) if raw.size else np.empty((0, 3))
             a = self._arrays[("xyz", s)]
-            if len(xyz) > a.shape[1]:
-                a.resize((a.shape[0], max(2 * a.shape[1], len(xyz)), 3))
+            if len(xyz) > a.shape[1]:  # rewrite with a larger cap: rows stay one chunk each
+                old = np.asarray(a[:row]) if row else None
+                del self._group[f"particles/{s}/xyz"]
+                a = self._create(self._group, f"particles/{s}/xyz", (a.shape[0], max(2 * a.shape[1], len(xyz)), 3),
+                                 ("time", "molecule", "xyz"))
+                if old is not None:
+                    a[:row, : old.shape[1]] = old
+                self._arrays[("xyz", s)] = a
             buf = np.full((a.shape[1], 3), np.nan)
             buf[: len(xyz)] = xyz
             a[row] = buf
-            self._arrays[("count", s)][row] = float(len(xyz))
+            self._arrays[("count", s)][row, 0] = float(len(xyz))
         self._rows += 1
         seg = self._manifest.segments[0]
         self._manifest = replace(self._manifest, times=(*self._manifest.times, float(t)),
@@ -292,7 +307,7 @@ class SpatialBundleWriter:
 
         attrs = manifest_to_attrs(self._manifest)
         if self.particle_species:
-            attrs[EXTENSION_KEY] = {"schema": 1, "particles": {
+            attrs[EXTENSION_KEY] = {"schema": 1, "species": {
                 s: {"xyz": f"particles/{s}/xyz", "count": f"particles/{s}/count"} for s in self.particle_species}}
         handle, temp = tempfile.mkstemp(dir=self.path, prefix=".zattrs.", suffix=".tmp")
         try:
@@ -309,14 +324,14 @@ def read_particles(path, species: str, row: int) -> np.ndarray:
     import zarr
 
     attrs = json.loads((Path(path) / ".zattrs").read_text())
-    ext = attrs.get(EXTENSION_KEY, {}).get("particles", {})
+    ext = attrs.get(EXTENSION_KEY, {}).get("species", {})
     if species not in ext:
         raise KeyError(f"no particles recorded for {species!r}")
     g = zarr.open_group(str(path), mode="r", zarr_format=2)
-    n = int(g[ext[species]["count"]][row])
+    n = int(np.asarray(g[ext[species]["count"]][row]).ravel()[0])
     return np.asarray(g[ext[species]["xyz"]][row, :n, :])
 
 
 def particle_species(path) -> list[str]:
     attrs = json.loads((Path(path) / ".zattrs").read_text())
-    return sorted(attrs.get(EXTENSION_KEY, {}).get("particles", {}))
+    return sorted(attrs.get(EXTENSION_KEY, {}).get("species", {}))

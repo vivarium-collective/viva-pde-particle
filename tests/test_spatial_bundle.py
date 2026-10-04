@@ -56,6 +56,13 @@ def test_writer_round_trips_through_the_vcell_fenics_reader(tmp_path):
         np.testing.assert_array_equal(b.field("cell", "B", i), v)
         np.testing.assert_array_equal(b.field("pm", "B", i), m)
         np.testing.assert_array_equal(read_particles(tmp_path / "b.fenics", "A", i), p)
+    import json
+
+    attrs = json.loads((tmp_path / "b.fenics" / ".zattrs").read_text())
+    assert attrs["particles"] == {"schema": 1, "species": {"A": {"xyz": "particles/A/xyz", "count": "particles/A/count"}}}
+    for arr in ("particles/A/xyz", "particles/A/count"):  # whole-row chunks, as field arrays (VCell's reader)
+        meta = json.loads((tmp_path / "b.fenics" / arr / ".zarray").read_text())
+        assert meta["chunks"] == [1, *meta["shape"][1:]] and meta["dtype"] == "<f8"
     st = b.stats("cell", "B")
     assert st.shape == (4, 4)
     assert st[0, 2] == pytest.approx(rows[0][0].min()) and st[0, 3] == pytest.approx(rows[0][0].max())
