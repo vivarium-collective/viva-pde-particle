@@ -129,11 +129,25 @@ canonical_runs:
   args: []
   label: "Co-sim on VCell's realization of the ball: 3 corrections × conversion + exchange, 32 seeds (dev env)"
   default: true
+- name: render-3d
+  script: workspace/studies/vcell-geometry-cosim/sims/render_3d.py
+  args: []
+  label: "3D figures: one seed per path recorded into results bundles (record: dev env; render: default env)"
 
 visualizations:
 - name: vcell-geometry-cosim
   chart: viz/vcell_geometry_cosim.html
   render: "python sims/run.py"
+- name: vcell-geometry-3d
+  chart: viz/vcell_geometry_3d.png
+  render: "python sims/render_3d.py render"
+  requires: "sims/render_3d.py record (dev env) writes the bundles in runs/"
+- name: vcell-geometry-3d-movie
+  chart: viz/vcell_geometry_3d_movie.gif
+  render: "python sims/render_3d.py render"
+- name: vcell-geometry-3d-interactive
+  address: threejs:viz/vcell_geometry_3d_interactive.html
+  render: "python sims/render_3d.py render"
 
 conclusion: |
   Results (results/metrics.json, 2026-10-04; 32 seeds per variant):

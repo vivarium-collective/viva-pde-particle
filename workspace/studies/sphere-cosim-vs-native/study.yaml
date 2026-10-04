@@ -100,11 +100,28 @@ canonical_runs:
   args: []
   label: "Ball: native VCell vs co-sim, conversion + exchange, 8 seeds each (dev pixi env)"
   default: true
+- name: render-3d
+  script: workspace/studies/sphere-cosim-vs-native/sims/render_3d.py
+  args: []
+  label: "3D figures: one seed per path recorded into results bundles (record: dev env; render: default env)"
 
 visualizations:
 - name: sphere-cosim-vs-native
   chart: viz/sphere_cosim_vs_native.html
   render: "python sims/run.py"
+- name: sphere-3d-conversion
+  chart: viz/sphere_3d_conversion.png
+  render: "python sims/render_3d.py render"
+  requires: "sims/render_3d.py record (dev env) writes the bundles in runs/"
+- name: sphere-3d-exchange
+  chart: viz/sphere_3d_exchange.png
+  render: "python sims/render_3d.py render"
+- name: sphere-3d-movie
+  chart: viz/sphere_3d_movie.gif
+  render: "python sims/render_3d.py render"
+- name: sphere-3d-interactive
+  address: threejs:viz/sphere_3d_interactive.html
+  render: "python sims/render_3d.py render"
 
 conclusion: |
   Results (results/metrics.json, 2026-10-03). Re-run after Study B2d with:

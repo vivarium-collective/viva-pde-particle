@@ -1,0 +1,7 @@
+{
+  "title": "Exchange at 5 s: native VCell vs co-sim",
+  "caption": "As above, near the exchange steady state (A/B = 0.5).",
+  "simulations": "One seed per solver and case, recorded every 0.25 s into results bundles (sims/render_3d.py): conversion to 2 s, exchange to 5 s. Native particles are placed at their nodes from VCell's per-node counts; its membrane is VCell's smooth surface.",
+  "interpretation": "Native VCell holds fewer A + B molecules by now (its \u22126.8% exchange balance in the metrics: binning loss at exterior nodes, vcell-fvsolver#25); the co-sim conserves them.",
+  "source_run_id": "22d627ea79a34d59b3ad4a55784a3c4f"
+}

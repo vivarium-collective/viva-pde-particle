@@ -1,0 +1,7 @@
+{
+  "title": "B at 2 s: native VCell and the three corrections",
+  "caption": "Top: mid-plane slice with VCell's smooth membrane. Bottom: B on the cut-away membrane with the A particles.",
+  "simulations": "One seed per path, conversion (20,000 A \u2192 B, k = 0.5), recorded every 0.25 s to 2 s into results bundles (sims/render_3d.py). Native particles are placed at their nodes from VCell's per-node counts.",
+  "interpretation": "Every path converts the same 20,000 molecules. Native and 'none' spread B over VCell's staircase (266.7 \u00b5m\u00b3); 'adapters+volumes' over the accessible volume (261.9 \u00b5m\u00b3, the particles' smooth domain), hence its slightly higher level. 'adapters' divides by accessible volumes but integrates over full voxels, so its sources are overcounted (+1.3% in the 32-seed metrics). The ~1.4% shell bias of native and 'none' is below single-seed noise; the metrics resolve it.",
+  "source_run_id": "471cc916b2b9428abece5f812443d0c3"
+}

@@ -1044,7 +1044,21 @@ metrics and 1D/2D plotly pages.
      - **Finding:** VCell places an initial particle concentration over its *staircase* volume. Native runs given the
        smooth volume therefore start with ~12% more molecules (22,400 vs 20,000). B2f's metrics are relative to each
        run's own A₀ and are unaffected; the figures use the staircase volume, so every path starts at 20,000.
-   - **Next:** B2e, B2b and the calcium sparks.
+   - **B2e, B2b and C1:** done, each with its own `sims/render_3d.py` (record stage in `dev`, render stage in
+     `default`).
+     - **B2e:** native VCell and the three corrections on VCell's ball.
+     - **B2b:** native VCell vs the gmsh co-sim, for conversion and exchange.
+       - At 5 s native B is about 7% below the co-sim, which matches its −6.8% exchange balance.
+     - **C1 (calcium sparks):** both solvers at 1, 2 and 3 s.
+       - The figure shows U in the channel plane on a log scale, with the 24 channels closed or open. Native channel
+         states come from VCell's per-node counts.
+       - Co-sim channels sit inside their node's voxel, because Smoldyn places them there.
+   - **Library additions:**
+     - `write_native_bundle` places native particles at their nodes (`positions_from_counts`).
+     - `render_png`: `(path, time)` panels, `panels=("slice",)` with particles on the slice, `stack="rows"`,
+       `slice_origin`, `log_scale`, per-species colours, and face-on slices fitted to the panel.
+     - `bundle_html`: `colors`, `camera="top"` and `slice_origin`.
+     - `viz3d/study.py`: `logged_run` and `write_meta` for study scripts.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

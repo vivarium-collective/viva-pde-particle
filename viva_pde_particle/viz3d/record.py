@@ -162,14 +162,28 @@ def attach_recorder(doc: dict, out_dir, output_dt: float, *, membranes: dict | N
     return doc
 
 
+def positions_from_counts(grid, counts: np.ndarray) -> np.ndarray:
+    """Molecule positions at their grid nodes, from a per-node count array (native VCell's particle output)."""
+    c = np.rint(np.asarray(counts, dtype=float)).astype(int).ravel()
+    coords = np.stack([x.ravel() for x in grid.node_coordinates()], axis=1)
+    return np.repeat(coords, np.maximum(c, 0), axis=0)
+
+
 def write_native_bundle(path, trajectory, grid, *, mask=None, membranes: dict | None = None, region: str = "cell",
-                        source: str = "native VCell (vcell-fvsolver)") -> None:
-    """A native VCell ``NativeTrajectory`` (fields on the grid) as a bundle, for side-by-side viewing."""
+                        particles: bool = True, source: str = "native VCell (vcell-fvsolver)") -> None:
+    """A native VCell ``NativeTrajectory`` (fields on the grid) as a bundle, for side-by-side viewing.
+
+    VCell writes particles as counts per node, so with ``particles`` the molecules are placed at their
+    nodes (:func:`positions_from_counts`): exact for particles that sit on nodes (calcium-spark
+    channels), binned to the nearest node otherwise.
+    """
     layout = {"kind": "grid", "grid": grid.to_config()}
     if mask is not None:
         layout["mask"] = np.asarray(mask, bool)
-    rec = BundleRecorder(path, layout, list(trajectory.fields), (), membranes, region, source,
+    counts = dict(trajectory.particle_counts) if particles else {}
+    rec = BundleRecorder(path, layout, list(trajectory.fields), list(counts), membranes, region, source,
                          planned_times=trajectory.times)
     for i, t in enumerate(trajectory.times):
-        rec.record(float(t), {s: v[i] for s, v in trajectory.fields.items()})
+        rec.record(float(t), {s: v[i] for s, v in trajectory.fields.items()},
+                   {s: positions_from_counts(grid, c[i]) for s, c in counts.items()} or None)
     rec.close()
