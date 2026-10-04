@@ -68,9 +68,9 @@ viva-catalog = { git = "https://github.com/vivarium-collective/viva-marketplace.
 viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basic-processes.git", branch = "main" }
 investigation-contracts = { git = "https://github.com/vivarium-collective/investigation-contracts.git", rev = "65c793fd231d952e49a9cfe4244797dadde1bedc" }
 # GeometryDescription (VCell-style geometry formalism) and its Netgen realization (Phase 7e).
-# rev: virtualcell/vcell-fenics#211 (lazy backend imports, so realize() needs no solver-only deps such
-# as scifem); move to main once merged.
-vcell-fenics = { git = "https://github.com/virtualcell/vcell-fenics.git", rev = "d1cd9cccd035b2332c4f3e867d111765fcae2d27" }
+# rev: vcell-fenics main, merge of #211 (lazy backend imports, so realize() needs no solver-only deps such
+# as scifem).
+vcell-fenics = { git = "https://github.com/virtualcell/vcell-fenics.git", rev = "4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17" }
 
 [tasks]
 build-smoldyn = { cmd = "bash scripts/build_smoldyn.sh", description = "Build + install the Smoldyn python module (OPTION_VCELL) from external/Smoldyn" }
