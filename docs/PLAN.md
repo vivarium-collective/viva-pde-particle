@@ -354,7 +354,7 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
        "Phase 7e plan".
      - **7f:** packaging. A written component contract (units, array layouts, timing), catalog and workbench
        registration, and example composites that mix components; for example the FV engine with
-       positions-based binning on a mesh-derived grid.
+       positions-based binning on a mesh-derived grid. Done; see "Phase 7f results".
    - **Acceptance:** B1, B2b, B2d and B3 reproduce with the componentized composites, and no engine imports or
      names another engine's concepts.
 
@@ -966,6 +966,23 @@ The two compilers:
   - `adapters+volumes` gives −0.07%, with no near-membrane bias. The Netgen path gives −0.12%.
   - The native runners now pass `geometry`, `region` and `domain_volume` through.
   - Remaining for later: CSG and image subvolumes in the VCML adapter, and the SBML-Spatial adapter (Phase 6).
+
+## Phase 7f results (2026-10-04): the component contract and assembly; Phase 7 complete
+
+- **Component contract:** written in DESIGN.md §13. It covers units, array layouts, timing, and the ports and config
+  of every Process and Step.
+- **`kinetics.py`:** holds `reaction_rates`, shared by the FV, Q1 and P1 engines. No engine imports another any
+  more; the FEniCSx engines used to import it from the FV module.
+- **Workbench generators:**
+  - `ball_netgen_hybrid`: a `GeometryDescription` ball, Netgen mesh, both transfer Steps;
+  - `ball_vcell_geometry_hybrid`: VCell's own geometry with the accessible-volume correction;
+  - `exchange_splitting`: any PDE engine under any splitting scheme. This includes the FEniCSx Q1 engine under
+    Strang splitting, which the original code could not express (`tests/test_phase7_generators.py`).
+- **Phase 7 acceptance:**
+  - The componentized composites reproduce B1 (Q1), B2/B2b/B2d (mesh) and B3 (all four schemes) bit-for-bit on the
+    regression harness (`scripts/component_regression.py`).
+  - No engine imports or names another engine's concepts.
+  - Every coupling concern is a separate component: transfers, scheduling, splitting, geometry.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

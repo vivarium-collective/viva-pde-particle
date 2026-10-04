@@ -21,7 +21,7 @@ import scipy.sparse.linalg as spla
 from process_bigraph import Process
 
 from viva_pde_particle.mesh import build_mesh  # noqa: F401  (re-exported for existing callers)
-from viva_pde_particle.processes.fv_reaction_diffusion import reaction_rates
+from viva_pde_particle.kinetics import reaction_rates
 
 
 class FenicsxMeshReactionDiffusion(Process):
