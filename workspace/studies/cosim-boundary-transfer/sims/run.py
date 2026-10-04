@@ -106,7 +106,7 @@ def mesh_geometry():
 
     doc = build_mesh_hybrid_document(b2b.model("conversion"), b2b.MESH_SPHERE, DT, seed=1)
     proc = FenicsxMeshReactionDiffusion(config=doc["pde"]["config"], core=allocate_core())
-    return proc.transfer.V.tabulate_dof_coordinates(), proc.ml
+    return proc.V.tabulate_dof_coordinates(), proc.ml
 
 
 def main() -> int:

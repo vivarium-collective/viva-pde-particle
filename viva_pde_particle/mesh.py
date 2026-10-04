@@ -68,11 +68,12 @@ class MeshGridTransfer:
     inside: np.ndarray        # bool per grid node (node lies in the mesh)
 
     @classmethod
-    def build(cls, msh, grid: CartesianGrid) -> "MeshGridTransfer":
+    def build(cls, msh, grid: CartesianGrid, V=None) -> "MeshGridTransfer":
+        """``V``: an existing P1 space on ``msh`` (shared DOF numbering); created if None."""
         from dolfinx import fem
         from scipy.spatial import cKDTree
 
-        V = fem.functionspace(msh, ("Lagrange", 1))
+        V = V if V is not None else fem.functionspace(msh, ("Lagrange", 1))
         nodes = np.stack([c.ravel() for c in grid.node_coordinates()], axis=1)
         if nodes.shape[1] < 3:
             nodes = np.hstack([nodes, np.zeros((len(nodes), 3 - nodes.shape[1]))])
@@ -315,24 +316,47 @@ def build_mesh(spec: dict):
     return _MESH_CACHE[key]
 
 
-def mesh_transfer(spec: dict, grid: CartesianGrid) -> MeshGridTransfer:
-    """MeshGridTransfer for (mesh spec, background grid), cached, with ``ml`` (lumped mass) attached."""
-    key = (_key(spec), grid.origin, grid.size, grid.num)
-    if key not in _TRANSFER_CACHE:
+@dataclass
+class MeshSpace:
+    """A mesh with its P1 space and lumped mass: everything the PDE engine needs, with no grid."""
+
+    msh: object
+    V: object
+    ml: np.ndarray  # lumped mass = nodal control volumes (µm³)
+
+
+_SPACE_CACHE: dict = {}
+
+
+def mesh_space(spec: dict) -> MeshSpace:
+    """The P1 space and lumped mass for ``spec``, cached. All mesh components share it (one DOF numbering)."""
+    key = _key(spec)
+    if key not in _SPACE_CACHE:
         import ufl
         from dolfinx import fem
 
-        transfer = MeshGridTransfer.build(build_mesh(spec), grid)
-        u, v = ufl.TrialFunction(transfer.V), ufl.TestFunction(transfer.V)
+        msh = build_mesh(spec)
+        V = fem.functionspace(msh, ("Lagrange", 1))
+        u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         M = fem.assemble_matrix(fem.form(u * v * ufl.dx)).to_scipy()
-        transfer.ml = np.asarray(M.sum(axis=1)).ravel()   # lumped mass = nodal control volumes (µm³)
+        _SPACE_CACHE[key] = MeshSpace(msh=msh, V=V, ml=np.asarray(M.sum(axis=1)).ravel())
+    return _SPACE_CACHE[key]
+
+
+def mesh_transfer(spec: dict, grid: CartesianGrid) -> MeshGridTransfer:
+    """MeshGridTransfer between the cached mesh space and a background grid, cached; ``ml`` attached."""
+    key = (_key(spec), grid.origin, grid.size, grid.num)
+    if key not in _TRANSFER_CACHE:
+        space = mesh_space(spec)
+        transfer = MeshGridTransfer.build(space.msh, grid, V=space.V)
+        transfer.ml = space.ml
         _TRANSFER_CACHE[key] = transfer
     return _TRANSFER_CACHE[key]
 
 
-def mesh_locator(spec: dict, grid: CartesianGrid) -> PointLocator:
-    """PointLocator on the cached transfer's P1 space, cached on the transfer."""
-    transfer = mesh_transfer(spec, grid)
-    if getattr(transfer, "locator", None) is None:
-        transfer.locator = PointLocator.build(build_mesh(spec), transfer.V)
-    return transfer.locator
+def mesh_locator(spec: dict, grid: CartesianGrid | None = None) -> PointLocator:
+    """PointLocator on the cached mesh space, cached. ``grid`` is accepted for backward compatibility; unused."""
+    space = mesh_space(spec)
+    if getattr(space, "locator", None) is None:
+        space.locator = PointLocator.build(space.msh, space.V)
+    return space.locator

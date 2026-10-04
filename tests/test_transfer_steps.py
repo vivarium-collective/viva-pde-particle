@@ -44,3 +44,26 @@ def test_composite_wires_the_step_and_keeps_it_current():
     counts = np.asarray(sim.state["particle_counts"]["A"])
     assert counts.sum() > 0  # creation happened, so the Step had something to convert
     np.testing.assert_array_equal(np.asarray(sim.state["particle_conc"]["A"]), model.grid.counts_to_uM(counts))
+
+
+def test_mesh_composite_samples_fields_with_the_step():
+    pytest.importorskip("smoldyn")
+    pytest.importorskip("dolfinx")
+    from viva_pde_particle.composites.hybrid import build_mesh_hybrid_document
+    from viva_pde_particle.core import build_core
+    from viva_pde_particle.mesh import mesh_transfer
+    from viva_pde_particle.model import HybridModel, Reaction, Species
+
+    g = CartesianGrid((0, 0, 0), (4, 4, 4), (17, 17, 17))
+    m = HybridModel(g, [Species("A", 1.0, particle=True, initial=500), Species("B", 1.0, initial=0.0)],
+                    [Reaction("convert", {"A": 1}, {"B": 1}, k=1.0)])
+    doc = build_mesh_hybrid_document(m, {"center": (2.0, 2.0, 2.0), "radius": 2.0, "h": 0.6}, 0.01, seed=2)
+    assert doc["pde"]["outputs"] == {"field_dofs": ["field_dofs"]} and "grid" not in doc["pde"]["config"]
+    assert doc["field_to_particles"]["address"] == "local:MeshToGridField"
+    sim = Composite({"state": doc}, core=build_core())
+    sim.run(0.005)
+    sim.run(0.2)
+    dofs = np.asarray(sim.state["field_dofs"]["B"])
+    assert dofs.sum() > 0
+    P = mesh_transfer(doc["pde"]["config"]["mesh"], g).P
+    np.testing.assert_array_equal(np.asarray(sim.state["fields"]["B"]), (P @ dofs).reshape(g.shape))

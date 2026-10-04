@@ -1,4 +1,4 @@
-"""FEniCSx reaction-diffusion on an unstructured mesh, coupled to particles through a background grid.
+"""FEniCSx reaction-diffusion on an unstructured mesh (P1). A general PDE engine: it knows no grid and no particles.
 
 Internally the PDE is P1 on an unstructured mesh (e.g. a gmsh ball), with lumped mass,
 backward-Euler diffusion and explicit reactions. The authoritative state is the DOF vector,
@@ -7,8 +7,9 @@ kept in ``field_dofs``.
   ``external_conc`` as DOF arrays. A Step fills them from the particle engine:
   :class:`~viva_pde_particle.steps.GridCountsToMeshConcentration` (Pᵀ of the grid histogram)
   or :class:`~viva_pde_particle.steps.PositionsToMeshConcentration` (the exact P1 point load).
-- **Outputs:** ``field_dofs``, plus a grid-sampled view ``fields`` = P·u for the particle
-  engine's rate lookups. The view moves into a Step in Phase 7b.
+- **Outputs:** ``field_dofs`` only. In a hybrid, the
+  :class:`~viva_pde_particle.steps.MeshToGridField` Step samples them onto the particle
+  engine's lookup grid (P·u).
 
 See :mod:`viva_pde_particle.mesh`.
 """
@@ -19,23 +20,20 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 from process_bigraph import Process
 
-from viva_pde_particle.grid import CartesianGrid
 from viva_pde_particle.mesh import build_mesh  # noqa: F401  (re-exported for existing callers)
 from viva_pde_particle.processes.fv_reaction_diffusion import reaction_rates
 
 
 class FenicsxMeshReactionDiffusion(Process):
-    """PDE half on an unstructured P1 mesh; particle side on ``grid`` (background Cartesian grid).
+    """Reaction-diffusion on an unstructured P1 mesh.
 
     Config:
-        grid: background grid ``{origin, size, num}`` (covers the mesh; SmoldynHybrid uses the same).
         mesh: ``{"kind": "sphere", "radius", "center", "h"}``.
         pde: the ``pde`` part of a PartitionedModel.
         dt: time step (s).
     """
 
     config_schema = {
-        "grid": "map",
         "mesh": "map",
         "pde": "map",
         "dt": {"_type": "float", "_default": 0.01},
@@ -45,19 +43,18 @@ class FenicsxMeshReactionDiffusion(Process):
         import ufl
         from dolfinx import fem
 
-        from viva_pde_particle.mesh import mesh_transfer
+        from viva_pde_particle.mesh import mesh_space
 
-        self.grid = CartesianGrid.from_config(config["grid"])
         self.pde = config["pde"]
         self.species = list(self.pde["species"])
         self.external_species = list(self.pde.get("external_species") or sorted(
             {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
         self.dt = float(config["dt"])
-        self.transfer = mesh_transfer(config["mesh"], self.grid)
-        V = self.transfer.V
+        space = mesh_space(config["mesh"])
+        self.V = V = space.V
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         K = fem.assemble_matrix(fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)).to_scipy().tocsr()
-        self.ml = self.transfer.ml  # lumped mass = nodal control volumes (µm³)
+        self.ml = space.ml  # lumped mass = nodal control volumes (µm³)
         self.n_dofs = len(self.ml)
         self._solvers = {
             name: spla.factorized((sp.diags(self.ml) + float(spec["diffusion"]) * self.dt * K).tocsc())
@@ -67,14 +64,11 @@ class FenicsxMeshReactionDiffusion(Process):
     def initial_dofs(self, initial: dict[str, float]) -> dict[str, np.ndarray]:
         return {s: np.full(self.n_dofs, float(initial.get(s, 0.0))) for s in self.species}
 
-    def to_grid(self, dofs: np.ndarray) -> np.ndarray:
-        return (self.transfer.P @ dofs).reshape(self.grid.shape)
-
     def inputs(self):
         return {"field_dofs": "map[array[float]]", "external_conc": "map[array[float]]"}
 
     def outputs(self):
-        return {"field_dofs": "map[overwrite[array[float]]]", "fields": "map[overwrite[array[float]]]"}
+        return {"field_dofs": "map[overwrite[array[float]]]"}
 
     def update(self, state, interval):
         u = {s: np.asarray(state["field_dofs"][s], dtype=float) for s in self.species}
@@ -83,4 +77,4 @@ class FenicsxMeshReactionDiffusion(Process):
         for _ in range(max(1, int(round(interval / self.dt)))):
             rates = reaction_rates(self.pde["terms"], self.species, {**pc, **u}, (self.n_dofs,))
             u = {s: self._solvers[s](self.ml * (u[s] + self.dt * rates[s])) for s in self.species}
-        return {"field_dofs": u, "fields": {s: self.to_grid(v) for s, v in u.items()}}
+        return {"field_dofs": u}

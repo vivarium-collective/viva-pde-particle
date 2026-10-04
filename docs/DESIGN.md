@@ -447,12 +447,14 @@ coupling does not notice. This is what "a process is an interface" buys.
 
 A body-fitted tetrahedral mesh of a curved domain no longer has nodes that coincide with the grid Smoldyn bins on.
 [`processes/fenicsx_mesh_reaction_diffusion.py`](../viva_pde_particle/processes/fenicsx_mesh_reaction_diffusion.py)
-`FenicsxMeshReactionDiffusion` handles this by keeping **two representations of the field**.
+`FenicsxMeshReactionDiffusion` solves on the mesh alone. Since Phase 7, two Steps translate between its DOFs and that
+grid, so the field has **two representations**.
 
 ```mermaid
 flowchart LR
   D[("field_dofs<br/>{B: P1 DOF vector}<br/>(authoritative)")]
   F[("fields<br/>{B: grid array}<br/>(view for Smoldyn)")]
+  S2{{"MeshToGridField<br/>Step: P·u"}}
   C[("particle_counts<br/>{A: grid counts}")]
   PC[("particle_conc<br/>{A: DOF array}")]
   S{{"GridCountsToMeshConcentration<br/>Step: Pᵀ·counts / (M_L·602.214)"}}
@@ -463,22 +465,25 @@ flowchart LR
   S --> PC
   PC -- external_conc --> PDE
   PDE --> D
-  PDE -- "P · u" --> F
+  D --> S2
+  S2 --> F
   F --> PART
   PART --> C
 ```
 
-The mesh process:
-- treats the DOF vector as authoritative and stores it in `field_dofs`;
-- publishes a grid-sampled copy in `fields` for Smoldyn's rate lookups.
+The pieces:
+- the mesh process treats the DOF vector as authoritative and publishes only `field_dofs`. It knows neither the grid
+  nor the particles;
+- the `MeshToGridField` Step samples the DOFs onto the grid as `fields`, for Smoldyn's rate lookups;
+- a particle → mesh Step (`GridCountsToMeshConcentration`) fills the engine's `external_conc`.
 
-Both directions go through one sparse matrix **P** (grid nodes × mesh DOFs), built once in
-[`mesh.py`](../viva_pde_particle/mesh.py) `MeshGridTransfer`:
+Both Steps use one sparse matrix **P** (grid nodes × mesh DOFs), built once in
+[`mesh.py`](../viva_pde_particle/mesh.py) `MeshGridTransfer` and shared through a per-process cache:
 - **Mesh → grid:** `u_grid = P·u`. Row n of P holds the barycentric weights of grid node n in its tetrahedron, so
   P·u is the P1 interpolant. A node outside the mesh copies its nearest DOF.
 - **Grid → mesh:** `load = Pᵀ·counts`, i.e. `load_j = Σ_n φ_j(x_n)·count_n`. Because P's rows sum to 1, molecules
-  are conserved exactly. The PDE then reads `[A]_j = load_j / (ml_j · 602.214)`, where `ml_j = ∫φ_j` is the lumped
-  mass of DOF j.
+  are conserved exactly. The Step hands the PDE `[A]_j = load_j / (ml_j · 602.214)`, where `ml_j = ∫φ_j` is the
+  lumped mass of DOF j.
 
 ![Mesh-grid transfer](figures/mesh_grid_transfer.svg)
 
@@ -523,7 +528,8 @@ flowchart LR
   PC -- external_conc --> PDE["pde: FenicsxMeshReactionDiffusion"]
   D[("field_dofs")] --> PDE
   PDE --> D
-  PDE --> F
+  D --> S3{{"MeshToGridField<br/>Step: P·u"}}
+  S3 --> F
 ```
 
 **Exact P1 load.** For each particle p in cell c with barycentric weights λ, add λ_i to the load of vertex i:
@@ -683,8 +689,8 @@ coupling timing of §6.3 is unchanged.
 | Sub-phase | Component | Status |
 |---|---|---|
 | 7a | `ParticlesToField` Steps: `GridCountsToConcentration` (FV, Q1), `GridCountsToMeshConcentration` (Pᵀ), `PositionsToMeshConcentration` (P1 load). The PDE engines take a generic `external_conc` and no longer know about particles. | **done**: bit-identical to the pre-refactor code on six composites (`scripts/component_regression.py`). The mesh composites run 1.8–3.5× faster, because the PDE no longer receives the grid histogram or positions through its ports. |
-| 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs. | next |
-| 7c | The particle engine without the PDE clock: replace `coupling="fvsolver"` with a scheduling or field-snapshot construct that reproduces fvsolver timing bit-for-bit. | planned |
+| 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs and needs no grid; it builds from the mesh alone through a shared `mesh_space` cache. | **done**: bit-identical on the same six composites; same speed as 7a. |
+| 7c | The particle engine without the PDE clock: replace `coupling="fvsolver"` with a scheduling or field-snapshot construct that reproduces fvsolver timing bit-for-bit. | next |
 | 7d | A generic splitting coordinator in place of `HybridCoupler`'s hard-coded FV + Smoldyn pair. | planned |
 | 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | planned |
 | 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
@@ -717,7 +723,7 @@ coupling timing of §6.3 is unchanged.
 | FV PDE process | `viva_pde_particle/processes/fv_reaction_diffusion.py` |
 | Smoldyn process | `viva_pde_particle/processes/smoldyn_hybrid.py` |
 | Splitting coupler | `viva_pde_particle/processes/hybrid_coupler.py` |
-| Particle → PDE adapter Steps (Phase 7a) | `viva_pde_particle/steps/transfer.py` |
+| Adapter Steps, both directions (Phase 7a, 7b) | `viva_pde_particle/steps/transfer.py` |
 | Bit-exact refactor regression | `scripts/component_regression.py` |
 | FEniCSx Q1 process | `viva_pde_particle/processes/fenicsx_reaction_diffusion.py` |
 | FEniCSx P1 mesh process | `viva_pde_particle/processes/fenicsx_mesh_reaction_diffusion.py` |

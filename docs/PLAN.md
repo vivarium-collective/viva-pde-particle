@@ -340,7 +340,8 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
      (`scripts/component_regression.py`, six composites), or justify the difference:
      - **7a:** particle → PDE adapters as Steps; PDE engines take a generic `external_conc`. Done; see "Phase 7a
        results".
-     - **7b:** PDE → particle adapter Step (`MeshToGridField`, P·u); the mesh engine publishes only DOFs.
+     - **7b:** PDE → particle adapter Step (`MeshToGridField`, P·u); the mesh engine publishes only DOFs. Done; see
+       "Phase 7b results".
      - **7c:** take the PDE clock out of the particle engine. Replace `coupling="fvsolver"` with a scheduling or
        field-snapshot construct that keeps fvsolver timing exact; the Investigation A studies must reproduce.
      - **7d:** a generic splitting coordinator. It sequences any child processes and adapters (Jacobi, Gauss–Seidel,
@@ -812,6 +813,18 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   The likely reason: the PDE engine no longer receives the grid histogram or the positions array through its ports
   every PDE step. Not profiled.
 - **Tests:** `tests/test_transfer_steps.py`. The existing engine tests were updated to compose Step + engine.
+
+## Phase 7b results (2026-10-03): PDE → particle adapter as a Step
+
+- **New Step:** `MeshToGridField` (`steps/transfer.py`) samples P1 DOF fields onto the particle engine's lookup grid
+  (P·u; nearest DOF for nodes outside the mesh). FV and Q1 already produce grid fields and need no adapter.
+- **Mesh engine:** `FenicsxMeshReactionDiffusion` now publishes only `field_dofs` and takes no `grid` config. It
+  builds from `mesh.mesh_space(spec)`, a cached mesh with its P1 space and lumped mass, and knows neither the grid
+  nor the particles.
+- **Shared caches:** `mesh_transfer` (for the Steps) is built on the same cached space, so the DOF numbering is shared
+  across components. `mesh_locator` now needs only the mesh spec.
+- **Equivalence and cost:** bit-identical to the pre-refactor code on the six regression composites. Timing is the
+  same as 7a (mesh with grid transfer 0.37, with positions 0.95 wall s per simulated s).
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
