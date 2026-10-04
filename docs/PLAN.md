@@ -919,7 +919,16 @@ The two compilers:
     pre-7e studies.
   - A hybrid on the Netgen ball conserves mass (1 s: conversion +0.64%, exchange +0.45%) and confines its particles
     to the PDE domain (`tests/test_geometry.py`).
-- **7e.3:** Smoldyn geometry derived from a `RealizedGeometry` (membrane, compartments, volume samples, boxsize).
+- **7e.3 (done):** `geometry/smoldyn.py`, the Smoldyn geometry derived from a `RealizedGeometry`.
+  - `smoldyn_geometry(realized, region, grid, volume_samples)` gives the membrane (the region's boundary triangles),
+    several compartment points, and the `highResVolumeSamples` map rasterized with the realization's own `inside`.
+    `RealizedGeometry.uniform_points` gives the initial positions.
+  - The gmsh ball is wrapped as a one-region `MeshRealization`, so both mesh paths share the derivation.
+    Bit-identical on the regression harness.
+  - **Non-convex check** (a dumbbell: two overlapping balls joined by a neck, realized by Netgen). Field-driven
+    creation fills the compartment at 1.009× rate·volume, evenly between the lobes. With a single compartment point
+    it falls to 0.882× and is lopsided, because Smoldyn's line-of-sight compartment test can't see the whole region
+    (`tests/test_smoldyn_geometry.py`).
 - **7e.4:** the VCell-FV compiler through libvcell.
 - **7e.5:** the accessible-volume correction in both variants, plus the FV volume-fraction option; B2b and B2c
   re-run with both.

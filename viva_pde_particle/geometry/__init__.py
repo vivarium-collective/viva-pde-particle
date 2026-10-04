@@ -11,7 +11,9 @@ from viva_pde_particle.geometry.description import (
     description_to_config,
     sphere_in_box,
 )
-from viva_pde_particle.geometry.realize import FenicsRealization, RealizedGeometry, realize_fenics
+from viva_pde_particle.geometry.realize import FenicsRealization, MeshRealization, RealizedGeometry, realize_fenics
+from viva_pde_particle.geometry.smoldyn import compartment_samples, smoldyn_geometry
 
-__all__ = ["FenicsRealization", "RealizedGeometry", "description_from_config", "description_to_config",
-           "realize_fenics", "sphere_in_box"]
+__all__ = ["FenicsRealization", "MeshRealization", "RealizedGeometry", "compartment_samples",
+           "description_from_config", "description_to_config", "realize_fenics", "smoldyn_geometry",
+           "sphere_in_box"]
