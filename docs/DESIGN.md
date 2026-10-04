@@ -548,6 +548,30 @@ That residual mismatch helps explain the native results in B2b:
 - **Creation:** 0.982 (compartment/PDE volume) × 0.976 (centre-only creation rule) = 0.958, matching the measured 0.960.
 - **Binning:** particles just inside the smooth membrane can be nearest to an exterior voxel node (exterior binning).
 
+**Keeping a triangulated membrane cheap: avoid N×M work.** With N molecules and M membrane triangles, two Smoldyn
+operations can degrade to N×M work:
+
+| Operation | Smoldyn's acceleration | What the co-sim does |
+|---|---|---|
+| Collision checks during diffusion (`checksurfaces`) | Virtual boxes, each listing the panels it intersects | Always writes `boxsize` (default two grid spacings) |
+| Compartment test (`posincompart`: creation thinning, random placement) | VCell's `highResVolumeSamples` voxel map: inside or outside from the 3×3×3 sample neighbourhood, exact test only next to the surface | Writes the map from `mesh.volume_samples` (`volume_samples=2` per grid spacing by default) |
+
+- **Boxes:** without `boxsize`, Smoldyn sizes boxes from the *initial* molecule count. A model that starts with no
+  particles (the exchange case) got a single box, so every molecule tested all 806 triangles every step.
+- **The map:** VCell's Java writer already emits it. Upstream Smoldyn kept the code, but parsed the keyword only in
+  VCell's own build; our fork now accepts it under `OPTION_VCELL`.
+
+Measured on the B2b ball, exchange, wall s per simulated s:
+
+| configuration | wall s per sim s |
+|---|---|
+| single box, no map | 4.55 |
+| + `boxsize` | 0.45 |
+| + volume-sample map | 0.25 |
+| sphere membrane (reference) | 0.21 |
+
+Results are identical seed for seed with and without the map.
+
 **Outcome (Study B2d, cosim-boundary-transfer).** The four combinations on the B2c problem, 32 seeds each:
 
 | transfer / membrane | outer-shell bias (z) | exchange mass balance | wall s per sim s |

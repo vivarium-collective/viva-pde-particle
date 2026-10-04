@@ -726,6 +726,12 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   `test_zeroth_order_creation_matches_curved_compartment_area` covers it.
 - **Upstream candidate:** vcell-fvsolver's vendored Smoldyn has the same centre test, plausibly the native 0.960.
   Not filed yet.
+- **Triangulated-membrane cost (N molecules × M triangles):**
+  - Smoldyn sized its virtual boxes from the initial count, so exchange, which starts empty, got 1 box.
+  - Fix: always write `boxsize` (10×), plus VCell's `highResVolumeSamples` compartment map, now parsed under
+    `OPTION_VCELL` (fork e86d552), for a further 1.8×.
+  - Mesh-membrane exchange: 4.55 → 0.25 s per simulated s (sphere 0.21), with identical results.
+  - Candidate for VCell: its Smoldyn writer sets no `boxsize` either.
 - **New infrastructure:** positions transfer, the voxel→tet `PointLocator`, and the mesh membrane (PR #21).
   `docs/DESIGN.md` explains all approaches.
 

@@ -153,9 +153,18 @@ conclusion: |
   the sphere's extra +1.4% of volume. The mesh membrane exposed the deficit (−3.2%); the fix
   removes it.
 
-  **Cost.** The mesh membrane costs about 1.5× the sphere (806 triangle panels instead of one
-  sphere panel). Positions transfer costs about 4× (locating 20k particles every step), and
-  buys nothing here once the membrane matches.
+  **Cost.**
+  - The wall times in the table are for the conversion case.
+  - Positions transfer costs about 4× (locating 20k particles every step), and buys nothing
+    here once the membrane matches.
+  - Follow-up: exchange with the mesh membrane was much slower, about 23× the sphere.
+    - Smoldyn sized its virtual boxes from the initial molecule count (zero A), giving one
+      box, so every molecule tested all 806 triangles every step (N×M).
+    - The Smoldyn config now always sets boxsize, which gives 10×.
+    - It also writes VCell's highResVolumeSamples compartment map (fork e86d552 enables its
+      parsing under OPTION_VCELL), a further 1.8×, with identical results.
+    - Mesh-membrane exchange now runs at 0.25 s per simulated s, against 0.21 for the sphere;
+      see DESIGN.md §11.
 
   **Default changed:** build_mesh_hybrid_document now uses membrane="mesh" with grid
   transfer. B2, B2b and B2c are re-run with it.

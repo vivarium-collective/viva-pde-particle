@@ -271,3 +271,24 @@ def uniform_in_mesh(n: int, locator: PointLocator, bbox_lo, bbox_hi, rng: np.ran
         cand = lo + (hi - lo) * rng.random((max(2 * (n - len(out)), 1000), 3))
         out = np.vstack([out, cand[locator.inside(cand)]])
     return out[:n]
+
+
+def volume_samples(locator: PointLocator, origin, size, num) -> np.ndarray:
+    """Compartment map for Smoldyn's ``highResVolumeSamples``: 0 inside the mesh, 1 outside.
+
+    Samples are cell-centred, as Smoldyn's ``posincompart`` reads them: sample (i, j, k)
+    covers ``[o + i·h, o + (i+1)·h)`` per axis with ``h = size/num``. It is classified at
+    its centre. Returns uint8 of length ``prod(num)`` in x-fastest order.
+    """
+    o, s, n = (np.asarray(v, dtype=float) for v in (origin, size, num))
+    n = n.astype(int)
+    h = s / n
+    axes = [o[d] + (np.arange(n[d]) + 0.5) * h[d] for d in range(3)]
+    out = np.ones(int(n.prod()), dtype=np.uint8)
+    nxy = n[0] * n[1]
+    gx, gy = np.meshgrid(axes[0], axes[1], indexing="xy")      # (ny, nx): x fastest when raveled
+    xy = np.stack([gx.ravel(), gy.ravel()], axis=1)
+    for k, z in enumerate(axes[2]):
+        pts = np.column_stack([xy, np.full(len(xy), z)])
+        out[k * nxy:(k + 1) * nxy] = np.where(locator.inside(pts), 0, 1)
+    return out
