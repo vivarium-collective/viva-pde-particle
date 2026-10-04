@@ -80,7 +80,6 @@ class FenicsxReactionDiffusion(Process):
         # reactant in the terms that is not one of this engine's species
         self.external_species = list(self.pde.get("external_species") or sorted(
             {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
-        self.particle_species = self.external_species  # alias kept for HybridCoupler (Phase 7d)
         self.dt = float(config["dt"])
         K, M, self._dof_to_node = q1_operators(self.grid)
         if config["mass"] == "lumped":

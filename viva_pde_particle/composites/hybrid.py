@@ -290,21 +290,41 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
     return doc
 
 
-def build_coupler_document(model: HybridModel, dt: float, step_multiplier: int, scheme: str, seed: int = 1,
-                           particle_init: str = "exact") -> dict:
-    """One HybridCoupler process (PDE + particles with a chosen splitting) instead of two processes."""
-    doc = build_hybrid_document(model, dt, step_multiplier, "start-of-interval", seed, particle_init)
-    return {
-        "fields": doc["fields"],
-        "particle_counts": doc["particle_counts"],
-        "particle_totals": doc["particle_totals"],
-        "coupler": {
-            "_type": "process",
-            "address": "local:HybridCoupler",
-            "config": {"pde": doc["pde"]["config"], "particles": doc["particles"]["config"], "scheme": scheme},
-            "interval": step_multiplier * dt,
-            "inputs": {"fields": ["fields"], "particle_counts": ["particle_counts"]},
-            "outputs": {"fields": ["fields"], "particle_counts": ["particle_counts"],
-                        "particle_totals": ["particle_totals"]},
-        },
+def to_splitting_document(doc: dict, scheme: str, dt: float, step_multiplier: int) -> dict:
+    """Replace the engine and adapter nodes of a two-process document with one SplittingCoordinator.
+
+    ``doc`` must use ``coupling="start-of-interval"``, so its particle node is the bare engine.
+    Works for any engine pair (FV, FEniCSx Q1, unstructured mesh); the stores are unchanged.
+    """
+    if doc["particles"]["address"] == "local:Stepper":
+        raise ValueError("build the two-process document with coupling='start-of-interval' (the coordinator schedules)")
+
+    def node(name):
+        n = doc[name]
+        return {"address": n["address"], "config": n["config"], "inputs": n["inputs"], "outputs": n["outputs"]}
+
+    adapter_names = [name for name in ("particle_to_field", "field_to_particles") if name in doc]
+    children = {"pde": node("pde"), "particles": node("particles"), **{a: node(a) for a in adapter_names}}
+    reads = {path[0] for c in children.values() for path in c["inputs"].values()}
+    writes = {path[0] for c in children.values() for path in c["outputs"].values()}
+    out = {k: v for k, v in doc.items() if k not in children}
+    out["coupler"] = {
+        "_type": "process",
+        "address": "local:SplittingCoordinator",
+        "config": {"pde": children["pde"], "particles": children["particles"],
+                   "adapters": {a: children[a] for a in adapter_names},
+                   "scheme": scheme, "dt": dt, "step_multiplier": step_multiplier},
+        "interval": step_multiplier * dt,
+        "inputs": {s: [s] for s in sorted(reads)},
+        "outputs": {s: [s] for s in sorted(writes)},
     }
+    return out
+
+
+def build_coupler_document(model: HybridModel, dt: float, step_multiplier: int, scheme: str, seed: int = 1,
+                           particle_init: str = "exact", pde_engine: str = "fv", pde_options: dict | None = None) -> dict:
+    """One SplittingCoordinator (PDE + particles + adapters with a chosen splitting) instead of two processes."""
+    doc = build_hybrid_document(model, dt, step_multiplier, "start-of-interval", seed, particle_init,
+                                pde_engine, pde_options)
+    return to_splitting_document(doc, scheme, dt, step_multiplier)
+

@@ -187,6 +187,7 @@ Each process owns its own unit conversion, using `units.py` and `grid.py`.
       worth comparing in its own right.
 - **Alternative orchestration (Phase 5), not possible in fvsolver:**
   - A `HybridCoupler` orchestrator (implemented as one Process owning both engines) for Gauss-Seidel ordering or Strang splitting.
+    Replaced in Phase 7d by the engine-agnostic `SplittingCoordinator`.
   - A sub-cycled PDE (implicit backward Euler with a larger dt).
 
 ### 3. Model spec and partitioner (`model/`)
@@ -346,7 +347,7 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
        field-snapshot construct that keeps fvsolver timing exact; the Investigation A studies must reproduce. Done;
        see "Phase 7c results".
      - **7d:** a generic splitting coordinator. It sequences any child processes and adapters (Jacobi, Gauss–Seidel,
-       Strang) in place of `HybridCoupler`'s hard-coded classes; B3 must reproduce.
+       Strang) in place of `HybridCoupler`'s hard-coded classes; B3 must reproduce. Done; see "Phase 7d results".
      - **7e:** a geometry compiler. One spec yields the PDE mesh, the Smoldyn membrane, the volume samples and the
        accessible-volume fractions, so the domains cannot diverge (B2d). It also covers compartment-aware and
        accessible-volume binning options for the adapters (the vcell-fvsolver#25 and B2c lessons).
@@ -771,7 +772,7 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
 
 ## Phase 5 results (2026-10-03): splitting schemes (B3)
 
-**`HybridCoupler`** (`processes/hybrid_coupler.py`):
+**`HybridCoupler`** (`processes/hybrid_coupler.py`; replaced by `SplittingCoordinator` in Phase 7d):
 - One process composes the FV and Smoldyn engines and orders their substeps per coupling interval:
   `jacobi`, `gs_particles_first`, `gs_pde_first` or `strang`.
 - `jacobi` reproduces the two-process `coupling="fvsolver"` composite exactly (regression test).
@@ -845,6 +846,24 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   - bit-identical on the six regression composites, including fvsolver mode with k = 2;
   - `tests/test_stepper.py` checks the read and publish times for k = 1, 2, 3 with toy clock processes;
   - timing within noise of 7b.
+
+## Phase 7d results (2026-10-04): generic splitting coordinator
+
+- **`SplittingCoordinator`** (`processes/splitting.py`) replaces `HybridCoupler`, which instantiated FV + Smoldyn
+  directly.
+  - It holds a PDE engine, a particle engine and adapter Steps as nodes (address, config, port → store wiring), just
+    as in a composite document.
+  - Over each interval τ = k·dt it runs the engines in the scheme's order on an internal copy of the stores, and runs
+    the adapters whose inputs changed after each run.
+  - The schedules are explicit (`splitting.schedule`); Jacobi holds the particle update back until the end of the
+    interval.
+- **Builders:** `composites.hybrid.to_splitting_document(doc, scheme, dt, k)` converts any start-of-interval
+  two-process document, FV, Q1 or mesh. `build_coupler_document` wraps it and gains `pde_engine` and `pde_options`.
+- **New capability:** splitting with the unstructured-mesh engine and both mesh adapters (Strang test,
+  `tests/test_splitting.py`).
+- **Equivalence:** the regression harness now covers all four schemes (nine composites, 20 arrays). The result is
+  bit-identical to the code before 7d, and therefore to the original pre-Phase-7 code.
+- **Cleanup:** the FV and Q1 engines lost their `particle_species` alias, which only `HybridCoupler` used.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

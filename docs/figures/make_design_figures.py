@@ -106,7 +106,7 @@ def splitting_schemes(k=4):
     ax.legend(handles, ["PDE substep with old particles pⁿ", "PDE substep with new particles pⁿ⁺¹",
                         "one Smoldyn step of τ = k·dt (instantaneous in this picture)"],
               loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3, frameon=False, fontsize=8)
-    ax.set_title("HybridCoupler splitting schemes over one coupling interval τ = k·dt (k = 4)")
+    ax.set_title("SplittingCoordinator schemes over one coupling interval τ = k·dt (k = 4)")
     save(fig, "splitting_schemes.svg")
 
 
