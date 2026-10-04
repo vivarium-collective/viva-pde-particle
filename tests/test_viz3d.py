@@ -79,3 +79,38 @@ def test_html_page_is_self_contained_and_small(bundle, tmp_path):
     assert run["times"] == [0.0, 0.5, 1.0]  # 5 rows subsampled to 3, first and last kept
     assert set(run["slices"]) == {"x", "y", "z"} and len(run["particles"]["A"]) == 3
     assert run["range"][1] == pytest.approx(1.0, rel=1e-6)
+
+
+def test_slab_layout_with_particles_on_the_slice(tmp_path):
+    """Calcium-spark style: a slab, no membrane, particles drawn on the slice, one row per (run, time)."""
+    if not _can_render():
+        pytest.skip("no off-screen render backend")
+    from viva_pde_particle.viz3d.static import render_gif, render_png
+
+    g = CartesianGrid((0, 0, 0), (10, 2, 0.5), (21, 5, 3))
+    path = tmp_path / "slab.fenics"
+    w = SpatialBundleWriter(path)
+    dom = grid_domain("cyt", g)
+    w.add_domain(dom, ["U"])
+    w.add_particles(["C", "O"])
+    w.open()
+    for t in (0.0, 1.0):
+        w.write(t, {("cyt", "U"): 0.2 + t * np.exp(-((dom.points[:, 0] - 5) ** 2))},
+                particles={"C": [[2.0, 1.0, 0.0]], "O": [[5.0, 1.0, 0.0]]})
+    w.finalize()
+    png = render_png({"a, t = 0 s": (path, 0.0), "a, t = 1 s": (path, 1.0)}, "U", None, tmp_path / "s.png",
+                     panels=("slice",), stack="rows", window=(600, 200), colors={"O": "lime"},
+                     slice_origin=(5, 1, 1e-3), log_scale=True)
+    assert png.stat().st_size > 5_000
+    assert render_gif(path, "U", tmp_path / "s.gif", view="slice", slice_origin=(5, 1, 1e-3)).exists()
+
+
+def test_native_particles_from_counts():
+    from viva_pde_particle.viz3d.record import positions_from_counts
+
+    g = CartesianGrid((0, 0, 0), (2, 2, 2), (3, 3, 3))
+    counts = np.zeros(g.shape)
+    counts[1, 2, 0] = 2  # (z, y, x)
+    counts[0, 0, 1] = 1
+    p = positions_from_counts(g, counts)
+    assert sorted(map(tuple, p.tolist())) == [(0.0, 2.0, 1.0), (0.0, 2.0, 1.0), (1.0, 0.0, 0.0)]

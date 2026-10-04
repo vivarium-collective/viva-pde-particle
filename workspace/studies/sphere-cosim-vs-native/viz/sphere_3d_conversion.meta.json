@@ -1,0 +1,7 @@
+{
+  "title": "Conversion at 2 s: native VCell vs co-sim",
+  "caption": "Top: mid-plane slice with the membrane. Bottom: B on the cut-away membrane with the A particles.",
+  "simulations": "One seed per solver and case, recorded every 0.25 s into results bundles (sims/render_3d.py): conversion to 2 s, exchange to 5 s. Native particles are placed at their nodes from VCell's per-node counts; its membrane is VCell's smooth surface.",
+  "interpretation": "Both solvers spread B uniformly. The staircase panel shows VCell's PDE domain; the co-sim's is the body-fitted mesh inside the same ball.",
+  "source_run_id": "22d627ea79a34d59b3ad4a55784a3c4f"
+}

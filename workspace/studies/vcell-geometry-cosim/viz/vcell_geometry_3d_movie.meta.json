@@ -1,0 +1,7 @@
+{
+  "title": "The corrected co-sim over time",
+  "caption": "Mid-plane slice of B, membrane, A particles.",
+  "simulations": "One seed per path, conversion (20,000 A \u2192 B, k = 0.5), recorded every 0.25 s to 2 s into results bundles (sims/render_3d.py). Native particles are placed at their nodes from VCell's per-node counts.",
+  "interpretation": "B rises uniformly as A converts, with no depletion at the membrane.",
+  "source_run_id": "471cc916b2b9428abece5f812443d0c3"
+}

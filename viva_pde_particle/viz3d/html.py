@@ -42,7 +42,7 @@ def _surface(points, cells):
     return {"points": _b64(points, "<f4"), "cells": _b64(np.asarray(cells).ravel(), "<u4"), "n": int(len(points))}
 
 
-def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng) -> dict:
+def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng, slice_origin=None) -> dict:
     from vcell_fenics.results import Bundle
 
     from viva_pde_particle.viz3d.static import domain_mesh
@@ -55,7 +55,7 @@ def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng) ->
     for k, r in enumerate(rows):
         v.point_data[f"f{k}"] = b.field(vol, var, r)
     out = {"times": [float(b.times[r]) for r in rows], "slices": {}, "particles": {}}
-    center = np.asarray(v.center)
+    center = np.asarray(v.center if slice_origin is None else slice_origin, dtype=float)
     for axis in "xyz":
         sl = v.slice(normal=axis, origin=center).triangulate()
         if not sl.n_cells:
@@ -89,17 +89,26 @@ def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng) ->
 
 
 def bundle_html(bundles: dict, var: str, out, *, title: str | None = None, max_frames: int = 20,
-                max_particles: int = 2000, seed: int = 0) -> Path:
-    """Write a self-contained three.js page for ``bundles`` (label → bundle path) showing ``var``."""
+                max_particles: int = 2000, seed: int = 0, colors: dict | None = None, camera: str = "side",
+                units: str = "µM", slice_origin=None) -> Path:
+    """Write a self-contained three.js page for ``bundles`` (label → bundle path) showing ``var``.
+
+    ``colors`` maps particle species to CSS colours; ``camera`` is ``"side"`` or ``"top"`` (a slab);
+    ``slice_origin`` places the slices (default: the domain's centre).
+    """
     rng = np.random.default_rng(seed)
-    data = {label: _bundle_payload(path, var, max_frames, max_particles, rng) for label, path in bundles.items()}
+    data = {label: _bundle_payload(path, var, max_frames, max_particles, rng, slice_origin)
+            for label, path in bundles.items()}
+    species = list(next(iter(data.values()))["particles"])
+    spc = [(colors or {}).get(s, _SPECIES_COLORS[k % len(_SPECIES_COLORS)]) for k, s in enumerate(species)]
     lo = min(d["range"][0] for d in data.values())
     hi = max(d["range"][1] for d in data.values())
     page = (_TEMPLATE.replace("__TITLE__", title or f"{var}: {', '.join(bundles)}")
             .replace("__THREE__", THREE_CDN).replace("__ORBIT__", ORBIT_CDN)
             .replace("__DATA__", json.dumps(data)).replace("__VAR__", json.dumps(var))
             .replace("__RANGE__", json.dumps([lo, hi if hi > lo else lo + 1e-12]))
-            .replace("__CMAP__", json.dumps(_VIRIDIS)).replace("__SPCOLORS__", json.dumps(_SPECIES_COLORS)))
+            .replace("__CMAP__", json.dumps(_VIRIDIS)).replace("__SPCOLORS__", json.dumps(spc))
+            .replace("__CAMERA__", json.dumps(camera)).replace("__UNITS__", units))
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page)
@@ -133,7 +142,7 @@ _TEMPLATE = r"""<!doctype html>
 </div>
 <div id="view"><div id="cbar"><div id="cvar"></div><div id="grad"></div><div style="display:flex;justify-content:space-between"><span id="lo"></span><span id="hi"></span></div></div></div>
 <script>
-const DATA = __DATA__, VAR = __VAR__, ALL_RANGE = __RANGE__, CMAP = __CMAP__, SPC = __SPCOLORS__;
+const DATA = __DATA__, VAR = __VAR__, ALL_RANGE = __RANGE__, CMAP = __CMAP__, SPC = __SPCOLORS__, CAMERA = __CAMERA__;
 let RANGE = ALL_RANGE.slice();
 const dec = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
 const stops = CMAP.map(h => new THREE.Color(h));
@@ -142,7 +151,7 @@ function cmap(v, out, i) {
   const f = x * (stops.length - 1), k = Math.min(stops.length - 2, Math.floor(f)), w = f - k;
   out[3*i] = stops[k].r + w*(stops[k+1].r - stops[k].r); out[3*i+1] = stops[k].g + w*(stops[k+1].g - stops[k].g); out[3*i+2] = stops[k].b + w*(stops[k+1].b - stops[k].b);
 }
-document.getElementById('cvar').textContent = VAR + ' (µM)';
+document.getElementById('cvar').textContent = VAR + ' (__UNITS__)';
 document.getElementById('grad').style.background = 'linear-gradient(to right,' + CMAP.join(',') + ')';
 function setRange() {  // this frame's range over every run (runs share their output times), or all times
   if (document.getElementById('fixed').checked) RANGE = ALL_RANGE.slice();
@@ -197,7 +206,9 @@ function update() {
 function select(label) {
   if (cur) runs[cur].group.visible = false; cur = label; runs[cur].group.visible = true;
   const b = runs[cur].d.bounds, c = new THREE.Vector3((b[0]+b[1])/2, (b[2]+b[3])/2, (b[4]+b[5])/2), s = Math.max(b[1]-b[0], b[3]-b[2], b[5]-b[4]);
-  controls.target.copy(c); camera.position.set(c.x + 0.45*s, c.y - 1.6*s, c.z + 0.9*s); camera.up.set(0, 0, 1);
+  controls.target.copy(c);
+  if (CAMERA === 'top') { camera.position.set(c.x, c.y - 0.25*s, c.z + 1.1*s); camera.up.set(0, 1, 0); }
+  else { camera.position.set(c.x + 0.45*s, c.y - 1.6*s, c.z + 0.9*s); camera.up.set(0, 0, 1); }
   light.position.copy(camera.position); update();
 }
 el('bundle').onchange = e => select(e.target.value);

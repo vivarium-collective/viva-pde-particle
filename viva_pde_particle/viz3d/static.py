@@ -1,8 +1,9 @@
 """Static 3D figures from spatial results bundles, rendered off-screen with PyVista (PNG, GIF).
 
-- :func:`render_png`: one column per bundle (e.g. native VCell | co-sim | mesh co-sim) on a shared
-  colour range. Top row: the mid-plane slice of the volume field with the membrane's outline. Bottom
-  row: the field on the membrane, with particles as points.
+- :func:`render_png`: one column per bundle (e.g. native VCell | co-sim | mesh co-sim), or per
+  (bundle, time), on a shared colour range. Panel ``"slice"``: the mid-plane slice of the volume field
+  with the membrane's outline. Panel ``"membrane"``: the field on the cut-away membrane, with particles
+  as points. Without a membrane panel the particles are drawn on the slice (e.g. channels in a slab).
 - :func:`render_gif`: one bundle over time (slice, translucent membrane, particles).
 
 The workbench embeds PNG and GIF study figures directly. PyVista is in the pixi env only.
@@ -25,6 +26,16 @@ def _cutaway(surface):
     hi = np.asarray(surface.bounds)[1::2]
     c = np.asarray(surface.center)
     return surface.clip_box([c[0], hi[0] + 1, c[1], hi[1] + 1, c[2], hi[2] + 1], invert=True)
+
+
+def _face_on(p, normal: str, bounds, window) -> None:
+    """Look at the ``normal`` plane face-on, filling the panel (parallel projection, fitted to ``bounds``)."""
+    {"x": p.view_yz, "y": p.view_xz, "z": p.view_xy}[normal]()
+    b = np.asarray(bounds, dtype=float).reshape(3, 2)
+    axes = {"x": (1, 2), "y": (0, 2), "z": (0, 1)}[normal]
+    w, h = (b[axes[0], 1] - b[axes[0], 0]), (b[axes[1], 1] - b[axes[1], 0])
+    p.enable_parallel_projection()
+    p.camera.parallel_scale = 0.5 * max(1.45 * h, 1.05 * w * window[1] / window[0])  # room for the labels above
 
 
 def _pv():
@@ -58,6 +69,16 @@ def nearest_row(bundle, t: float) -> int:
     return int(np.argmin(np.abs(np.asarray(bundle.times) - t)))
 
 
+def _color(species: str, k: int, colors: dict | None) -> str:
+    return (colors or {}).get(species, _PARTICLE_COLORS[k % len(_PARTICLE_COLORS)])
+
+
+def _add_particles(p, pv, parts: dict, colors: dict | None, size: int) -> str:
+    for k, (s, pts) in enumerate(parts.items()):
+        p.add_mesh(pv.PolyData(pts), color=_color(s, k, colors), point_size=size, render_points_as_spheres=True)
+    return ", ".join(f"{s} ({_color(s, k, colors)})" for k, s in enumerate(parts))
+
+
 def _particles(path, row: int, max_points: int, rng):
     out = {}
     for s in particle_species(path):
@@ -75,48 +96,65 @@ def _open(path):
     return Bundle.open(path)
 
 
-def render_png(bundles: dict, var: str, t: float, out, *, clim=None, normal: str = "z",
-               max_particles: int = 1500, window=(420, 380), title: str | None = None, seed: int = 0) -> Path:
-    """Side-by-side panels per bundle (label → path) of ``var`` at the output nearest ``t``."""
+def render_png(bundles: dict, var: str, t: float | None, out, *, clim=None, normal: str = "z",
+               panels=("slice", "membrane"), colors: dict | None = None, cmap: str = "viridis", units: str = "µM",
+               max_particles: int = 1500, window=(420, 380), title: str | None = None, seed: int = 0,
+               stack: str = "columns", slice_origin=None, log_scale: bool = False) -> Path:
+    """Panels per bundle of ``var`` at the output nearest ``t``.
+
+    ``stack="rows"`` puts each bundle on its own row (wide domains such as a slab). ``slice_origin``
+    places the slice (default: the domain's centre). ``log_scale`` colours on a log scale (sparks).
+
+    ``bundles`` maps a label to a bundle path, or to ``(path, time)`` for one column per time.
+    ``colors`` maps particle species to colours.
+    """
     pv = _pv()
     rng = np.random.default_rng(seed)
-    opened = {label: _open(path) for label, path in bundles.items()}
     scenes = {}
     lo, hi = np.inf, -np.inf
-    for label, b in opened.items():
-        row = nearest_row(b, t)
+    for label, spec in bundles.items():
+        path, tt = (spec, t) if not isinstance(spec, tuple) else spec
+        b = _open(path)
+        row = nearest_row(b, tt)
         vol, mem = _domains(b)
         v = domain_mesh(b, vol[0], var, row)
         m = domain_mesh(b, mem[0], var, row) if mem else v.extract_surface(algorithm=None)
-        scenes[label] = (b.times[row], v, m, _particles(bundles[label], row, max_points=max_particles, rng=rng))
+        scenes[label] = (b.times[row], v, m if mem else None, _particles(path, row, max_points=max_particles, rng=rng))
         vals = v.point_data[var]
         lo, hi = min(lo, float(np.nanmin(vals))), max(hi, float(np.nanmax(vals)))
     clim = clim or (lo, hi if hi > lo else lo + 1e-12)
-    n = len(scenes)
-    p = pv.Plotter(shape=(2, n), off_screen=True, window_size=(window[0] * n, window[1] * 2), border=False)
+    n, rows = len(scenes), list(panels)
+    shape = (len(rows), n) if stack == "columns" else (n, len(rows))
+    p = pv.Plotter(shape=shape, off_screen=True, window_size=(window[0] * shape[1], window[1] * shape[0]),
+                   border=False)
     for j, (label, (tt, v, m, parts)) in enumerate(scenes.items()):
-        center = np.asarray(v.center)
-        sl = v.slice(normal=normal, origin=center)
-        p.subplot(0, j)
-        p.add_mesh(sl, scalars=var, clim=clim, cmap="viridis", show_scalar_bar=True,
-                   scalar_bar_args={"title": f"{var} (µM)", **_BAR})
-        outline = m.slice(normal=normal, origin=center) if m.n_cells else None
-        if outline is not None and outline.n_points:
-            p.add_mesh(outline, color="black", line_width=2)
-        p.add_text(f"{label}\nt = {tt:g} s (mid-plane {normal})", font_size=9)
-        {"x": p.view_yz, "y": p.view_xz, "z": p.view_xy}[normal]()
-        p.subplot(1, j)
-        cut = _cutaway(m)
-        if var in m.point_data:
-            p.add_mesh(cut, scalars=var, clim=clim, cmap="viridis", show_scalar_bar=False)
-        else:
-            p.add_mesh(cut, color="lightgrey")
-        for k, (s, pts) in enumerate(parts.items()):
-            p.add_mesh(pv.PolyData(pts), color=_PARTICLE_COLORS[k % len(_PARTICLE_COLORS)], point_size=4,
-                       render_points_as_spheres=True)
-        names = ", ".join(f"{s} ({_PARTICLE_COLORS[k % len(_PARTICLE_COLORS)]})" for k, s in enumerate(parts))
-        p.add_text(f"{var} on the membrane (cutaway)" + (f"\nparticles: {names}" if parts else ""), font_size=9)
-        p.view_isometric()
+        center = np.asarray(v.center if slice_origin is None else slice_origin, dtype=float)
+        for i, panel in enumerate(rows):
+            p.subplot(i, j) if stack == "columns" else p.subplot(j, i)
+            if panel == "slice":
+                p.add_mesh(v.slice(normal=normal, origin=center), scalars=var, clim=clim, cmap=cmap, log_scale=log_scale,
+                           show_scalar_bar=True, scalar_bar_args={"title": f"{var} ({units})", **_BAR})
+                outline = m.slice(normal=normal, origin=center) if m is not None and m.n_cells else None
+                if outline is not None and outline.n_points:
+                    p.add_mesh(outline, color="black", line_width=2)
+                names = "" if "membrane" in rows else _add_particles(p, pv, parts, colors, 6)
+                where = f"mid-plane {normal}" if slice_origin is None else f"{normal} = {center['xyz'.index(normal)]:g}"
+                when = "" if "t = " in label else f"t = {tt:g} s, "
+                p.add_text(f"{label}\n{when}{where}" + (f"; particles: {names}" if names else ""), font_size=9)
+                _face_on(p, normal, v.bounds, window)
+            elif panel == "membrane":
+                surface = m if m is not None else v.extract_surface(algorithm=None)
+                cut = _cutaway(surface)
+                if var in surface.point_data:
+                    p.add_mesh(cut, scalars=var, clim=clim, cmap=cmap, show_scalar_bar=False)
+                else:
+                    p.add_mesh(cut, color="lightgrey")
+                names = _add_particles(p, pv, parts, colors, 4)
+                p.add_text(f"{var} on the membrane (cutaway)" + (f"\nparticles: {names}" if names else ""),
+                           font_size=9)
+                p.view_isometric()
+            else:
+                raise ValueError(f"unknown panel {panel!r} (use 'slice' or 'membrane')")
     if title:
         p.subplot(0, 0)
         p.add_text(title, position="upper_right", font_size=10)
@@ -128,8 +166,12 @@ def render_png(bundles: dict, var: str, t: float, out, *, clim=None, normal: str
 
 
 def render_gif(path, var: str, out, *, rows=None, clim=None, normal: str = "z", max_particles: int = 3000,
-               window=(640, 520), fps: int = 4, seed: int = 0) -> Path:
-    """A time animation of one bundle: mid-plane slice, translucent membrane, particles."""
+               window=(640, 520), fps: int = 4, seed: int = 0, view: str = "isometric", colors: dict | None = None,
+               cmap: str = "viridis", units: str = "µM", slice_origin=None, log_scale: bool = False) -> Path:
+    """A time animation of one bundle: mid-plane slice, translucent membrane, particles.
+
+    ``view="slice"`` looks at the slice face-on (a slab), without the membrane.
+    """
     pv = _pv()
     rng = np.random.default_rng(seed)
     b = _open(path)
@@ -142,7 +184,7 @@ def render_gif(path, var: str, out, *, rows=None, clim=None, normal: str = "z", 
             clim = (clim[0], clim[0] + 1e-12)
     v = domain_mesh(b, vol[0])
     m = domain_mesh(b, mem[0]) if mem else v.extract_surface(algorithm=None)
-    center = np.asarray(v.center)
+    center = np.asarray(v.center if slice_origin is None else slice_origin, dtype=float)
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     p = pv.Plotter(off_screen=True, window_size=window)
@@ -150,14 +192,16 @@ def render_gif(path, var: str, out, *, rows=None, clim=None, normal: str = "z", 
     for row in rows:
         p.clear()
         v.point_data[var] = b.field(vol[0], var, row)
-        p.add_mesh(v.slice(normal=normal, origin=center), scalars=var, clim=clim, cmap="viridis",
-                   scalar_bar_args={"title": f"{var} (µM)", **_BAR})
-        p.add_mesh(_cutaway(m), color="lightgrey", opacity=0.25)
-        for k, (s, pts) in enumerate(_particles(path, row, max_particles, rng).items()):
-            p.add_mesh(pv.PolyData(pts), color=_PARTICLE_COLORS[k % len(_PARTICLE_COLORS)], point_size=3,
-                       render_points_as_spheres=True)
-        p.add_text(f"t = {b.times[row]:g} s", font_size=11)
-        p.view_isometric()
+        p.add_mesh(v.slice(normal=normal, origin=center), scalars=var, clim=clim, cmap=cmap, log_scale=log_scale,
+                   scalar_bar_args={"title": f"{var} ({units})", **_BAR})
+        if view == "isometric":
+            p.add_mesh(_cutaway(m), color="lightgrey", opacity=0.25)
+        names = _add_particles(p, pv, _particles(path, row, max_particles, rng), colors, 6 if view == "slice" else 3)
+        p.add_text(f"t = {b.times[row]:g} s" + (f"\nparticles: {names}" if names else ""), font_size=11)
+        if view == "slice":
+            _face_on(p, normal, v.bounds, window)
+        else:
+            p.view_isometric()
         p.write_frame()
     p.close()
     return out
