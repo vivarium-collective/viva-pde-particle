@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Study: coupling-interval-convergence</title>
+<title>Study: vcell-geometry-cosim</title>
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
@@ -17,7 +17,7 @@
 <header class="study-header">
   <div style="display:flex; align-items:baseline; gap:12px; justify-content:space-between;">
   <h1 class="study-title">
-    <span class="study-name" id="study-name" data-slug="coupling-interval-convergence" title="coupling-interval-convergence">Coupling error vs Smoldyn step multiplier, co-simulation (two schemes) and native VCell</span>
+    <span class="study-name" id="study-name" data-slug="vcell-geometry-cosim" title="vcell-geometry-cosim">The co-simulation on VCell&#39;s own geometry: staircase PDE, smooth membrane, accessible-volume correction</span>
     
     <span class="study-kind-tag study-kind-computational" data-study-kind="computational" title="Study kind">computational</span>
     
@@ -39,7 +39,7 @@
     
 
     
-    <div id="readiness-panel" data-slug="coupling-interval-convergence"></div>
+    <div id="readiness-panel" data-slug="vcell-geometry-cosim"></div>
 
     
     
@@ -151,10 +151,11 @@
 
 
 
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> How does the error of the lagged explicit coupling grow with the coupling interval
-k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
-fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
-(&#34;start-of-interval&#34;) do better or worse?
+<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Native VCell solves the PDE on the voxel staircase but confines particles by a smooth membrane.
+For the B2b ball the two domains differ by ~1.8% in volume. That leaves a −1.4% outer-shell
+depletion and an exchange drift, even with the binning correction of vcell-fvsolver#25
+(Study B2c). With the co-simulation running on exactly VCell&#39;s geometry, can an
+accessible-volume correction make the coupling both unbiased and conservative?
 </p>
 
 <nav class="study-tabs" aria-label="Study sections">
@@ -617,26 +618,36 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">How does the error of the lagged explicit coupling grow with the coupling interval
-k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
-fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
-(&#34;start-of-interval&#34;) do better or worse?
+      <p class="ctr-text">Native VCell solves the PDE on the voxel staircase but confines particles by a smooth membrane.
+For the B2b ball the two domains differ by ~1.8% in volume. That leaves a −1.4% outer-shell
+depletion and an exchange drift, even with the binning correction of vcell-fvsolver#25
+(Study B2c). With the co-simulation running on exactly VCell&#39;s geometry, can an
+accessible-volume correction make the coupling both unbiased and conservative?
 </p>
       
     </div>
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Test</h2>
-      <p class="ctr-text">A4 model with k = 2/(µM·s), 20,000 A, Δt = 0.005, t = 1.6 s, 64 seeds per
-configuration, step multiplier k ∈ {1, 2, 4, 8, 16, 32}.
-The error is the max over time of |mean surviving fraction − continuum limit|
-(A continuous, Δt/10). The order is fitted for k ≥ 4, above the sampling floor
-(~5·10⁻⁴).
+      <p class="ctr-text">The B2b ball as a vcell-fenics GeometryDescription, realized by VCell itself
+(VCellFVRealization, via libvcell):
+- **PDE:** FV on VCell&#39;s staircase `cell` (266.734 µm³).
+- **Smoldyn:** VCell&#39;s smooth membrane (9,516 triangles enclosing 261.818 µm³) and VCell&#39;s
+  compartment points.
+- **Adapters:** counts at exterior nodes are folded into the domain (compartment-aware
+  binning), and fields are extended into the exterior band for 0th-order creation.
+
+32 seeds per variant.
+- Conversion (k = 0.5, 20,000 A uniform in the smooth cell): interior B against
+  E[B] = A₀(1 − e^(−kt))/(V_PDE·N_A), the outer-shell bias (r &gt; 3.5 vs r &lt; 2) and A + B balance.
+- Exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): A + B balance and the steady ratio.
+
+All PDE masses and averages use the PDE&#39;s own element volumes.
 </p>
       
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>bimolecular-k2</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Fitted order (k ≥ 4) of the co-sim error with coupling=&#34;fvsolver&#34;.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Fitted order (k ≥ 4) of the native VCell hybrid error.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Co-sim (fvsolver mode) error / native error at k = 16.</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>vcell-ball</code></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Outer-shell mean B relative to the interior with correction=&#34;adapters+volumes&#34;.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Interior mean B relative to E[B] with correction=&#34;adapters+volumes&#34;.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">A + B balance at t = 5 s (exchange) with correction=&#34;adapters+volumes&#34;.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Outer-shell bias with correction=&#34;none&#34; (VCell&#39;s full voxel volumes). Expected to FAIL; it reproduces native VCell with the #25 binning correction (B2c: −1.41%).</span></div>
       </div>
       
     </div>
@@ -662,12 +673,12 @@ The error is the max over time of |mean surviving fraction − continuum limit|
   <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
     <h2 class="overview-label" style="margin:0">Model composition</h2>
     
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'coupling-interval-convergence', 'cosim-vs-embedded-hybrid')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'vcell-geometry-cosim', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
   </div>
 
   
   
-  <div id="model-composite-cards" class="model-composite-cards" data-study="coupling-interval-convergence"
+  <div id="model-composite-cards" class="model-composite-cards" data-study="vcell-geometry-cosim"
        data-study-config="">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading composite card(s)…</span></div>
   </div>
@@ -688,9 +699,9 @@ The error is the max over time of |mean surviving fraction − continuum limit|
   <div class="overview-section" id="model-section">
     <h3>Runnable models <span class="muted" style="font-size:0.85em;font-weight:normal">— the composite(s) this study simulates</span></h3>
     
-    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.bimolecular_hybrid" data-model-overrides='{"dt": 0.005, "k": 2.0, "step_multiplier": 1}'>
+    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.bimolecular_hybrid" data-model-overrides='{}'>
       <div class="cond-block-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>bimolecular-k2</strong>
+        <strong>vcell-ball</strong>
         
         <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.bimolecular_hybrid</code>
         <button type="button" class="action-btn" style="font-size:0.8em"
@@ -700,16 +711,16 @@ The error is the max over time of |mean surviving fraction − continuum limit|
       
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
         
-        <select class="baseline-composite-input" data-baseline-name="bimolecular-k2"
+        <select class="baseline-composite-input" data-baseline-name="vcell-ball"
                 data-current="viva_pde_particle.composites.examples.bimolecular_hybrid"
                 style="flex:1;min-width:200px;font-family:monospace;font-size:0.82em;padding:3px 6px">
           <option value="viva_pde_particle.composites.examples.bimolecular_hybrid" selected>viva_pde_particle.composites.examples.bimolecular_hybrid</option>
           
         </select>
         <button type="button" class="action-btn baseline-composite-set" style="font-size:0.8em"
-                data-baseline-name="bimolecular-k2">Set composite</button>
+                data-baseline-name="vcell-ball">Set composite</button>
       </div>
-      <div class="baseline-composite-status muted" data-baseline-name="bimolecular-k2" style="font-size:0.8em;margin-top:2px"></div>
+      <div class="baseline-composite-status muted" data-baseline-name="vcell-ball" style="font-size:0.8em;margin-top:2px"></div>
       
       
       
@@ -758,7 +769,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
 
   <h4>Latest run preview</h4>
   <p class="muted" style="font-size:0.9em">Per-store sparkline + first/last/min/max from the most recent run's emitted trajectory. This is a downsampled PREVIEW, not the full data — use the per-store or Download-all links for the complete arrays. For a cross-engine comparison run, this shows how closely the simulators agree, model by model, instead.</p>
-  <div id="results-preview" data-study="coupling-interval-convergence">
+  <div id="results-preview" data-study="vcell-geometry-cosim">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading results preview…</span></div>
   </div>
 
@@ -778,7 +789,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
   
   <div class="overview-section" id="study-analyses-section">
     <h3>Analyses to run <span class="muted" style="font-size:0.85em;font-weight:normal">— which of the workspace's <code>ANALYSIS_REGISTRY</code> entries to compute on dispatch</span></h3>
-    <div id="study-analyses-list" data-study="coupling-interval-convergence">
+    <div id="study-analyses-list" data-study="vcell-geometry-cosim">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading analyses…</span></div>
     </div>
     <div style="margin-top:8px">
@@ -794,9 +805,9 @@ The error is the max over time of |mean surviving fraction − continuum limit|
   <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
     <span class="muted" style="margin-right:auto;font-weight:600">Analysis result files</span>
     <a id="data-download-all" class="btn-mini" style="display:none"
-       href="/api/study-analysis-zip?study=coupling-interval-convergence">Download all (.zip)</a>
+       href="/api/study-analysis-zip?study=vcell-geometry-cosim">Download all (.zip)</a>
   </div>
-  <div id="data-files" data-study="coupling-interval-convergence">
+  <div id="data-files" data-study="vcell-geometry-cosim">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading result files…</span></div>
   </div>
 </div>
@@ -817,7 +828,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     interval/buffer, output location, and emit scope — from
     <code>lib/emitters.py</code> and this study's (or the workspace's)
     <code>runtime.default_emitter</code>.</p>
-    <div id="readouts-emitter" data-study="coupling-interval-convergence">
+    <div id="readouts-emitter" data-study="vcell-geometry-cosim">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading emitter configuration…</span></div>
     </div>
 
@@ -829,7 +840,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     
     <div id="readouts-download" style="margin:0 0 16px 0"></div>
 
-    <div id="readouts-table" data-study="coupling-interval-convergence">
+    <div id="readouts-table" data-study="vcell-geometry-cosim">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readouts from the composite emit plan…</span></div>
     </div>
 
@@ -837,7 +848,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     <p class="muted" style="font-size:0.9em">Store path, dtype, shape
     <code>(n_steps, …)</code>, units, and a best-effort byte estimate for each emitted
     leaf.</p>
-    <div id="readouts-shapes" data-study="coupling-interval-convergence">
+    <div id="readouts-shapes" data-study="vcell-geometry-cosim">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading output shapes…</span></div>
     </div>
 
@@ -852,7 +863,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     
     
     <div class="viz-actions-row" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'coupling-interval-convergence')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
+      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'vcell-geometry-cosim')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
     </div>
     
 
@@ -916,10 +927,10 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     
     
     
-    <li class="expected-behavior-item" id="bt-cosim-fvsolver-mode-first-order"
+    <li class="expected-behavior-item" id="bt-corrected-shell-unbiased"
         data-test-kind="behavioral"
         
-        data-pytest-node="cosim-fvsolver-mode-first-order"
+        data-pytest-node="corrected-shell-unbiased"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -928,19 +939,19 @@ The error is the max over time of |mean surviving fraction − continuum limit|
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">cosim-fvsolver-mode-first-order</strong>
+        <strong style="font-size: 0.9em;">corrected-shell-unbiased</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>step-multiplier-sweep</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>vcell-ball</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Fitted order (k ≥ 4) of the co-sim error with coupling=&#34;fvsolver&#34;.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Outer-shell mean B relative to the interior with correction=&#34;adapters+volumes&#34;.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a5_cosim_fvsolver_order", "kind": "derived_scalar"}
-pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory", "note": "Explicit lagged operator splitting is first order in the coupling interval."}}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2e_adapters_volumes_shell_bias", "kind": "derived_scalar"}
+pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "theory", "note": "E[B] is spatially uniform; 32 seeds give an SE of about 0.1%."}}</pre>
       </details>
       
       
@@ -955,10 +966,10 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
     
     
     
-    <li class="expected-behavior-item" id="bt-native-first-order"
+    <li class="expected-behavior-item" id="bt-corrected-interior-matches"
         data-test-kind="behavioral"
         
-        data-pytest-node="native-first-order"
+        data-pytest-node="corrected-interior-matches"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -967,19 +978,19 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">native-first-order</strong>
+        <strong style="font-size: 0.9em;">corrected-interior-matches</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>step-multiplier-sweep</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>vcell-ball</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Fitted order (k ≥ 4) of the native VCell hybrid error.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Interior mean B relative to E[B] with correction=&#34;adapters+volumes&#34;.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a5_native_order", "kind": "derived_scalar"}
-pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory", "note": "Same scheme (SimTool.cpp main loop)."}}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2e_adapters_volumes_interior_rel", "kind": "derived_scalar"}
+pass_if: {"high": 0.01, "low": -0.01, "op": "range", "provenance": {"kind": "theory", "note": "First-order conversion; the expectation is exact on the PDE\u0027s own volume."}}</pre>
       </details>
       
       
@@ -994,10 +1005,10 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
     
     
     
-    <li class="expected-behavior-item" id="bt-cosim-reproduces-native-coupling-error"
+    <li class="expected-behavior-item" id="bt-corrected-exchange-conserves"
         data-test-kind="behavioral"
         
-        data-pytest-node="cosim-reproduces-native-coupling-error"
+        data-pytest-node="corrected-exchange-conserves"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -1006,19 +1017,58 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">cosim-reproduces-native-coupling-error</strong>
+        <strong style="font-size: 0.9em;">corrected-exchange-conserves</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>step-multiplier-sweep</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>vcell-ball</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Co-sim (fvsolver mode) error / native error at k = 16.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">A + B balance at t = 5 s (exchange) with correction=&#34;adapters+volumes&#34;.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a5_fvsolver_mode_vs_native_err_ratio_k16", "kind": "derived_scalar"}
-pass_if: {"high": 1.25, "low": 0.8, "op": "range", "provenance": {"kind": "theory", "note": "Same lag semantics (verified in tests/test_scheduling_semantics.py), so the same coupling error."}}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2e_adapters_volumes_exchange_balance", "kind": "derived_scalar"}
+pass_if: {"high": 0.015, "low": -0.015, "op": "range", "provenance": {"kind": "theory", "note": "First-order coupling error only; the box-domain baseline (A3) is 1.2%."}}</pre>
+      </details>
+      
+      
+      
+      
+    </li>
+    
+    
+    
+    
+    
+    
+    
+    
+    <li class="expected-behavior-item" id="bt-vcell-like-shell-depletion"
+        data-test-kind="behavioral"
+        
+        data-pytest-node="vcell-like-shell-depletion"
+        data-classification="secondary"
+        data-result="pending"
+        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #cbd5e1; background: #f8fafc; border-radius: 4px;">
+      
+        
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
+        <span class="classification-pill classification-secondary">secondary</span>
+        <strong style="font-size: 0.9em;">vcell-like-shell-depletion</strong>
+        
+        <span class="muted" style="font-size:0.78em">requires: <code>vcell-ball</code></span>
+        
+      </div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Outer-shell bias with correction=&#34;none&#34; (VCell&#39;s full voxel volumes). Expected to FAIL; it reproduces native VCell with the #25 binning correction (B2c: −1.41%).</div>
+      
+      
+      <details style="margin-top: 6px; font-size: 0.82em;">
+        <summary class="muted" style="cursor: pointer;">Assertion</summary>
+        
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2e_none_shell_bias", "kind": "derived_scalar"}
+pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "theory", "note": "Kept so the volume mismatch stays visible in the report card."}}</pre>
       </details>
       
       
@@ -1138,21 +1188,26 @@ pass_if: {"high": 1.25, "low": 0.8, "op": "range", "provenance": {"kind": "theor
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-04; 32 seeds per variant):</p>
+<p>| variant | shell vs interior (z) | interior vs E[B] | conversion balance | exchange balance | steady ratio err |
+|---|---|---|---|---|---|
+| none | −1.36% (−12.5) | +1.07% | +0.12% | −2.7% | 1.2% |
+| adapters | +0.02% (0.2) | +2.06% | +1.30% | +0.19% | 1.8% |
+| adapters+volumes | +0.02% (0.15) | +0.20% | +0.12% | +0.96% | 0.13% |</p>
 <ul>
-<li><strong>Both fvsolver-semantics solvers are first order</strong> in the coupling interval:
-fitted order 1.23 (co-sim fvsolver mode) and 1.07 (native).</li>
-<li><strong>Their errors match:</strong> at k = 16 (0.08 s) the co-sim error is 0.0110 and native
-0.0104 (ratio 1.05). The co-simulation reproduces the embedded solver's coupling
-error, not only its results.</li>
-<li><strong>&quot;start-of-interval&quot; coupling</strong> (plain process-bigraph scheduling) roughly halves the
-error at large k: 0.0049 at k = 16 and 0.0110 at k = 32, against 0.0110 and 0.0218 for
-fvsolver mode. Reading the field at the start of the particle step appears to partly
-cancel the PDE side's lag. vcell-fvsolver's hybrid loop fixes one ordering, so that
-choice is not available there without changing the solver;
-higher-order splitting is Investigation B.</li>
-<li><strong>Native crash:</strong> VCell's native solver crashed at k = 32 (Smoldyn step 0.16 s, equal to
-the output interval), so native results stop at k = 16.</li>
+<li><strong><code>none</code> reproduces native VCell with the vcell-fvsolver#25 binning correction.</strong> The shell is
+−1.36% (native −1.41%; the forward model −1.33%) and the interior +1.07% (native +1.14%).
+Exchange drifts −2.7%: creation runs over the smooth volume, while consumption runs over the
+staircase volume.</li>
+<li><strong><code>adapters</code></strong> removes the shell bias but overcounts particle sources (+1.30% in conversion).
+In exchange this overcount happens to cancel the creation mismatch, which is not a principled
+result.</li>
+<li><strong><code>adapters+volumes</code> is unbiased and conservative.</strong> The shell bias is +0.02% (z = 0.15); the
+interior is within 0.2% of E[B]; conversion is at the lag level (+0.12%) and exchange at the
+first-order coupling level (+0.96%, against 1.2% for the box-domain A3). It also has the best
+steady ratio.</li>
+<li>Native vcell-fvsolver keeps full voxel volumes. The co-simulation offers both: <code>none</code> to
+compare with VCell, and <code>adapters+volumes</code> (the default) for accuracy.</li>
 </ul>
 </div>
     </div>
@@ -1201,7 +1256,7 @@ the output interval), so native results stop at k = 16.</li>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
-window._studyName = "coupling-interval-convergence";
+window._studyName = "vcell-geometry-cosim";
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.

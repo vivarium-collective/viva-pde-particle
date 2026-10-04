@@ -485,6 +485,83 @@ _save_viz('cosim-boundary-transfer', 'cosim-boundary-transfer', _render_one('', 
 # | mesh-membrane-exchange-balance | kind=derived_scalar field=b2d_grid_mesh_exchange_mass_balance_final_signed | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'First-order coupling error only. The box-domain baseline (A3, two-way-exchange) is 1.2%.'} |
 # | sphere-membrane-shell-bias | kind=derived_scalar field=b2d_grid_sphere_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'Kept so the artifact stays visible in the report card.'} |
 
+# ## Study: The co-simulation on VCell's own geometry: staircase PDE, smooth membrane, accessible-volume correction (`vcell-geometry-cosim`)
+#
+# **Question.** Native VCell solves the PDE on the voxel staircase but confines particles by a smooth membrane.
+# For the B2b ball the two domains differ by ~1.8% in volume. That leaves a −1.4% outer-shell
+# depletion and an exchange drift, even with the binning correction of vcell-fvsolver#25
+# (Study B2c). With the co-simulation running on exactly VCell's geometry, can an
+# accessible-volume correction make the coupling both unbiased and conservative?
+#
+# **Objective.** The B2b ball as a vcell-fenics GeometryDescription, realized by VCell itself
+# (VCellFVRealization, via libvcell):
+# - **PDE:** FV on VCell's staircase `cell` (266.734 µm³).
+# - **Smoldyn:** VCell's smooth membrane (9,516 triangles enclosing 261.818 µm³) and VCell's
+#   compartment points.
+# - **Adapters:** counts at exterior nodes are folded into the domain (compartment-aware
+#   binning), and fields are extended into the exterior band for 0th-order creation.
+#
+# 32 seeds per variant.
+# - Conversion (k = 0.5, 20,000 A uniform in the smooth cell): interior B against
+#   E[B] = A₀(1 − e^(−kt))/(V_PDE·N_A), the outer-shell bias (r > 3.5 vs r < 2) and A + B balance.
+# - Exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): A + B balance and the steady ratio.
+#
+# All PDE masses and averages use the PDE's own element volumes.
+#
+# **Hypothesis.** Three variants of the particle → field transfer:
+# - **`none`** (full voxel volumes): reproduces native VCell with the #25 correction. The shell
+#   is depleted by ~1.4%, and exchange drifts by the smooth-vs-staircase volume mismatch.
+# - **`adapters`** (accessible volumes in the adapter only): removes the shell bias, but the PDE
+#   still integrates over full voxels, so particle sources are overcounted (~+1.4% in conversion).
+# - **`adapters+volumes`** (accessible volumes in the adapter and as the FV element volumes):
+#   unbiased and conservative.
+
+# ### Parameters
+#
+# | simulation | composite | steps | params |
+# | --- | --- | --- | --- |
+# | `vcell-ball` | `viva_pde_particle.composites.examples.bimolecular_hybrid` | 0 | — |
+
+# ### Specification (process-bigraph) — load, inspect, edit
+#
+# Each composite is a process-bigraph *document*: named processes (`_type: process`) bound to an `address`, wired by `inputs`/`outputs` ports over shared stores. For every composite below the first cell loads the spec into a plain **editable Python dict** and prints its structure; the second cell is a **control panel** listing every configuration value and per-process `interval` so you can tweak any of them. Your edits are read when the composite is built and run, in the **Run** section.
+
+# **Composite `viva_pde_particle.composites.examples.bimolecular_hybrid`** — `spec_viva_pde_particle_composites_examples_bimolecular_hybrid` (a plain, editable dict)
+
+# _composite spec file for `viva_pde_particle.composites.examples.bimolecular_hybrid` not found under `viva_pde_particle/composites/` — skipped._
+
+# ### Run
+#
+# _Set the runtime (`STEPS`) and step size (`INTERVAL`), then run. Each simulation builds the (edited) spec above and writes `runs.db`; the figures below read it. Set `RERUN = False` to skip re-simulating._
+
+# === Study: vcell-geometry-cosim ===
+STUDY = 'vcell-geometry-cosim'
+STUDY_DIR = REPO / 'workspace/studies' / STUDY
+STUDY_YAML = str(STUDY_DIR / "study.yaml")
+RUNS_DB = str(STUDY_DIR / "runs.db")
+
+print("No recorded runs for this study; nothing to reproduce.")
+
+# ### Visualizations
+#
+# _Results are shown by the figures below, produced by the run above._
+
+# **vcell-geometry-cosim**
+
+# vcell-geometry-cosim
+_save_viz('vcell-geometry-cosim', 'vcell-geometry-cosim', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# ### Acceptance criteria
+#
+# _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
+#
+# | test | measures | passes if |
+# | --- | --- | --- |
+# | corrected-shell-unbiased | kind=derived_scalar field=b2e_adapters_volumes_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'E[B] is spatially uniform; 32 seeds give an SE of about 0.1%.'} |
+# | corrected-interior-matches | kind=derived_scalar field=b2e_adapters_volumes_interior_rel | op range low -0.01 high 0.01 provenance {'kind': 'theory', 'note': "First-order conversion; the expectation is exact on the PDE's own volume."} |
+# | corrected-exchange-conserves | kind=derived_scalar field=b2e_adapters_volumes_exchange_balance | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'First-order coupling error only; the box-domain baseline (A3) is 1.2%.'} |
+# | vcell-like-shell-depletion | kind=derived_scalar field=b2e_none_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'Kept so the volume mismatch stays visible in the report card.'} |
+
 # ## Study: Operator-splitting schemes for PDE/particle coupling: Jacobi (fvsolver), Gauss–Seidel, Strang (`splitting-schemes`)
 #
 # **Question.** The embedded vcell-fvsolver hard-codes one lagged (Jacobi-type) splitting. With the
