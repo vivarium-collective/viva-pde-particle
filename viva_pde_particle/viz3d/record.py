@@ -8,8 +8,9 @@
   (``ExtendGridField``).
 - ``{"kind": "mesh", "mesh": spec}``: P1 ``field_dofs`` on the mesh engine's own cells.
 
-Each membrane (name → (m, 3, 3) triangles) gets every field, sampled at its vertices: trilinear
-interpolation on the grid, the coincident DOF on a mesh. Particle positions are recorded when given.
+Each membrane (name → (m, 3, 3) triangles) gets every field, sampled at its vertices and named
+``<field>_<membrane>`` (VCell's convention): trilinear interpolation on the grid, the coincident DOF on
+a mesh. Particle positions are recorded when given.
 
 :func:`attach_recorder` adds a :class:`~viva_pde_particle.processes.recorder.SpatialRecorder` to a
 hybrid document; :func:`write_native_bundle` writes a native VCell trajectory.
@@ -18,7 +19,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from viva_pde_particle.viz3d.bundle import SpatialBundleWriter, grid_domain, membrane_domain, mesh_domain
+from viva_pde_particle.viz3d.bundle import (
+    SpatialBundleWriter,
+    grid_domain,
+    membrane_domain,
+    membrane_variable,
+    mesh_domain,
+)
 
 
 class BundleRecorder:
@@ -51,7 +58,7 @@ class BundleRecorder:
         for name, tri in (membranes or {}).items():
             dom = membrane_domain(name, tri)
             self.membranes[name] = (dom, self._sampler(dom.points))
-            self.writer.add_domain(dom, self.species)
+            self.writer.add_domain(dom, [membrane_variable(s, name) for s in self.species])
         self.particle_species = list(particle_species)
         if self.particle_species:
             self.writer.add_particles(self.particle_species)
@@ -85,7 +92,7 @@ class BundleRecorder:
             ext = arr[self._src] if self.kind == "grid" else arr
             values[(self.volume.name, s)] = ext[self.volume.node_index] if self.kind == "grid" else ext
             for name, (_, sample) in self.membranes.items():
-                values[(name, s)] = sample(ext)
+                values[(name, membrane_variable(s, name))] = sample(ext)
         self.writer.write(t, values, particles=positions)
         self.last_time = float(t)
 

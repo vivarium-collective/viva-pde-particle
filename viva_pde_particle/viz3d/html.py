@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from viva_pde_particle.viz3d.bundle import particle_species, read_particles
+from viva_pde_particle.viz3d.bundle import membrane_variable, particle_species, read_particles
 
 THREE_CDN = "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
 ORBIT_CDN = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
@@ -65,9 +65,10 @@ def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng) ->
                                "values": [_b64(sl.point_data[f"f{k}"], "<f4") for k in range(len(rows))]}
     if mem:
         m = b.mesh(mem[0])
-        has = any(x.name == var and x.domain == mem[0] for x in b.manifest.variables)
+        names = {x.name for x in b.manifest.variables if x.domain == mem[0]}
+        mvar = var if var in names else membrane_variable(var, mem[0])
         out["membrane"] = {**_surface(m.points, m.cells),
-                           "values": [_b64(b.field(mem[0], var, r), "<f4") for r in rows] if has else None}
+                           "values": [_b64(b.field(mem[0], mvar, r), "<f4") for r in rows] if mvar in names else None}
     else:
         surf = v.extract_surface(algorithm=None).triangulate()
         out["membrane"] = {**_surface(surf.points, surf.regular_faces),
