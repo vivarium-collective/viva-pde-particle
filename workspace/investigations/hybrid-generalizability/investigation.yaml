@@ -33,6 +33,8 @@ at_a_glance:
   role: Fields next to the membrane; native VCell on pyvcell's smoothed grid vs co-sim on the body-fitted mesh.
 - study: cosim-boundary-transfer
   role: Removes the co-sim's boundary artifact (mesh membrane) and fixes curved-compartment creation in the Smoldyn fork.
+- study: vcell-geometry-cosim
+  role: Co-sim on VCell's own geometry (staircase PDE, smooth membrane); the accessible-volume correction makes it unbiased and conservative.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
 - study: engine-swap
@@ -51,6 +53,7 @@ studies:
 - sphere-cosim-vs-native
 - near-membrane-fields
 - cosim-boundary-transfer
+- vcell-geometry-cosim
 - splitting-schemes
 expert_docs: []
 acceptance_criteria: []

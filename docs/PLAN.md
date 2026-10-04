@@ -943,8 +943,20 @@ The two compilers:
   - **The B2b ball reproduces native exactly:** staircase `cell` 266.734 µm³ over 17,071 nodes (nodes strictly
     inside r = 4); smooth membrane of 9,516 triangles enclosing 261.818 µm³; VCell's 26 compartment points. Smoldyn
     geometry derives from it unchanged. The tests need the `dev` env (spatial-hybrid pyvcell).
-- **7e.5:** the accessible-volume correction in both variants, plus the FV volume-fraction option; B2b and B2c
-  re-run with both.
+- **7e.5 (done):** the co-simulation on VCell's own geometry, with the accessible-volume correction.
+  - **Pieces:**
+    - `geometry/accessible.py`: accessible fractions, the fold map, effective volumes;
+    - adapters: `GridCountsToConcentration(staircase={fold, volumes})` and the new `ExtendGridField` Step;
+    - an FV `domain` option (mask and volume fractions);
+    - `build_vcell_geometry_hybrid_document(..., correction=)`.
+  - **Study B2e (`vcell-geometry-cosim`, 32 seeds):**
+    - `none` reproduces native VCell with the vcell-fvsolver#25 correction: shell −1.36%, exchange −2.7%.
+    - `adapters` is unbiased but overcounts sources (conversion +1.30%).
+    - **`adapters+volumes`** is unbiased (shell +0.02%, z 0.15) and conservative (conversion +0.12%, exchange
+      +0.96%, the coupling-lag level).
+  - **VTK finding:** `vtkSelectEnclosedPoints` misclassifies lattice-aligned points against VCell's surface,
+    depending on process state. The VCell realization now uses `geometry/inside.py` (vertical-ray parity). The B2c
+    forward model was re-checked: unchanged.
 - **7e.6:** a non-sphere geometry (CSG or image) end to end.
 
 ## Risks / open items

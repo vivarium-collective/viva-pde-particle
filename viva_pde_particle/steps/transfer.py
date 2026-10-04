@@ -39,14 +39,23 @@ class GridCountsToConcentration(Step):
     """Per-node particle counts → µM on the same grid (``count / (V_element · 602.214)``).
 
     Config: ``grid`` (``{origin, size, num}``), ``species`` (particle species to convert;
-    missing ones give zeros).
+    missing ones give zeros). Optional ``staircase`` map, for a staircase PDE domain with a smooth
+    membrane (7e.5):
+
+    - ``fold``: flat target node per node (``geometry.accessible.fold_map``). Counts at nodes outside
+      the PDE domain are added to their in-domain neighbour (compartment-aware binning).
+    - ``volumes``: grid-shaped effective volume per node (µM = count / (volume · 602.214); 0 where
+      the volume is 0), e.g. accessible volumes (``geometry.accessible.effective_volumes``).
     """
 
-    config_schema = {"grid": "map", "species": "list[string]"}
+    config_schema = {"grid": "map", "species": "list[string]", "staircase": {"_type": "map", "_default": {}}}
 
     def initialize(self, config):
         self.grid = CartesianGrid.from_config(config["grid"])
         self.species = list(config["species"])
+        st = config.get("staircase") or {}
+        self.fold = None if st.get("fold") is None else np.asarray(st["fold"], dtype=np.int64)
+        self.volumes = None if st.get("volumes") is None else np.asarray(st["volumes"], dtype=float)
 
     def inputs(self):
         return {"particle_counts": "map[array[float]]"}
@@ -55,13 +64,56 @@ class GridCountsToConcentration(Step):
         return {"particle_conc": "map[overwrite[array[float]]]"}
 
     def convert(self, counts: dict) -> dict[str, np.ndarray]:
-        return {
-            s: self.grid.counts_to_uM(np.asarray(counts[s], dtype=float)) if s in counts else np.zeros(self.grid.shape)
-            for s in self.species
-        }
+        if self.fold is None and self.volumes is None:
+            return {
+                s: self.grid.counts_to_uM(np.asarray(counts[s], dtype=float)) if s in counts else np.zeros(self.grid.shape)
+                for s in self.species
+            }
+        vol = self.grid.element_volumes if self.volumes is None else self.volumes
+        out = {}
+        for s in self.species:
+            c = np.asarray(counts[s], dtype=float).ravel() if s in counts else np.zeros(self.grid.num_elements)
+            if self.fold is not None:
+                ok = self.fold >= 0
+                c = np.bincount(self.fold[ok], weights=c[ok], minlength=c.size)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                conc = np.where(vol.ravel() > 0, c / (vol.ravel() * MOLECULES_PER_UM3_PER_UM), 0.0)
+            out[s] = conc.reshape(self.grid.shape)
+        return out
 
     def update(self, state):
         return {"particle_conc": self.convert(state.get("particle_counts") or {})}
+
+
+class ExtendGridField(Step):
+    """Grid fields → lookup fields for the particle engine, extended past a staircase PDE domain (7e.5).
+
+    Nodes outside the PDE domain take the value of their fold target (``geometry.accessible.fold_map``),
+    so 0th-order creation in elements the smooth membrane cuts, whose centres lie outside the
+    staircase, reads the adjacent domain field rather than a frozen or zero one.
+    Config: ``grid``, ``species``, ``staircase: {"fold"}``.
+    """
+
+    config_schema = {"grid": "map", "species": "list[string]", "staircase": "map"}
+
+    def initialize(self, config):
+        self.grid = CartesianGrid.from_config(config["grid"])
+        self.species = list(config["species"])
+        fold = np.asarray(config["staircase"]["fold"], dtype=np.int64)
+        self._src = np.where(fold >= 0, fold, np.arange(fold.size))
+
+    def inputs(self):
+        return {"fields": "map[array[float]]"}
+
+    def outputs(self):
+        return {"lookup_fields": "map[overwrite[array[float]]]"}
+
+    def convert(self, fields: dict) -> dict[str, np.ndarray]:
+        return {s: np.asarray(fields[s], dtype=float).ravel()[self._src].reshape(self.grid.shape)
+                for s in self.species if s in fields}
+
+    def update(self, state):
+        return {"lookup_fields": self.convert(state.get("fields") or {})}
 
 
 class _MeshConcentration(Step):
