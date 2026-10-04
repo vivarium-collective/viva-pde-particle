@@ -619,6 +619,21 @@ print("No recorded runs for this study; nothing to reproduce.")
 # dumbbell-three-ways
 _save_viz('dumbbell-three-ways', 'dumbbell-three-ways', _render_one('', {}, RUNS_DB, STUDY_YAML))
 
+# **dumbbell-3d**
+
+# dumbbell-3d
+_save_viz('dumbbell-three-ways', 'dumbbell-3d', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **dumbbell-3d-movie**
+
+# dumbbell-3d-movie
+_save_viz('dumbbell-three-ways', 'dumbbell-3d-movie', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **dumbbell-3d-interactive**
+
+# dumbbell-3d-interactive
+_save_viz('dumbbell-three-ways', 'dumbbell-3d-interactive', _render_one('threejs:viz/dumbbell_3d_interactive.html', {}, RUNS_DB, STUDY_YAML))
+
 # ### Acceptance criteria
 #
 # _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
