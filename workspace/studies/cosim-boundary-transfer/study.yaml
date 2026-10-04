@@ -49,7 +49,7 @@ description: |
   - tests/test_smoldyn_hybrid.py::test_zeroth_order_creation_matches_curved_compartment_area
     fails without the fix (−7.8%) and passes with it.
   - vcell-fvsolver's vendored Smoldyn has the same centre test. It plausibly accounts for
-    the native 0.960 creation in B2b. Not filed upstream yet.
+    the native 0.960 creation in B2b. Filed as virtualcell/vcell-fvsolver#26.
 
 baseline:
 - name: ball-transfer-variants

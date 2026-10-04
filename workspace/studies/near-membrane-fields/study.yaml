@@ -187,5 +187,5 @@ conclusion: |
     bridgeVCellSmoldyn/VCellSmoldynOutput.cpp:476–548) bins each molecule to the nearest
     node. Its correction for a nearest node in a different compartment (re-bin to the
     nearest same-compartment neighbour) is present but commented out. Re-enabling it is the
-    likely native fix.
+    likely native fix (virtualcell/vcell-fvsolver#25).
   - Co-sim fix (B2d, done): the mesh boundary as the particle membrane.
