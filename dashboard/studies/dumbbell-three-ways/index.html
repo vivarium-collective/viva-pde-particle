@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Study: handoff-units-and-binning</title>
+<title>Study: dumbbell-three-ways</title>
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
@@ -17,7 +17,7 @@
 <header class="study-header">
   <div style="display:flex; align-items:baseline; gap:12px; justify-content:space-between;">
   <h1 class="study-title">
-    <span class="study-name" id="study-name" data-slug="handoff-units-and-binning" title="handoff-units-and-binning">Each side alone, and the particle-to-grid handoff</span>
+    <span class="study-name" id="study-name" data-slug="dumbbell-three-ways" title="dumbbell-three-ways">One non-convex GeometryDescription, three solver paths: native VCell, co-sim on VCell&#39;s geometry, co-sim on a Netgen mesh</span>
     
     <span class="study-kind-tag study-kind-computational" data-study-kind="computational" title="Study kind">computational</span>
     
@@ -39,7 +39,7 @@
     
 
     
-    <div id="readiness-panel" data-slug="handoff-units-and-binning"></div>
+    <div id="readiness-panel" data-slug="dumbbell-three-ways"></div>
 
     
     
@@ -151,9 +151,9 @@
 
 
 
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Before coupling anything: does each half of the co-simulation behave correctly on its own,
-and does the particle-to-grid handoff (nearest-node binning, boundary element volumes,
-counts to µM) follow vcell-fvsolver&#39;s conventions?
+<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Phase 7e end to end on a non-sphere: does one geometry description drive the native VCell solver
+and both co-simulation paths, and do the accessible-volume correction and the body-fitted mesh
+stay unbiased and conservative on a thin-necked, non-convex shape?
 </p>
 
 <nav class="study-tabs" aria-label="Study sections">
@@ -616,29 +616,31 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">Before coupling anything: does each half of the co-simulation behave correctly on its own,
-and does the particle-to-grid handoff (nearest-node binning, boundary element volumes,
-counts to µM) follow vcell-fvsolver&#39;s conventions?
+      <p class="ctr-text">Phase 7e end to end on a non-sphere: does one geometry description drive the native VCell solver
+and both co-simulation paths, and do the accessible-volume correction and the body-fitted mesh
+stay unbiased and conservative on a thin-necked, non-convex shape?
 </p>
       
     </div>
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Test</h2>
-      <p class="ctr-text">Four checks, all on the shared CartesianGrid:
-(1) FV diffusion of cos(πx/L)cos(πy/L) (21×21, L = 10 µm, D = 1, dt = 0.01, t = 1 s)
-    against exp(-2π²Dt/L²);
-(2) 20,000 particles diffusing from the centre cell (D = 1, 4 seeds): the variance of the
-    binned positions, minus dx²/6 (the initial cell spread plus Sheppard&#39;s binning
-    correction), against 2Dt;
-(3) the histogram sum equals the molecule count at every record;
-(4) 100,000 uniform particles after 2 s of diffusion (11×11, 4 seeds): the counts per
-    node class (corner, edge, interior) match their element-volume shares.
+      <p class="ctr-text">A vcell-fenics GeometryDescription: two balls (R = 1.5 µm, centres 2.8 µm apart) joined by a
+neck (radius 0.6 µm), in an 8 × 6 × 6 µm box, Δ = 0.25 µm (33 × 25 × 25 grid). The four paths:
+- **native:** the description converted to VCML; vcell-fvsolver with embedded Smoldyn; 8 seeds.
+- **vcell_none, vcell_corrected:** the co-simulation on VCell&#39;s own realization, with
+  correction `none` or `adapters+volumes`; 16 seeds each.
+- **mesh:** the co-simulation on a Netgen tet mesh (h = 0.3); 16 seeds.
+
+Cases and measures:
+- conversion (k = 0.5, 20,000 A uniform; 2 s): A + B balance; near-membrane bias (mean B within
+  0.5 µm of the membrane against deeper B; E[B] is uniform); lobe asymmetry;
+- exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM; 5 s): A + B balance and the steady ratio.
 </p>
       
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>particle-diffusion-baseline</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Max relative error of the FV cosine mode vs the analytic decay at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Relative error of the binned per-axis variance (corrected by dx²/6) vs 2Dt at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max |histogram total - molecule count| over all records.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max |z| over node classes of per-class counts vs element-volume share.</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>dumbbell</code></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">A + B balance at 5 s, co-sim on VCell&#39;s geometry with adapters+volumes.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Near-membrane B bias, co-sim on VCell&#39;s geometry with adapters+volumes.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">A + B balance at 5 s, co-sim on the Netgen mesh.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">A + B balance at 5 s, native VCell. Expected to FAIL; it documents the smooth-vs-staircase mismatch plus the vcell-fvsolver#25/#26 defects on a thin-necked shape.</span></div>
       </div>
       
     </div>
@@ -664,12 +666,12 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
     <h2 class="overview-label" style="margin:0">Model composition</h2>
     
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'handoff-units-and-binning', 'cosim-vs-embedded-hybrid')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'dumbbell-three-ways', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
   </div>
 
   
   
-  <div id="model-composite-cards" class="model-composite-cards" data-study="handoff-units-and-binning"
+  <div id="model-composite-cards" class="model-composite-cards" data-study="dumbbell-three-ways"
        data-study-config="">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading composite card(s)…</span></div>
   </div>
@@ -690,28 +692,28 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div class="overview-section" id="model-section">
     <h3>Runnable models <span class="muted" style="font-size:0.85em;font-weight:normal">— the composite(s) this study simulates</span></h3>
     
-    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.particle_diffusion" data-model-overrides='{"diffusion": 1.0, "dt": 0.01, "n_particles": 20000, "start": "center"}'>
+    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.bimolecular_hybrid" data-model-overrides='{}'>
       <div class="cond-block-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>particle-diffusion-baseline</strong>
+        <strong>dumbbell</strong>
         
-        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.particle_diffusion</code>
+        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.bimolecular_hybrid</code>
         <button type="button" class="action-btn" style="font-size:0.8em"
-                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.particle_diffusion')">🧬 explore &amp; run ↗</button>
+                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.bimolecular_hybrid')">🧬 explore &amp; run ↗</button>
         
       </div>
       
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
         
-        <select class="baseline-composite-input" data-baseline-name="particle-diffusion-baseline"
-                data-current="viva_pde_particle.composites.examples.particle_diffusion"
+        <select class="baseline-composite-input" data-baseline-name="dumbbell"
+                data-current="viva_pde_particle.composites.examples.bimolecular_hybrid"
                 style="flex:1;min-width:200px;font-family:monospace;font-size:0.82em;padding:3px 6px">
-          <option value="viva_pde_particle.composites.examples.particle_diffusion" selected>viva_pde_particle.composites.examples.particle_diffusion</option>
+          <option value="viva_pde_particle.composites.examples.bimolecular_hybrid" selected>viva_pde_particle.composites.examples.bimolecular_hybrid</option>
           
         </select>
         <button type="button" class="action-btn baseline-composite-set" style="font-size:0.8em"
-                data-baseline-name="particle-diffusion-baseline">Set composite</button>
+                data-baseline-name="dumbbell">Set composite</button>
       </div>
-      <div class="baseline-composite-status muted" data-baseline-name="particle-diffusion-baseline" style="font-size:0.8em;margin-top:2px"></div>
+      <div class="baseline-composite-status muted" data-baseline-name="dumbbell" style="font-size:0.8em;margin-top:2px"></div>
       
       
       
@@ -760,7 +762,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
 
   <h4>Latest run preview</h4>
   <p class="muted" style="font-size:0.9em">Per-store sparkline + first/last/min/max from the most recent run's emitted trajectory. This is a downsampled PREVIEW, not the full data — use the per-store or Download-all links for the complete arrays. For a cross-engine comparison run, this shows how closely the simulators agree, model by model, instead.</p>
-  <div id="results-preview" data-study="handoff-units-and-binning">
+  <div id="results-preview" data-study="dumbbell-three-ways">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading results preview…</span></div>
   </div>
 
@@ -780,7 +782,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   
   <div class="overview-section" id="study-analyses-section">
     <h3>Analyses to run <span class="muted" style="font-size:0.85em;font-weight:normal">— which of the workspace's <code>ANALYSIS_REGISTRY</code> entries to compute on dispatch</span></h3>
-    <div id="study-analyses-list" data-study="handoff-units-and-binning">
+    <div id="study-analyses-list" data-study="dumbbell-three-ways">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading analyses…</span></div>
     </div>
     <div style="margin-top:8px">
@@ -796,9 +798,9 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
     <span class="muted" style="margin-right:auto;font-weight:600">Analysis result files</span>
     <a id="data-download-all" class="btn-mini" style="display:none"
-       href="/api/study-analysis-zip?study=handoff-units-and-binning">Download all (.zip)</a>
+       href="/api/study-analysis-zip?study=dumbbell-three-ways">Download all (.zip)</a>
   </div>
-  <div id="data-files" data-study="handoff-units-and-binning">
+  <div id="data-files" data-study="dumbbell-three-ways">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading result files…</span></div>
   </div>
 </div>
@@ -819,7 +821,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     interval/buffer, output location, and emit scope — from
     <code>lib/emitters.py</code> and this study's (or the workspace's)
     <code>runtime.default_emitter</code>.</p>
-    <div id="readouts-emitter" data-study="handoff-units-and-binning">
+    <div id="readouts-emitter" data-study="dumbbell-three-ways">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading emitter configuration…</span></div>
     </div>
 
@@ -831,7 +833,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     <div id="readouts-download" style="margin:0 0 16px 0"></div>
 
-    <div id="readouts-table" data-study="handoff-units-and-binning">
+    <div id="readouts-table" data-study="dumbbell-three-ways">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readouts from the composite emit plan…</span></div>
     </div>
 
@@ -839,7 +841,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     <p class="muted" style="font-size:0.9em">Store path, dtype, shape
     <code>(n_steps, …)</code>, units, and a best-effort byte estimate for each emitted
     leaf.</p>
-    <div id="readouts-shapes" data-study="handoff-units-and-binning">
+    <div id="readouts-shapes" data-study="dumbbell-three-ways">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading output shapes…</span></div>
     </div>
 
@@ -854,7 +856,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     
     <div class="viz-actions-row" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'handoff-units-and-binning')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
+      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'dumbbell-three-ways')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
     </div>
     
 
@@ -918,10 +920,10 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     
     
-    <li class="expected-behavior-item" id="bt-fv-matches-continuum-diffusion"
+    <li class="expected-behavior-item" id="bt-corrected-exchange-conserves"
         data-test-kind="behavioral"
         
-        data-pytest-node="fv-matches-continuum-diffusion"
+        data-pytest-node="corrected-exchange-conserves"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -930,19 +932,19 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">fv-matches-continuum-diffusion</strong>
+        <strong style="font-size: 0.9em;">corrected-exchange-conserves</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>dumbbell</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max relative error of the FV cosine mode vs the analytic decay at t = 1 s.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">A + B balance at 5 s, co-sim on VCell&#39;s geometry with adapters+volumes.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_fv_cosine_rel_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order in space and first order in time; expected error ~1e-3 on this grid."}, "value": 0.01}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2f_vcell_corrected_exchange_balance", "kind": "derived_scalar"}
+pass_if: {"high": 0.015, "low": -0.015, "op": "range", "provenance": {"kind": "theory", "note": "First-order coupling error only."}}</pre>
       </details>
       
       
@@ -957,10 +959,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order
     
     
     
-    <li class="expected-behavior-item" id="bt-particle-variance-matches-2Dt"
+    <li class="expected-behavior-item" id="bt-corrected-near-membrane-unbiased"
         data-test-kind="behavioral"
         
-        data-pytest-node="particle-variance-matches-2Dt"
+        data-pytest-node="corrected-near-membrane-unbiased"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -969,19 +971,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">particle-variance-matches-2Dt</strong>
+        <strong style="font-size: 0.9em;">corrected-near-membrane-unbiased</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>dumbbell</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Relative error of the binned per-axis variance (corrected by dx²/6) vs 2Dt at t = 1 s.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Near-membrane B bias, co-sim on VCell&#39;s geometry with adapters+volumes.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_particle_variance_rel_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownian motion; 80,000 molecule samples give ~0.5% sampling error on the variance."}, "value": 0.03}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2f_vcell_corrected_band_bias", "kind": "derived_scalar"}
+pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "theory", "note": "E[B] is spatially uniform."}}</pre>
       </details>
       
       
@@ -996,10 +998,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownia
     
     
     
-    <li class="expected-behavior-item" id="bt-histogram-conserves-molecules"
+    <li class="expected-behavior-item" id="bt-mesh-exchange-conserves"
         data-test-kind="behavioral"
         
-        data-pytest-node="histogram-conserves-molecules"
+        data-pytest-node="mesh-exchange-conserves"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -1008,19 +1010,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownia
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">histogram-conserves-molecules</strong>
+        <strong style="font-size: 0.9em;">mesh-exchange-conserves</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>dumbbell</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max |histogram total - molecule count| over all records.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">A + B balance at 5 s, co-sim on the Netgen mesh.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_histogram_count_mismatch", "kind": "derived_scalar"}
-pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Every molecule maps to exactly one node (clamped nearest-node index)."}, "value": 0}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2f_mesh_exchange_balance", "kind": "derived_scalar"}
+pass_if: {"high": 0.015, "low": -0.015, "op": "range", "provenance": {"kind": "theory", "note": "The particle domain is the mesh (B2d)."}}</pre>
       </details>
       
       
@@ -1035,31 +1037,31 @@ pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Every molecule m
     
     
     
-    <li class="expected-behavior-item" id="bt-boundary-volumes-give-uniform-concentration"
+    <li class="expected-behavior-item" id="bt-native-exchange-conserves"
         data-test-kind="behavioral"
         
-        data-pytest-node="boundary-volumes-give-uniform-concentration"
-        data-classification="primary"
+        data-pytest-node="native-exchange-conserves"
+        data-classification="secondary"
         data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
+        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #cbd5e1; background: #f8fafc; border-radius: 4px;">
       
         
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">boundary-volumes-give-uniform-concentration</strong>
+        <span class="classification-pill classification-secondary">secondary</span>
+        <strong style="font-size: 0.9em;">native-exchange-conserves</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>dumbbell</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max |z| over node classes of per-class counts vs element-volume share.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">A + B balance at 5 s, native VCell. Expected to FAIL; it documents the smooth-vs-staircase mismatch plus the vcell-fvsolver#25/#26 defects on a thin-necked shape.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_boundary_class_max_abs_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Binomial sampling; |z| \u003c 4 for a correct volume convention (corner 1/4, edge 1/2)."}, "value": 4.0}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2f_native_exchange_balance", "kind": "derived_scalar"}
+pass_if: {"high": 0.015, "low": -0.015, "op": "range", "provenance": {"kind": "theory", "note": "Kept so the native defect stays visible in the report card."}}</pre>
       </details>
       
       
@@ -1179,14 +1181,33 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Binomial sam
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>All four checks pass (results/metrics.json, 2026-10-03; re-run after the record-time fix):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-04). The analytic cell volume is 28.11 µm³ (Monte Carlo).</p>
+<p><strong>Geometry:</strong></p>
 <ul>
-<li>FV vs analytic: 6.0e-4 relative error;</li>
-<li>binned particle variance vs 2Dt: 0.13% (0.96% before the fix, which was the one-step record lag);</li>
-<li>histogram mismatch: 0 molecules;</li>
-<li>node classes vs volume shares: max |z| = 0.48. Corner and edge concentrations are
-within 0.4% of interior.
-Both halves and the handoff behave as specified.</li>
+<li>VCell's staircase is −1.6%.</li>
+<li>VCell's smooth membrane is <strong>−12.4%</strong>: smoothing shrinks the thin neck and the small lobes.</li>
+<li>The Netgen mesh (h = 0.3) is −3.0%.</li>
+</ul>
+<p>| path | near-membrane bias (z) | lobe asym (z) | conversion | exchange | steady ratio err |
+|---|---|---|---|---|---|
+| native VCell | −0.81% (−118) | +0.07% (0.2) | −0.65% | <strong>−25.9%</strong> | 8.9% |
+| co-sim, VCell geometry, none | −0.74% (−43) | +0.15% (0.4) | +0.06% | <strong>−18.2%</strong> | 7.8% |
+| co-sim, VCell geometry, adapters+volumes | −0.02% (−1.2) | +0.33% (0.9) | +0.06% | −0.07% | 0.39% |
+| co-sim, Netgen mesh | +0.04% (2.8) | +0.60% (1.9) | +0.34% | −0.12% | 0.61% |</p>
+<ul>
+<li><strong>On a thin-necked shape the uncorrected smooth-vs-staircase mismatch is severe.</strong> Native VCell
+loses a quarter of A + B in exchange and misses the steady ratio by 9%.
+<ul>
+<li>The co-sim with VCell's own volumes (<code>none</code>) isolates the volume effect: −18.2%.</li>
+<li>The rest of the native loss is consistent with the binning (vcell-fvsolver#25) and creation
+(#26) defects measured on the ball.</li>
+</ul>
+</li>
+<li><strong>The accessible-volume correction removes it entirely.</strong> Exchange is −0.07%, the near-membrane
+bias is gone and the steady ratio is accurate, on exactly VCell's geometry.</li>
+<li><strong>The body-fitted Netgen path</strong> is also conservative and unbiased. Its slight lobe asymmetry
+(0.6%, z = 1.9) is borderline at 16 seeds.</li>
+<li>One description drove all four paths; no solver-specific geometry code was needed.</li>
 </ul>
 </div>
     </div>
@@ -1196,34 +1217,6 @@ Both halves and the handoff behave as specified.</li>
   </div>
 
   
-  
-  <div class="overview-section"><h2 class="overview-label">Plan &amp; assumptions</h2>
-
-    
-    <div class="overview-section">
-      <h3 class="overview-label">Pipeline gate</h3>
-      <p class="muted" style="margin: 0 0 8px 0;font-size:0.88em">
-        Each study is a model-building gate: it answers <em>"Can we safely build the next layer?"</em>
-      </p>
-      
-      <div style="margin-bottom:6px"><strong>Prerequisites:</strong> <em class="muted">none (root study)</em></div>
-      
-      
-      <div style="margin-bottom:6px"><strong>Enables:</strong>
-        <code>field-modulated-decay</code>
-      </div>
-      
-      
-      <div><strong>Proceed when:</strong> <span class="muted">All four handoff checks pass.</span></div>
-      
-    </div>
-    
-
-    
-
-    
-
-  </div>
   
 
   
@@ -1263,7 +1256,7 @@ Both halves and the handoff behave as specified.</li>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
-window._studyName = "handoff-units-and-binning";
+window._studyName = "dumbbell-three-ways";
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.

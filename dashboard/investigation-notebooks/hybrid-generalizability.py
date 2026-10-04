@@ -562,6 +562,74 @@ _save_viz('vcell-geometry-cosim', 'vcell-geometry-cosim', _render_one('', {}, RU
 # | corrected-exchange-conserves | kind=derived_scalar field=b2e_adapters_volumes_exchange_balance | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'First-order coupling error only; the box-domain baseline (A3) is 1.2%.'} |
 # | vcell-like-shell-depletion | kind=derived_scalar field=b2e_none_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'Kept so the volume mismatch stays visible in the report card.'} |
 
+# ## Study: One non-convex GeometryDescription, three solver paths: native VCell, co-sim on VCell's geometry, co-sim on a Netgen mesh (`dumbbell-three-ways`)
+#
+# **Question.** Phase 7e end to end on a non-sphere: does one geometry description drive the native VCell solver
+# and both co-simulation paths, and do the accessible-volume correction and the body-fitted mesh
+# stay unbiased and conservative on a thin-necked, non-convex shape?
+#
+# **Objective.** A vcell-fenics GeometryDescription: two balls (R = 1.5 µm, centres 2.8 µm apart) joined by a
+# neck (radius 0.6 µm), in an 8 × 6 × 6 µm box, Δ = 0.25 µm (33 × 25 × 25 grid). The four paths:
+# - **native:** the description converted to VCML; vcell-fvsolver with embedded Smoldyn; 8 seeds.
+# - **vcell_none, vcell_corrected:** the co-simulation on VCell's own realization, with
+#   correction `none` or `adapters+volumes`; 16 seeds each.
+# - **mesh:** the co-simulation on a Netgen tet mesh (h = 0.3); 16 seeds.
+#
+# Cases and measures:
+# - conversion (k = 0.5, 20,000 A uniform; 2 s): A + B balance; near-membrane bias (mean B within
+#   0.5 µm of the membrane against deeper B; E[B] is uniform); lobe asymmetry;
+# - exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM; 5 s): A + B balance and the steady ratio.
+#
+# **Hypothesis.** The ball's ~1.8% smooth-vs-staircase mismatch grows with surface-to-volume ratio and thin
+# features, so the uncorrected paths (native VCell; the co-sim with `none`) should degrade much
+# more on a dumbbell. `adapters+volumes` and the Netgen mesh should stay at the coupling-lag level.
+
+# ### Parameters
+#
+# | simulation | composite | steps | params |
+# | --- | --- | --- | --- |
+# | `dumbbell` | `viva_pde_particle.composites.examples.bimolecular_hybrid` | 0 | — |
+
+# ### Specification (process-bigraph) — load, inspect, edit
+#
+# Each composite is a process-bigraph *document*: named processes (`_type: process`) bound to an `address`, wired by `inputs`/`outputs` ports over shared stores. For every composite below the first cell loads the spec into a plain **editable Python dict** and prints its structure; the second cell is a **control panel** listing every configuration value and per-process `interval` so you can tweak any of them. Your edits are read when the composite is built and run, in the **Run** section.
+
+# **Composite `viva_pde_particle.composites.examples.bimolecular_hybrid`** — `spec_viva_pde_particle_composites_examples_bimolecular_hybrid` (a plain, editable dict)
+
+# _composite spec file for `viva_pde_particle.composites.examples.bimolecular_hybrid` not found under `viva_pde_particle/composites/` — skipped._
+
+# ### Run
+#
+# _Set the runtime (`STEPS`) and step size (`INTERVAL`), then run. Each simulation builds the (edited) spec above and writes `runs.db`; the figures below read it. Set `RERUN = False` to skip re-simulating._
+
+# === Study: dumbbell-three-ways ===
+STUDY = 'dumbbell-three-ways'
+STUDY_DIR = REPO / 'workspace/studies' / STUDY
+STUDY_YAML = str(STUDY_DIR / "study.yaml")
+RUNS_DB = str(STUDY_DIR / "runs.db")
+
+print("No recorded runs for this study; nothing to reproduce.")
+
+# ### Visualizations
+#
+# _Results are shown by the figures below, produced by the run above._
+
+# **dumbbell-three-ways**
+
+# dumbbell-three-ways
+_save_viz('dumbbell-three-ways', 'dumbbell-three-ways', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# ### Acceptance criteria
+#
+# _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
+#
+# | test | measures | passes if |
+# | --- | --- | --- |
+# | corrected-exchange-conserves | kind=derived_scalar field=b2f_vcell_corrected_exchange_balance | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'First-order coupling error only.'} |
+# | corrected-near-membrane-unbiased | kind=derived_scalar field=b2f_vcell_corrected_band_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'E[B] is spatially uniform.'} |
+# | mesh-exchange-conserves | kind=derived_scalar field=b2f_mesh_exchange_balance | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'The particle domain is the mesh (B2d).'} |
+# | native-exchange-conserves | kind=derived_scalar field=b2f_native_exchange_balance | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'Kept so the native defect stays visible in the report card.'} |
+
 # ## Study: Operator-splitting schemes for PDE/particle coupling: Jacobi (fvsolver), Gauss–Seidel, Strang (`splitting-schemes`)
 #
 # **Question.** The embedded vcell-fvsolver hard-codes one lagged (Jacobi-type) splitting. With the
