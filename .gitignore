@@ -35,3 +35,6 @@ workspace/reports/assets/*
 # Native builds (Smoldyn) and pixi env
 build/
 .pixi/
+
+# Spatial results bundles (VTU + zarr) recorded by studies; figures in viz/ are regenerated from them.
+workspace/studies/*/runs/

@@ -165,6 +165,8 @@ def run_document(doc: dict, t_end: float, dt: float, every: float, core=None) ->
     for i in range(1, n_records + 1):
         sim.run(every)
         traj.record(i * every, sim.state)
+    if "recorder" in sim.state:  # its tick at t_end is never executed: record the final state here
+        sim.state["recorder"]["instance"].close(sim.state, n_records * every)
     return traj
 
 

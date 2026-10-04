@@ -737,6 +737,7 @@ Processes:
 | `SmoldynHybrid` | its advance | `fields` (µM on its lookup grid) | `particle_counts` (counts, grid), `particle_totals`[, `particle_positions`] | `grid`, `config_text`, `particle_species`, `field_species`, `dt`, `step_multiplier`, `emit_positions` |
 | `Stepper` | dt | the child's | the child's | `process` (address + config), `dt`, `every`, `phase` |
 | `SplittingCoordinator` | k·dt | union of its children's | union of its children's | `pde`, `particles`, `adapters` (nodes), `scheme`, `dt`, `step_multiplier` |
+| `SpatialRecorder` | the shortest process interval | `fields` (grid) or `field_dofs` (mesh)[, `particle_positions`] | none | `out_dir`, `base_dt`, `every`, `layout`, `species`, `particle_species`, `membranes` (added by `viz3d.attach_recorder`; writes a vcell-fenics results bundle, Phase 8) |
 
 Steps (adapters):
 
