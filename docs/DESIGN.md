@@ -536,6 +536,18 @@ flowchart LR
 B2b ball). Particles then never leave the PDE domain. The ~1.4% sliver between sphere and mesh is gone, and so is
 the boundary load it caused.
 
+**This is what VCell already does.** VCell's Smoldyn input also confines particles by `panel tri` surfaces taken from
+its own geometry. For the B2b ball, it writes 9,516 triangles with vertex radius 3.972 ± 0.016 µm, enclosing 261.8 µm³.
+The co-sim adopts the same principle with one difference:
+- **Co-sim:** the triangles *are* the PDE mesh boundary, so the particle domain and the PDE domain are identical.
+- **Native VCell:** the PDE runs on the voxel staircase (266.7 µm³), and the membrane is a smoothed surface triangulation
+  of the same geometry. The two agree to within a voxel, so the particle compartment is 1.8% smaller than the PDE's
+  `cell`.
+
+That residual mismatch helps explain the native results in B2b:
+- **Creation:** 0.982 (compartment/PDE volume) × 0.976 (centre-only creation rule) = 0.958, matching the measured 0.960.
+- **Binning:** particles just inside the smooth membrane can be nearest to an exterior voxel node (exterior binning).
+
 **Outcome (Study B2d, cosim-boundary-transfer).** The four combinations on the B2c problem, 32 seeds each:
 
 | transfer / membrane | outer-shell bias (z) | exchange mass balance | wall s per sim s |

@@ -134,11 +134,19 @@ conclusion: |
   - The cause is the domain mismatch. Particles in the ~1.4% sliver between the sphere and the
     inscribed mesh are projected onto the boundary DOFs.
   - Confining Smoldyn by the mesh's own boundary triangles removes the bias, with either
-    transfer.
+    transfer. VCell does the same with its geometry's surface triangulation; see below.
   - With the mesh membrane, exchange mass balance is at the box-domain level (A3: 1.2%), so
     the curved geometry adds nothing.
   - With the sphere membrane, the PDE removes B over the smaller mesh while creation covers
     the full sphere, so the balance is +2.9%.
+
+  **Credit: VCell already does this.** Its Smoldyn input confines particles by `panel tri` surfaces taken from its own
+  geometry (B2b ball: 9,516 triangles enclosing 261.8 µm³), so the co-sim's mesh membrane follows VCell's practice.
+  - **Co-sim:** the triangles are the PDE mesh boundary itself, so the domains are identical.
+  - **Native:** the triangulation is a smoothed surface, while the PDE domain is the voxel staircase (266.7 µm³). The
+    particle compartment is therefore 1.8% smaller than the PDE's cell. Times the centre-only creation factor (0.976),
+    that predicts a native creation rate of 0.958, matching the measured 0.960. Particles near the smooth membrane can
+    also be nearest to exterior voxel nodes (exterior binning).
 
   **Creation fix (Smoldyn fork).** Before it, the sphere variants showed −1.2 to −1.4%
   exchange balance. That was two errors cancelling: a creation deficit of about −2.4% and
