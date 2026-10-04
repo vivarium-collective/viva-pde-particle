@@ -724,14 +724,15 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   centre was inside. That gave a −2.4% deficit for this ball, the B2b "creation deficit", which had been cancelling
   the sphere's +1.4% extra volume. Every cell now draws, with exact thinning.
   `test_zeroth_order_creation_matches_curved_compartment_area` covers it.
-- **Upstream candidate:** vcell-fvsolver's vendored Smoldyn has the same centre test, plausibly the native 0.960.
-  Not filed yet.
+- **Upstream:** vcell-fvsolver's vendored Smoldyn has the same centre test, plausibly the native 0.960. Filed as
+  virtualcell/vcell-fvsolver#26. The commented-out same-compartment binning correction is
+  virtualcell/vcell-fvsolver#25.
 - **Triangulated-membrane cost (N molecules × M triangles):**
   - Smoldyn sized its virtual boxes from the initial count, so exchange, which starts empty, got 1 box.
   - Fix: always write `boxsize` (10×), plus VCell's `highResVolumeSamples` compartment map, now parsed under
     `OPTION_VCELL` (fork e86d552), for a further 1.8×.
   - Mesh-membrane exchange: 4.55 → 0.25 s per simulated s (sphere 0.21), with identical results.
-  - Candidate for VCell: its Smoldyn writer sets no `boxsize` either.
+  - VCell's Smoldyn writer sets no `boxsize` either: virtualcell/vcell#2159.
 - **New infrastructure:** positions transfer, the voxel→tet `PointLocator`, and the mesh membrane (PR #21).
   `docs/DESIGN.md` explains all approaches.
 
