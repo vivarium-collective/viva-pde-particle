@@ -1,4 +1,11 @@
-"""Particle → PDE adapters (Phase 7a): turn particle-engine output into concentrations on a PDE discretization.
+"""Adapters between the particle and PDE engines, as Steps (Phase 7a, 7b).
+
+**PDE → particles (7b).** ``MeshToGridField`` samples a P1 field onto the Cartesian grid that
+the particle engine's rate lookups use (u_grid = P·u). Structured engines (FV, Q1) already
+produce fields on that grid and need no adapter.
+
+**Particles → PDE (7a).** The steps below turn particle-engine output into concentrations on
+a PDE discretization.
 
 The PDE engines no longer know about particles. Each reads an ``external_conc`` map,
 {species: µM array on its own discretization}, for species that appear in its reaction
@@ -116,3 +123,33 @@ class PositionsToMeshConcentration(_MeshConcentration):
 
     def update(self, state):
         return {"particle_conc": self.convert(state.get("particle_positions") or {})}
+
+
+class MeshToGridField(Step):
+    """P1 DOF fields → grid fields for the particle engine's rate lookups: u_grid = P·u.
+
+    Grid nodes inside the mesh take the P1 interpolant; nodes outside take the nearest DOF value.
+    Config: ``grid`` (background grid), ``mesh`` (mesh spec), ``species`` (fields to sample).
+    """
+
+    config_schema = {"grid": "map", "mesh": "map", "species": "list[string]"}
+
+    def initialize(self, config):
+        from viva_pde_particle.mesh import mesh_transfer
+
+        self.grid = CartesianGrid.from_config(config["grid"])
+        self.species = list(config["species"])
+        self.transfer = mesh_transfer(config["mesh"], self.grid)
+
+    def inputs(self):
+        return {"field_dofs": "map[array[float]]"}
+
+    def outputs(self):
+        return {"fields": "map[overwrite[array[float]]]"}
+
+    def convert(self, dofs: dict) -> dict[str, np.ndarray]:
+        return {s: (self.transfer.P @ np.asarray(dofs[s], dtype=float)).reshape(self.grid.shape)
+                for s in self.species if s in dofs}
+
+    def update(self, state):
+        return {"fields": self.convert(state.get("field_dofs") or {})}

@@ -2,7 +2,9 @@
 from viva_pde_particle.steps.transfer import (
     GridCountsToConcentration,
     GridCountsToMeshConcentration,
+    MeshToGridField,
     PositionsToMeshConcentration,
 )
 
-__all__ = ["GridCountsToConcentration", "GridCountsToMeshConcentration", "PositionsToMeshConcentration"]
+__all__ = ["GridCountsToConcentration", "GridCountsToMeshConcentration", "MeshToGridField",
+           "PositionsToMeshConcentration"]

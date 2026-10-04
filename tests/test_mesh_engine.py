@@ -34,7 +34,7 @@ def test_transfer_reproduces_linear_fields_and_conserves_counts(transfer):
 
 def test_mesh_process_conserves_and_sources_from_particles():
     proc = FenicsxMeshReactionDiffusion(core=allocate_core(), config={
-        "grid": GRID.to_config(), "mesh": MESH, "dt": 0.01,
+        "mesh": MESH, "dt": 0.01,
         "pde": {"species": {"B": {"diffusion": 1.0}}, "particle_species": ["A"],
                 "terms": [{"species": "B", "coeff": 1, "k": 1.0, "reactants": {"A": 1}}]},
     })
@@ -50,4 +50,8 @@ def test_mesh_process_conserves_and_sources_from_particles():
     out = proc.update({"field_dofs": dofs0, "external_conc": conc}, 0.1)
     produced = (out["field_dofs"]["B"] * proc.ml).sum()  # µM·µm³ of B made in 0.1 s at rate k·[A]
     assert produced == pytest.approx(10.0 * 1.0 * 0.1, rel=1e-10)
-    assert out["fields"]["B"].shape == GRID.shape
+    assert set(out) == {"field_dofs"}  # a general engine: DOFs only (grid sampling is MeshToGridField)
+    from viva_pde_particle.steps import MeshToGridField
+
+    to_grid = MeshToGridField(core=allocate_core(), config={"grid": GRID.to_config(), "mesh": MESH, "species": ["B"]})
+    assert to_grid.update({"field_dofs": out["field_dofs"]})["fields"]["B"].shape == GRID.shape

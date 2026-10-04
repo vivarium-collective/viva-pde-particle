@@ -78,7 +78,7 @@ def run_cosim():
         runs = list(pool.map(_cosim, SEEDS))
     doc = build_mesh_hybrid_document(b2b.model("conversion"), b2b.MESH_SPHERE, DT, seed=1)
     proc = FenicsxMeshReactionDiffusion(config=doc["pde"]["config"], core=allocate_core())
-    xyz = proc.transfer.V.tabulate_dof_coordinates()
+    xyz = proc.V.tabulate_dof_coordinates()
     return np.array([r[0] for r in runs]), np.stack([r[1] for r in runs]), xyz, proc.ml
 
 

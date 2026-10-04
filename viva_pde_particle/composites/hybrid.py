@@ -198,14 +198,14 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
                  "h": sphere.get("h", sphere["radius"] / 6)}
     if particle_transfer not in ("grid", "positions"):
         raise ValueError(f"particle_transfer must be 'grid' or 'positions', got {particle_transfer!r}")
-    pde_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "pde": parts.pde, "dt": dt}
+    pde_cfg = {"mesh": mesh_spec, "pde": parts.pde, "dt": dt}
     from process_bigraph import allocate_core
 
     probe = FenicsxMeshReactionDiffusion(config=pde_cfg, core=allocate_core())
     if membrane == "mesh":
         from viva_pde_particle.mesh import boundary_triangles, uniform_in_mesh
 
-        msh = probe.transfer.V.mesh
+        msh = probe.V.mesh
         from viva_pde_particle.mesh import mesh_locator
 
         locator = mesh_locator(mesh_spec, g)
@@ -230,15 +230,17 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
     config_text = write_smoldyn_config(parts.particles, g, counts0, time_step=step_multiplier * dt, seed=seed,
                                        geometry=geometry, positions=positions)
     by_position = particle_transfer == "positions"
-    from viva_pde_particle.steps import GridCountsToMeshConcentration, PositionsToMeshConcentration
+    from viva_pde_particle.steps import GridCountsToMeshConcentration, MeshToGridField, PositionsToMeshConcentration
 
     step_cls = PositionsToMeshConcentration if by_position else GridCountsToMeshConcentration
     to_field_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "species": model.particle_species}
     to_field = step_cls(config=to_field_cfg, core=allocate_core())
     step_input = "particle_positions" if by_position else "particle_counts"
+    to_grid_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "species": list(dofs0)}
+    to_grid = MeshToGridField(config=to_grid_cfg, core=allocate_core())
     doc = {
         "field_dofs": dofs0,
-        "fields": {s: probe.to_grid(v) for s, v in dofs0.items()},
+        "fields": to_grid.convert(dofs0),  # Steps do not run at initialization
         "particle_counts": {s: c.copy() for s, c in counts0.items()},
         "particle_conc": to_field.convert(positions if by_position else counts0),  # Steps don't run at init
         "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
@@ -248,7 +250,14 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
             "config": pde_cfg,
             "interval": dt,
             "inputs": {"field_dofs": ["field_dofs"], "external_conc": ["particle_conc"]},
-            "outputs": {"field_dofs": ["field_dofs"], "fields": ["fields"]},
+            "outputs": {"field_dofs": ["field_dofs"]},
+        },
+        "field_to_particles": {
+            "_type": "step",
+            "address": "local:MeshToGridField",
+            "config": to_grid_cfg,
+            "inputs": {"field_dofs": ["field_dofs"]},
+            "outputs": {"fields": ["fields"]},
         },
         "particle_to_field": {
             "_type": "step",
