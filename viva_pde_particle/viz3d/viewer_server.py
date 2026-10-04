@@ -8,7 +8,8 @@ that implements the same contract for results bundles, ported from ``FenicsBundl
 ``/health``, ``/info``, ``/grid``, ``/field``, ``/stats``, ``/timeseries``
     as VCell serves them (point data, ``"solver": "FEniCSx"``);
 ``/particles`` (extension)
-    the recorded particle positions at a time, for a viewer that draws them (not yet upstream).
+    the recorded particle positions at a time (``&max=`` caps the points sent, default 20,000),
+    for a viewer that draws them; ``/info`` lists ``particleSpecies`` when the run has any.
 
 Each bundle is registered under a name and opened as ``/?sim=<name>&job=0``. The page itself comes
 from a ``webapp-viewer`` checkout, whose ``npm run fetch:vtk-wasm`` must have been run once.
@@ -144,10 +145,14 @@ class BundleViews:
         return q["var"]
 
     def info(self, q):
+        from viva_pde_particle.viz3d.bundle import particle_species
+
         src = self.source(q)
         b = src.bundle()
         m = b.manifest
-        return {"simId": src.name, "simName": src.name, "jobIndex": 0, "solver": "FEniCSx", "status": m.status,
+        species = particle_species(src.path)
+        extra = {"particleSpecies": species} if species else {}
+        return {**extra, "simId": src.name, "simName": src.name, "jobIndex": 0, "solver": "FEniCSx", "status": m.status,
                 "progress": m.progress, "times": _floats(m.times), "domains": list(m.domains),
                 "variables": [{"name": v.name, "domain": v.domain, "location": "point", "isFunction": False}
                               for v in m.variables]}
@@ -262,10 +267,14 @@ class BundleViews:
         src = self.source(q)
         b = self._open(src)
         row = self._row(b, q)
+        cap = int(q.get("max") or 20000)
         species = []
         for s in particle_species(src.path):
             p = read_particles(src.path, s, row)
-            species.append({"name": s, "count": int(len(p)), "points": _floats(p)})
+            shown = p[:: max(1, -(-len(p) // cap))] if len(p) > cap else p  # evenly strided, at most `max`
+            species.append({"name": s, "count": int(len(p)), "shown": int(len(shown)), "points": _floats(shown)})
+        if not species:
+            raise BadRequest(f"the run {src.name} has no particles")
         return {"time": float(b.times[row]), "timeIndex": row, "species": species}
 
 

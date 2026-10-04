@@ -53,6 +53,7 @@ def test_info_grid_field(server):
     base, vol, mem = server
     status, info = get(base, "/info?sim=run&job=0")
     assert status == 200 and info["solver"] == "FEniCSx" and info["times"] == [0.0, 1.0, 2.0]
+    assert info["particleSpecies"] == ["A"]
     assert info["status"] == "completed" and info["domains"] == ["cell", "pm"]
     assert {"name": "B", "domain": "pm", "location": "point", "isFunction": False} in info["variables"]
     _, grid = get(base, "/grid?sim=run&job=0&domain=cell&time=1")
@@ -79,6 +80,8 @@ def test_stats_timeseries_particles(server):
     np.testing.assert_allclose(one["values"], [0, 6, 12])
     _, parts = get(base, "/particles?sim=run&job=0&time=1")
     assert parts["species"][0]["count"] == 2 and len(parts["species"][0]["points"]) == 6
+    _, capped = get(base, "/particles?sim=run&job=0&time=0&max=2")
+    assert capped["species"][0]["count"] == 3 and capped["species"][0]["shown"] == 2
 
 
 def test_errors_and_health(server):
