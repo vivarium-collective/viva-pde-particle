@@ -43,8 +43,21 @@ class RealizedGeometry(ABC):
     def volume(self, region: str) -> float:
         """The region's volume as discretized (µm³)."""
 
+    @abstractmethod
+    def region_bounds(self, region: str) -> tuple[np.ndarray, np.ndarray]:
+        """Axis-aligned bounding box (lo, hi) of the region as discretized."""
+
     def inside(self, region: str, points: np.ndarray) -> np.ndarray:
         return self.locate(points) == self.regions.index(region)
+
+    def uniform_points(self, region: str, n: int, rng: np.random.Generator) -> np.ndarray:
+        """n points uniformly distributed in the region (rejection sampling in its bounding box)."""
+        lo, hi = self.region_bounds(region)
+        out = np.empty((0, 3))
+        while len(out) < n:
+            cand = lo + (hi - lo) * rng.random((max(2 * (n - len(out)), 1000), 3))
+            out = np.vstack([out, cand[self.inside(region, cand)]])
+        return out[:n]
 
 
 class FenicsRealization(RealizedGeometry):
@@ -78,6 +91,13 @@ class FenicsRealization(RealizedGeometry):
             labels[todo[self._locators[r].inside(pts[todo])]] = i
         return labels
 
+    def inside(self, region, points):
+        return self._locators[region].inside(np.asarray(points, dtype=float).reshape(-1, 3))
+
+    def region_bounds(self, region):
+        x = self.meshes[region].geometry.x
+        return x.min(axis=0), x.max(axis=0)
+
     def boundary_triangles(self, region):
         from viva_pde_particle.mesh import boundary_triangles
 
@@ -94,6 +114,55 @@ class FenicsRealization(RealizedGeometry):
 
         m = self.meshes[region]
         return float(fem.assemble_scalar(fem.form(1.0 * ufl.dx(domain=m))))
+
+
+class MeshRealization(RealizedGeometry):
+    """A single dolfinx tet mesh as a one-region RealizedGeometry (e.g. the pre-7e gmsh ball).
+
+    ``locator`` (a PointLocator on the mesh) and ``interior`` (compartment points) may be given to
+    reuse existing objects; otherwise they are built from the mesh.
+    """
+
+    def __init__(self, msh, region: str = "domain", locator=None, interior=None):
+        self.msh = msh
+        self.regions = (region,)
+        if locator is None:
+            from dolfinx import fem
+
+            from viva_pde_particle.mesh import PointLocator
+
+            locator = PointLocator.build(msh, fem.functionspace(msh, ("Lagrange", 1)))
+        self.locator = locator
+        self._interior = None if interior is None else np.atleast_2d(np.asarray(interior, dtype=float))
+        x = msh.geometry.x
+        self.lo, self.hi = x.min(axis=0), x.max(axis=0)
+
+    def locate(self, points):
+        return np.where(self.locator.inside(np.asarray(points, dtype=float).reshape(-1, 3)), 0, -1)
+
+    def inside(self, region, points):
+        return self.locator.inside(np.asarray(points, dtype=float).reshape(-1, 3))
+
+    def region_bounds(self, region):
+        return self.lo, self.hi
+
+    def boundary_triangles(self, region):
+        from viva_pde_particle.mesh import boundary_triangles
+
+        return boundary_triangles(self.msh)
+
+    def interior_points(self, region, max_points=64):
+        if self._interior is not None:
+            return self._interior
+        c = self.locator.centroids
+        step = max(1, len(c) // max_points)
+        return c[::step][:max_points]
+
+    def volume(self, region):
+        import ufl
+        from dolfinx import fem
+
+        return float(fem.assemble_scalar(fem.form(1.0 * ufl.dx(domain=self.msh))))
 
 
 _REALIZATIONS: dict = {}

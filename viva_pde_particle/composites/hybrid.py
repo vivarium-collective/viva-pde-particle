@@ -233,24 +233,20 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict | None, dt: floa
 
     probe = FenicsxMeshReactionDiffusion(config=pde_cfg, core=allocate_core())
     if membrane == "mesh":
-        from viva_pde_particle.mesh import boundary_triangles, uniform_in_mesh
-
-        msh = probe.V.mesh
+        # Particle domain = PDE domain: everything Smoldyn needs is derived from one realization (7e.3).
+        from viva_pde_particle.geometry import MeshRealization
+        from viva_pde_particle.geometry import smoldyn_geometry as derive_smoldyn_geometry
         from viva_pde_particle.mesh import mesh_locator
 
-        locator = mesh_locator(mesh_spec, g)
-        lo, hi = msh.geometry.x.min(axis=0), msh.geometry.x.max(axis=0)
-        positions = {s.name: uniform_in_mesh(int(s.initial), locator, lo, hi, rng)
+        if realization is None:  # gmsh ball: a one-region realization of the PDE mesh
+            realization = MeshRealization(probe.V.mesh, locator=mesh_locator(mesh_spec, g),
+                                          interior=list(sphere["center"]))
+            region = "domain"
+        else:
+            region = mesh_spec["region"]
+        positions = {s.name: realization.uniform_points(region, int(s.initial), rng)
                      for s in model.species if s.particle}
-        interior = (realization.interior_points(mesh_spec["region"]) if realization is not None
-                    else list(sphere["center"]))
-        smoldyn_geometry = {"kind": "triangles", "triangles": boundary_triangles(msh), "interior_point": interior}
-        if volume_samples:
-            from viva_pde_particle.mesh import volume_samples as sample_map
-
-            num = [int(round((n - 1) * volume_samples)) or 1 for n in g.num]
-            smoldyn_geometry["volume_samples"] = {"origin": list(g.origin), "size": list(g.size), "num": num,
-                                                  "ids": sample_map(locator, g.origin, g.size, num)}
+        smoldyn_geometry = derive_smoldyn_geometry(realization, region, g, volume_samples)
     else:
         positions = {s.name: uniform_in_sphere(int(s.initial), sphere["center"], sphere["radius"], rng)
                      for s in model.species if s.particle}
