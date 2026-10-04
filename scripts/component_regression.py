@@ -1,6 +1,6 @@
 """Bit-exact regression harness for the Phase 7 componentization refactor.
 
-Records the outputs of six representative hybrid composites, then checks a later version of
+Records the outputs of nine representative hybrid composites, then checks a later version of
 the code against them array for array (np.array_equal, no tolerance):
 
     pixi run python scripts/component_regression.py refs.npz save    # on the commit before a change
@@ -34,6 +34,9 @@ cases = {
     "fv_start": lambda: run_document(build_hybrid_document(two_way_exchange_model(), 0.01, 2, "start-of-interval", seed=3), 1.0, 0.01, 0.1),
     "q1": lambda: run_document(build_hybrid_document(two_way_exchange_model(), 0.01, 2, "fvsolver", seed=3, pde_engine="fenicsx"), 1.0, 0.01, 0.1),
     "coupler_strang": lambda: run_document(build_coupler_document(two_way_exchange_model(), 0.01, 4, "strang", seed=3), 1.0, 0.01, 0.2),
+    "coupler_jacobi": lambda: run_document(build_coupler_document(two_way_exchange_model(), 0.01, 4, "jacobi", seed=3), 1.0, 0.01, 0.2),
+    "coupler_gs_particles": lambda: run_document(build_coupler_document(two_way_exchange_model(), 0.01, 4, "gs_particles_first", seed=3), 1.0, 0.01, 0.2),
+    "coupler_gs_pde": lambda: run_document(build_coupler_document(two_way_exchange_model(), 0.01, 4, "gs_pde_first", seed=3), 1.0, 0.01, 0.2),
     "mesh_grid": lambda: run_document(build_mesh_hybrid_document(b2b.model("exchange"), b2b.MESH_SPHERE, 0.01, seed=3), 0.3, 0.01, 0.1),
     "mesh_positions": lambda: run_document(build_mesh_hybrid_document(b2b.model("conversion"), b2b.MESH_SPHERE, 0.01, seed=3, particle_transfer="positions"), 0.3, 0.01, 0.1),
 }

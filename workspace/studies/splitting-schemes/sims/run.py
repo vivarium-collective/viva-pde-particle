@@ -3,7 +3,7 @@
 Model: A5's A_particle + B_field → C_field (k = 2/(µM·s), 20,000 A, 11×11×3 slab),
 Δt = 0.005, coupling interval τ = k·Δt with k ∈ {2, 4, 8, 16, 32}, 64 seeds per point.
 
-Schemes (viva_pde_particle.processes.HybridCoupler):
+Schemes (viva_pde_particle.processes.SplittingCoordinator; HybridCoupler before Phase 7d):
 - jacobi: vcell-fvsolver's lagged scheme; identical to the two-process composite with
   coupling="fvsolver";
 - gs_particles_first and gs_pde_first: Gauss–Seidel orderings;

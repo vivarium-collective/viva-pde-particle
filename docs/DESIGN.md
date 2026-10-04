@@ -20,7 +20,7 @@ repository, not from a separate sketch.
 5. [A process-bigraph primer for this problem](#5-a-process-bigraph-primer-for-this-problem)
 6. [Approach 1: two processes on a Cartesian grid](#6-approach-1-two-processes-on-a-cartesian-grid)
 7. [The handoff: grids, binning and units](#7-the-handoff-grids-binning-and-units)
-8. [Approach 2: one coupler process with a chosen splitting](#8-approach-2-one-coupler-process-with-a-chosen-splitting)
+8. [Approach 2: one coordinator process with a chosen splitting](#8-approach-2-one-coordinator-process-with-a-chosen-splitting)
 9. [Approach 3: swapping the PDE engine (FEniCSx Q1)](#9-approach-3-swapping-the-pde-engine-fenicsx-q1)
 10. [Approach 4: an unstructured mesh behind a background grid](#10-approach-4-an-unstructured-mesh-behind-a-background-grid)
 11. [Approach 5: particles loaded from positions, membrane from the mesh](#11-approach-5-particles-loaded-from-positions-membrane-from-the-mesh)
@@ -394,49 +394,59 @@ Studies B2b and B2c measured these effects:
 - **B2c:** native's outer shell runs 2.3% low and the co-sim's 1.3% high.
 - **Code:** vcell-fvsolver's `computeHistogram` contains a same-compartment correction that is commented out.
 
-## 8. Approach 2: one coupler process with a chosen splitting
+## 8. Approach 2: one coordinator process with a chosen splitting
 
 Approach 1 gets its ordering from the scheduler: both processes read old values. To use a *different* order (e.g.
 Gauss–Seidel or Strang), something must sequence the substeps inside one coupling interval.
-[`processes/hybrid_coupler.py`](../viva_pde_particle/processes/hybrid_coupler.py) `HybridCoupler` is a single Process
-that **owns** an `FVReactionDiffusion` and a `SmoldynHybrid` instance and calls them in the order the `scheme` says.
+[`processes/splitting.py`](../viva_pde_particle/processes/splitting.py) `SplittingCoordinator` (Phase 7d; it replaced
+the earlier `HybridCoupler`, which hard-coded FV + Smoldyn) does this for **any** engine pair:
+- it holds a PDE engine, a particle engine and the adapter Steps as nodes (address, config, port → store wiring), just
+  as in a composite document;
+- over each interval τ it runs the engines in the order the `scheme` gives, on an internal copy of the stores;
+- after each run it runs the adapters whose inputs changed.
+
+`to_splitting_document(doc, scheme, dt, k)` turns any two-process document (FV, Q1 or mesh) into a coordinator
+document.
 
 ```mermaid
 flowchart LR
   F[("fields")] --> HC
   C[("particle_counts")] --> HC
-  HC["coupler: HybridCoupler<br/>interval = k·dt<br/>scheme = jacobi | gs_* | strang"]
+  HC["coupler: SplittingCoordinator<br/>interval = k·dt<br/>scheme = jacobi | gs_* | strang"]
   HC --> F
   HC --> C
   HC --> T[("particle_totals")]
   subgraph HC_inside["inside update()"]
     direction LR
-    E1["FVReactionDiffusion.step × n"] --- E2["SmoldynHybrid._run(1)"]
+    E1["pde node (any engine)<br/>update(interval)"] --- A1{{"adapter Steps<br/>(run when inputs change)"}} --- E2["particles node (any engine)<br/>update(τ)"]
   end
-  HC -. "owns both engines;<br/>calls them in scheme order" .-> HC_inside
+  HC -. "children by address;<br/>runs them in scheme order" .-> HC_inside
 ```
 
 ![Splitting schemes](figures/splitting_schemes.svg)
 
-*Figure 3.* Order of substeps within one interval τ for each scheme (k = 4):
+*Figure 3.* Order of substeps within one interval τ for each scheme (k = 4). In Jacobi, the coordinator holds the
+particle update back until the end of the interval.
 - **jacobi** is Approach 1 / vcell-fvsolver.
 - **gs_particles_first** steps the particles first, so the PDE sees the new particles throughout.
 - **gs_pde_first** steps the PDE first, so the particles see the end-of-interval field.
 - **strang** puts the particle step at the midpoint. In theory that makes the splitting second order in τ, against
   first order for the other three.
 
-**Why a Process and not a composite of Steps?** The substeps are ordered *within* one interval, and each consumes the
-previous one's output immediately. Steps run only when inputs change at update boundaries, so expressing the order
-with them would need extra stores and triggers for every substep. One Process that calls two engines keeps the
-engines reusable unchanged; only the ordering is new. The trade-off is that inside the coupler the two engines are no
-longer separately visible in the composite's state tree.
+**Why a coordinator Process?** The substeps are ordered *within* one interval, and each consumes the previous one's
+output immediately. Process-bigraph's scheduler gives the Jacobi order for free (everyone reads old values), but not
+the others. The coordinator adds only the ordering:
+- it uses the children's public `update` methods, so the engines and adapters are reused unchanged and can be any
+  registered components;
+- the trade-off is that inside the coordinator the children are not separately visible in the composite's state tree.
 
 **Outcome (Study B3, splitting-schemes).**
 - Jacobi and both Gauss–Seidel orders are first order in τ.
 - Strang keeps the error at the sampling floor up to τ = 0.16 s, 25× below Jacobi there. The particle side can
   therefore step about 32× less often at fvsolver-level accuracy.
 - vcell-fvsolver's loop implements one fixed order (`SimTool.cpp`), so trying another there means changing the
-  solver. Here it is a coupler option.
+  solver. Here it is a coordinator option, and since Phase 7d it works with any engine pair (e.g. Strang on the
+  unstructured-mesh engine, `tests/test_splitting.py`).
 
 ## 9. Approach 3: swapping the PDE engine (FEniCSx Q1)
 
@@ -702,8 +712,8 @@ coupling timing of §6.3 is unchanged.
 | 7a | `ParticlesToField` Steps: `GridCountsToConcentration` (FV, Q1), `GridCountsToMeshConcentration` (Pᵀ), `PositionsToMeshConcentration` (P1 load). The PDE engines take a generic `external_conc` and no longer know about particles. | **done**: bit-identical to the pre-refactor code on six composites (`scripts/component_regression.py`). The mesh composites run 1.8–3.5× faster, because the PDE no longer receives the grid histogram or positions through its ports. |
 | 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs and needs no grid; it builds from the mesh alone through a shared `mesh_space` cache. | **done**: bit-identical on the same six composites; same speed as 7a. |
 | 7c | The particle engine without the PDE clock: `SmoldynHybrid` reads at the start of each update and advances by its interval. fvsolver timing comes from a generic `Stepper` Process (tick dt; child on tick k−1 of every k, with interval k·dt). | **done**: bit-identical on the six composites, including fvsolver mode with k = 2. |
-| 7d | A generic splitting coordinator in place of `HybridCoupler`'s hard-coded FV + Smoldyn pair. | next |
-| 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | planned |
+| 7d | `SplittingCoordinator`: any PDE engine, particle engine and adapters, by address, in Jacobi, Gauss–Seidel or Strang order. It replaces `HybridCoupler`. | **done**: bit-identical on all four schemes and the earlier composites (20 arrays); new capability is splitting with the mesh engine. |
+| 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | next |
 | 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
 
 **Costs to watch.**
@@ -718,7 +728,7 @@ coupling timing of §6.3 is unchanged.
 |---|---|---|---|---|---|
 | 0. vcell-fvsolver | — (one C++ loop) | Jacobi (fixed) | FV, Cartesian + membrane numerics | nearest node | reference |
 | 1. Two processes | `FVReactionDiffusion` + `SmoldynHybrid` (Processes) | Jacobi, by the scheduler | FV, Cartesian | nearest node (same grid) | matches native within noise; 0.25–0.93× cost (A) |
-| 2. Coupler | `HybridCoupler` (one Process owning both engines) | jacobi / GS / Strang | FV, Cartesian | nearest node | Strang 25× more accurate at τ = 0.16 s (B3) |
+| 2. Coordinator | `SplittingCoordinator` (one Process sequencing any engines and adapters) | jacobi / GS / Strang | any (FV, Q1, P1 mesh) | via the adapter Steps | Strang 25× more accurate at τ = 0.16 s (B3) |
 | 3. Engine swap | `FenicsxReactionDiffusion` + `SmoldynHybrid` | Jacobi | FEniCSx Q1 on the grid | nearest node | differs only by PDE discretization (B1) |
 | 4. Unstructured mesh | `FenicsxMeshReactionDiffusion` + `SmoldynHybrid` | Jacobi | FEniCSx P1, body-fitted | grid histogram, then `Pᵀ` / `P` | conservative; boundary shell +1.3% (B2c) |
 | 5. Mesh membrane (± positions) | same; optional `particle_positions` store | Jacobi | FEniCSx P1, body-fitted | grid `Pᵀ` (default) or exact P1 load | mesh membrane removes the bias (+0.12%, z 1.2); positions not needed (B2d) |
@@ -733,7 +743,7 @@ coupling timing of §6.3 is unchanged.
 | Smoldyn configuration writer | `viva_pde_particle/model/smoldyn_config.py` |
 | FV PDE process | `viva_pde_particle/processes/fv_reaction_diffusion.py` |
 | Smoldyn process | `viva_pde_particle/processes/smoldyn_hybrid.py` |
-| Splitting coupler | `viva_pde_particle/processes/hybrid_coupler.py` |
+| Splitting coordinator | `viva_pde_particle/processes/splitting.py` |
 | Coarse/phase-shifted scheduling of any process (Phase 7c) | `viva_pde_particle/processes/stepper.py` |
 | Adapter Steps, both directions (Phase 7a, 7b) | `viva_pde_particle/steps/transfer.py` |
 | Bit-exact refactor regression | `scripts/component_regression.py` |
