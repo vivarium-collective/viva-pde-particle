@@ -583,7 +583,7 @@ uniform in the ball), t = 2 s, 32 seeds per solver.
       
       <div class="ctr-meta">
         <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>ball-conversion</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Relative volume error of the node-centred smoothed cell domain vs the exact ball.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">RMS radial error of the smoothed boundary surface (µm); the staircase surface is about 0.11 µm.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Native interior (r &lt; R/2) mean B relative to E[B].</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Co-sim interior mean B relative to E[B].</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Native outer-shell mean B relative to the interior. Expected to FAIL; it localizes B2b&#39;s exterior-binning loss at the membrane.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Co-sim outer-shell mean B relative to the interior. Expected to FAIL slightly; Pᵀ folding enriches the boundary DOFs.</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Relative volume error of the node-centred smoothed cell domain vs the exact ball.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">RMS radial error of the smoothed boundary surface (µm); the staircase surface is about 0.11 µm.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Native interior (r &lt; R/2) mean B relative to E[B].</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Co-sim interior mean B relative to E[B].</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Native outer-shell mean B relative to the interior. Expected to FAIL; it localizes B2b&#39;s exterior-binning loss at the membrane.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Co-sim outer-shell mean B relative to the interior. Failed (+1.3%) with the sphere membrane; passes since B2d made the mesh boundary the default membrane.</span></div>
       </div>
       
     </div>
@@ -1075,7 +1075,7 @@ pass_if: {"high": 0.01, "low": -0.01, "op": "range", "provenance": {"kind": "the
         <span class="muted" style="font-size:0.78em">requires: <code>ball-conversion</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Co-sim outer-shell mean B relative to the interior. Expected to FAIL slightly; Pᵀ folding enriches the boundary DOFs.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Co-sim outer-shell mean B relative to the interior. Failed (+1.3%) with the sphere membrane; passes since B2d made the mesh boundary the default membrane.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
@@ -1202,7 +1202,7 @@ pass_if: {"high": 0.01, "low": -0.01, "op": "range", "provenance": {"kind": "the
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03; 32 seeds per solver):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03; 32 seeds per solver; co-sim re-run with the B2d default membrane):</p>
 <p><strong>Geometry.</strong></p>
 <ul>
 <li>The node-centred smoothed cell domain is within −0.50% of the ball volume. Taken as-is,
@@ -1210,19 +1210,29 @@ the pyvcell export is −8.4% (the tiling convention above).</li>
 <li>Smoothing cuts the RMS radial error of the boundary surface from 0.108 to 0.065 µm.</li>
 </ul>
 <p><strong>Interior.</strong> Both solvers match the exact uniform E[B]: native +0.49%, co-sim −0.37%.</p>
-<p><strong>Next to the membrane, both solvers have a boundary artifact, of opposite sign.</strong></p>
+<p><strong>Next to the membrane.</strong></p>
 <ul>
-<li><strong>Native:</strong> the outer shell (r &gt; 3.5 µm) is 2.3% below the interior (z = −20). The
-profile declines smoothly from about r = 2.5 µm to 0.98 at the membrane, which is the
-diffusive footprint of the B sources dropped at the boundary. This is B2b's
-exterior-binning loss, now localized.</li>
-<li><strong>Co-sim:</strong> the shell is 1.3% above the interior (z = 10). This is consistent with Pᵀ
-folding exterior-node counts into the nearest boundary DOFs: conservative, but it
-concentrates the sources at the boundary.</li>
-<li>Smoothing the native grid barely changes its shell bias (−2.27% vs −2.29% on the
-staircase). The field is smooth on the scale of the boundary displacement (&lt; 0.1 µm),
-so the smoothed grid helps geometry and visualization; the field artifact is in the
-coupling.</li>
+<li><strong>Native:</strong>
+<ul>
+<li>The outer shell (r &gt; 3.5 µm) is 2.3% below the interior (z = −20).</li>
+<li>The profile declines smoothly from about r = 2.5 µm to 0.98 at the membrane: the
+diffusive footprint of the B sources dropped at the boundary.</li>
+<li>This is B2b's exterior-binning loss, now localized.</li>
+</ul>
+</li>
+<li><strong>Co-sim:</strong>
+<ul>
+<li>The shell is +0.12% (z = 1.2), unbiased.</li>
+<li>The first run, with Smoldyn confined by the exact sphere, gave +1.3% (z = 10).
+This study attributed that to Pᵀ folding of exterior-node counts. Study B2d showed the
+cause was the domain mismatch instead: particles in the ~1.4% sliver between sphere and
+inscribed mesh load the boundary DOFs.</li>
+<li>Confining Smoldyn by the mesh's own boundary (now the default) removes it.</li>
+</ul>
+</li>
+<li><strong>Smoothing</strong> barely changes the native shell bias (−2.27% vs −2.29% on the staircase).
+The field is smooth on the scale of the boundary displacement (&lt; 0.1 µm), so the smoothed
+grid helps geometry and visualization; the field artifact is in the coupling.</li>
 </ul>
 <p>Neither effect is a limitation of VCell's geometry or PDE numerics. Both come from how
 particles near a curved membrane are binned to the field.</p>
@@ -1232,7 +1242,7 @@ bridgeVCellSmoldyn/VCellSmoldynOutput.cpp:476–548) bins each molecule to the n
 node. Its correction for a nearest node in a different compartment (re-bin to the
 nearest same-compartment neighbour) is present but commented out. Re-enabling it is the
 likely native fix.</li>
-<li>Co-sim fix: distribute exterior counts by cell overlap rather than to the nearest DOF.</li>
+<li>Co-sim fix (B2d, done): the mesh boundary as the particle membrane.</li>
 </ul>
 </div>
     </div>
@@ -1277,7 +1287,7 @@ likely native fix.</li>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "b7830e8b01f2211173a1dcf709dde71d393997ef", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/b7830e8b01f2211173a1dcf709dde71d393997ef", "branch": "main", "lockfile": "uv.lock@cf27fd8aeff4", "generated_at": "2026-10-03 21:42 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "f167a30e6b1e318c5bee55cb5633b55a005e75b6", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/f167a30e6b1e318c5bee55cb5633b55a005e75b6", "branch": "main", "lockfile": "uv.lock@1363dec34ba4", "generated_at": "2026-10-04 00:00 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>

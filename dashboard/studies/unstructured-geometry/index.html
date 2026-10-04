@@ -1121,21 +1121,22 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Detailed bal
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03). Re-run after Study B2d, with Smoldyn confined
+by the mesh's boundary triangles and the creation fix:</p>
 <ul>
-<li><strong>Conversion:</strong> A follows exp(−kt) (|z| ≤ 1.8); A + B is conserved to 0.4%; B matches
-the continuum FEM to 1.0% relative L2.</li>
-<li><strong>Exchange:</strong> mass balance to 1.0%; steady ratio within 0.33% of k2/k1.</li>
-<li><strong>Geometry:</strong> the polyhedral mesh is 1.4% smaller in volume than the ball, which
-bounds the geometry-representation mismatch between the two sides.
-The co-simulation runs on an unstructured mesh with curved particle confinement, and
-the handoff stays conservative.
+<li><strong>Conversion:</strong> A follows exp(−kt) (|z| ≤ 1.5); A + B is conserved to 0.11%; B matches
+the continuum FEM to 0.53% relative L2. The sphere membrane gave 0.4% and 1.0%.</li>
+<li><strong>Exchange:</strong> mass balance to 0.86%; steady ratio within 0.11% of k2/k1.</li>
+<li><strong>Geometry:</strong> the polyhedral mesh is 1.4% smaller in volume than the ball. With the mesh
+as the membrane, the particle and PDE domains are identical, so this is now a
+geometry-representation error of the model, not a mismatch between the two halves.
+The co-simulation runs on an unstructured mesh, and the handoff stays conservative.
 Follow-ups:</li>
 <li>membrane-bound particles;</li>
-<li>a native VCell comparison on the same analytic sphere. VCell handles curved
-geometries (analytic, image and CSG) with tangent-plane/Voronoi membrane
-numerics, so this is a discretization comparison, not a capability gap;</li>
-<li>higher-order (P2) PDE.</li>
+<li>native VCell on the same analytic sphere: done in sphere-cosim-vs-native (B2b).
+VCell handles curved geometries (analytic, image and CSG) with tangent-plane/Voronoi
+membrane numerics, so that is a discretization comparison, not a capability gap;</li>
+<li>higher-order (P2) PDE, or a finer mesh, to shrink the 1.4% volume error.</li>
 </ul>
 </div>
     </div>
@@ -1180,7 +1181,7 @@ numerics, so this is a discretization comparison, not a capability gap;</li>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "b7830e8b01f2211173a1dcf709dde71d393997ef", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/b7830e8b01f2211173a1dcf709dde71d393997ef", "branch": "main", "lockfile": "uv.lock@cf27fd8aeff4", "generated_at": "2026-10-03 21:42 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "f167a30e6b1e318c5bee55cb5633b55a005e75b6", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/f167a30e6b1e318c5bee55cb5633b55a005e75b6", "branch": "main", "lockfile": "uv.lock@1363dec34ba4", "generated_at": "2026-10-04 00:00 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>

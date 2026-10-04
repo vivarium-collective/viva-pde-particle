@@ -584,7 +584,7 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
       
       <div class="ctr-meta">
         <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>ball-both-solvers</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Relative volume error of VCell&#39;s Cartesian representation of the ball (cells of nodes inside).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max two-sample |z| of surviving A, co-sim vs native, conversion case.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max relative difference of the final radial B profiles (8 shells), co-sim vs native.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max two-sample |z| of total A, co-sim vs native, exchange case. Currently FAILS; see the conclusion (open discrepancy, under investigation).</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Relative volume error of VCell&#39;s Cartesian representation of the ball (cells of nodes inside).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max two-sample |z| of surviving A, co-sim vs native, conversion case.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max relative difference of the final radial B profiles (8 shells), co-sim vs native.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max two-sample |z| of total A, co-sim vs native, exchange case. FAILS: native loses 6.8% at the curved membrane (exterior binning plus centre-only creation in vcell-fvsolver). See the conclusion.</span></div>
       </div>
       
     </div>
@@ -998,7 +998,7 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Discretizati
         <span class="muted" style="font-size:0.78em">requires: <code>ball-both-solvers</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max two-sample |z| of total A, co-sim vs native, exchange case. Currently FAILS; see the conclusion (open discrepancy, under investigation).</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Max two-sample |z| of total A, co-sim vs native, exchange case. FAILS: native loses 6.8% at the curved membrane (exterior binning plus centre-only creation in vcell-fvsolver). See the conclusion.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
@@ -1125,35 +1125,53 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Kept so the 
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03; re-run with signed diagnostics):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03). Re-run after Study B2d with:</p>
+<ul>
+<li>the co-sim default membrane=&quot;mesh&quot; (Smoldyn confined by the PDE mesh's boundary
+triangles);</li>
+<li>the Smoldyn-fork fix for field-dependent creation in curved compartments.
+The native results are unchanged.</li>
+</ul>
 <p><strong>Geometry.</strong> VCell's representation of the ball is more accurate at this resolution:
 −0.47% volume error, against −1.4% for the co-sim mesh at h = 0.8 µm.</p>
-<p><strong>Conversion: the solvers agree.</strong> Both decay as exp(−kt) (|z| ≤ 0.99) and conserve
-A + B to under 1% (native −0.57%, co-sim +0.79%). Survival agrees (|z| = 0.73), and the
-final radial B profiles agree to 3.5%.</p>
+<p><strong>Conversion: the solvers agree.</strong> Both decay as exp(−kt) (|z| ≤ 1.5) and conserve
+A + B to under 1% (native −0.57%, co-sim +0.66%). Survival agrees (|z| = 1.5), and the
+final radial B profiles agree to 3.3%.</p>
 <p><strong>Exchange: the native solver loses molecules at the curved membrane.</strong></p>
 <ul>
-<li>Signed mass balance at t = 5 s: native −6.8%, co-sim −1.2%. Native total A ends
-6.1% below the co-sim (|z| = 8.5). An earlier version of this study read the
-unsigned deviation as growth; that was wrong.</li>
-<li>The loss is consistent with two native mechanisms. Their rough budget, about
-−1.6% plus −5 to −6%, matches the observed −6.8%:
+<li>Signed mass balance at t = 5 s: native −6.8%; co-sim +0.51%, its first-order coupling
+error and within the box-domain level.</li>
+<li>Native total A ends 8.1% below the co-sim (|z| = 12).</li>
+<li>An earlier version of this study read the unsigned deviation as growth; that was wrong.</li>
+<li>Two native mechanisms account for the loss. Their rough budget, about −1.6% plus
+−5 to −6%, matches the observed −6.8%:
 <ol>
-<li><strong>Exterior binning:</strong> 1.2% of native A is binned to grid nodes outside the
-voxelized cell. Smoldyn confines particles with a triangulated membrane, so
-particles just inside it can be nearest to an exterior node. B is not solved
-there, so their PDE source k1·[A] is dropped.</li>
-<li><strong>Creation deficit:</strong> field-dependent creation in the cell runs at 0.960 of the
-exact expectation (B a static catalyst). VCell's in-compartment test with the
-high-resolution voxel map plausibly excludes cells next to the membrane.</li>
+<li><strong>Exterior binning:</strong>
+<ul>
+<li>1.2% of native A is binned to grid nodes outside the voxelized cell, where B is not
+solved, so their PDE source k1·[A] is dropped.</li>
+<li>B2c localizes this as a −2.3% outer-shell depletion.</li>
+<li>In vcell-fvsolver, VCellSmoldynOutput::computeHistogram bins to the nearest node.
+Its same-compartment correction is commented out.</li>
+</ul>
+</li>
+<li><strong>Creation deficit:</strong>
+<ul>
+<li>Field-dependent creation in the cell runs at 0.960 of the exact expectation.</li>
+<li>Study B2d found the mechanism in Smoldyn's hybrid zeroreact: it draws only in grid
+cells whose centre is inside the compartment, so cells that partly overlap a curved
+compartment never create. Monte Carlo on this geometry gives 0.976 for that rule.</li>
+<li>Our Smoldyn fork now draws in every cell and thins exactly. VCell's vendored
+Smoldyn 2.38 still has the centre test.</li>
+</ul>
+</li>
 </ol>
 </li>
-<li>The co-sim also has a smaller creation deficit (0.974: ~1% one-time start-up plus
-~1.6% at the boundary), but avoids exterior binning: its Pᵀ transfer folds
-exterior-node counts into the nearest mesh DOF.</li>
+<li>The co-sim had both effects before B2d (creation 0.974, exchange −1.2%); with the fixes,
+neither remains.</li>
 <li>These are hybrid-coupling details at curved membranes, not a limitation of VCell's
-geometry or PDE numerics. Possible fixes on the native side: bin particles to the
-voxel's region rather than the nearest node, or redistribute exterior counts.</li>
+geometry or PDE numerics. Native-side fixes: re-enable the same-compartment binning
+correction, and draw creation in every cell overlapping the compartment.</li>
 </ul>
 </div>
     </div>
@@ -1198,7 +1216,7 @@ voxel's region rather than the nearest node, or redistribute exterior counts.</l
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "b7830e8b01f2211173a1dcf709dde71d393997ef", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/b7830e8b01f2211173a1dcf709dde71d393997ef", "branch": "main", "lockfile": "uv.lock@cf27fd8aeff4", "generated_at": "2026-10-03 21:42 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "f167a30e6b1e318c5bee55cb5633b55a005e75b6", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/f167a30e6b1e318c5bee55cb5633b55a005e75b6", "branch": "main", "lockfile": "uv.lock@1363dec34ba4", "generated_at": "2026-10-04 00:00 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>

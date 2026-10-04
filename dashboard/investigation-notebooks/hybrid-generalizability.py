@@ -365,8 +365,8 @@ _save_viz('sphere-cosim-vs-native', 'sphere-cosim-vs-native', _render_one('', {}
 # transfer at the membrane.
 # - Native: exterior-node binning drops B sources next to the membrane, so the outer shell
 #   should be depleted.
-# - Co-sim: Pᵀ folds exterior counts into the nearest boundary DOFs, so its outer shell
-#   should be slightly enriched.
+# - Co-sim: exterior-node counts are folded onto boundary DOFs (Pᵀ), so its outer shell
+#   should be slightly enriched. Study B2d later revised this cause; see the conclusion.
 
 # ### Parameters
 #
@@ -415,6 +415,75 @@ _save_viz('near-membrane-fields', 'near-membrane-fields', _render_one('', {}, RU
 # | cosim-interior-matches-expectation | kind=derived_scalar field=b2c_cosim_interior_rel | op range low -0.02 high 0.02 provenance {'kind': 'theory', 'note': 'As above.'} |
 # | native-shell-unbiased | kind=derived_scalar field=b2c_native_shell_bias | op range low -0.01 high 0.01 provenance {'kind': 'theory', 'note': 'E[B] is uniform; kept so the boundary artifact stays visible in the report card.'} |
 # | cosim-shell-unbiased | kind=derived_scalar field=b2c_cosim_shell_bias | op range low -0.01 high 0.01 provenance {'kind': 'theory', 'note': 'As above.'} |
+
+# ## Study: Removing the co-simulation's boundary artifact: particle transfer, membrane geometry and curved-compartment creation (`cosim-boundary-transfer`)
+#
+# **Question.** B2c found the co-simulation's ensemble-mean B 1.3% too high in the outer shell of the ball.
+# Two causes were candidates:
+# - the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+# - the domain mismatch: Smoldyn's exact sphere holds about 1.4% more volume than the
+#   inscribed P1 mesh.
+# Which is it, and what does removing it cost?
+#
+# **Objective.** Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
+# Variants (particle_transfer / membrane):
+# - grid / sphere (B2b/B2c);
+# - positions / sphere;
+# - grid / mesh;
+# - positions / mesh.
+# Cases and measures:
+# - Conversion (uniform A, so E[B] is uniform): interior level against
+#   E[B] = A₀(1 − e^(−kt))/(V_mesh·N_A), and the outer-shell bias (r > R − 2Δ vs r < R/2).
+# - Exchange with field-dependent creation in the cell: final mass balance and steady ratio.
+# - Wall time per simulated second.
+#
+# **Hypothesis.** B2c attributed the bias to the transfer, so the exact P1 load from molecule positions
+# should remove it.
+
+# ### Parameters
+#
+# | simulation | composite | steps | params |
+# | --- | --- | --- | --- |
+# | `ball-transfer-variants` | `viva_pde_particle.composites.examples.bimolecular_hybrid` | 0 | — |
+
+# ### Specification (process-bigraph) — load, inspect, edit
+#
+# Each composite is a process-bigraph *document*: named processes (`_type: process`) bound to an `address`, wired by `inputs`/`outputs` ports over shared stores. For every composite below the first cell loads the spec into a plain **editable Python dict** and prints its structure; the second cell is a **control panel** listing every configuration value and per-process `interval` so you can tweak any of them. Your edits are read when the composite is built and run, in the **Run** section.
+
+# **Composite `viva_pde_particle.composites.examples.bimolecular_hybrid`** — `spec_viva_pde_particle_composites_examples_bimolecular_hybrid` (a plain, editable dict)
+
+# _composite spec file for `viva_pde_particle.composites.examples.bimolecular_hybrid` not found under `viva_pde_particle/composites/` — skipped._
+
+# ### Run
+#
+# _Set the runtime (`STEPS`) and step size (`INTERVAL`), then run. Each simulation builds the (edited) spec above and writes `runs.db`; the figures below read it. Set `RERUN = False` to skip re-simulating._
+
+# === Study: cosim-boundary-transfer ===
+STUDY = 'cosim-boundary-transfer'
+STUDY_DIR = REPO / 'workspace/studies' / STUDY
+STUDY_YAML = str(STUDY_DIR / "study.yaml")
+RUNS_DB = str(STUDY_DIR / "runs.db")
+
+print("No recorded runs for this study; nothing to reproduce.")
+
+# ### Visualizations
+#
+# _Results are shown by the figures below, produced by the run above._
+
+# **cosim-boundary-transfer**
+
+# cosim-boundary-transfer
+_save_viz('cosim-boundary-transfer', 'cosim-boundary-transfer', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# ### Acceptance criteria
+#
+# _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
+#
+# | test | measures | passes if |
+# | --- | --- | --- |
+# | mesh-membrane-removes-shell-bias | kind=derived_scalar field=b2d_grid_mesh_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'E[B] is uniform; 32 seeds give an SE of about 0.1%.'} |
+# | mesh-membrane-exchange-balance | kind=derived_scalar field=b2d_grid_mesh_exchange_mass_balance_final_signed | op range low -0.015 high 0.015 provenance {'kind': 'theory', 'note': 'First-order coupling error only. The box-domain baseline (A3, two-way-exchange) is 1.2%.'} |
+# | sphere-membrane-shell-bias | kind=derived_scalar field=b2d_grid_sphere_shell_bias | op range low -0.005 high 0.005 provenance {'kind': 'theory', 'note': 'Kept so the artifact stays visible in the report card.'} |
 
 # ## Study: Operator-splitting schemes for PDE/particle coupling: Jacobi (fvsolver), Gauss–Seidel, Strang (`splitting-schemes`)
 #

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Study: splitting-schemes</title>
+<title>Study: cosim-boundary-transfer</title>
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
@@ -14,7 +14,7 @@
 <header class="study-header">
   <div style="display:flex; align-items:baseline; gap:12px; justify-content:space-between;">
   <h1 class="study-title">
-    <span class="study-name" id="study-name" data-slug="splitting-schemes" title="splitting-schemes">Operator-splitting schemes for PDE/particle coupling: Jacobi (fvsolver), Gauss–Seidel, Strang</span>
+    <span class="study-name" id="study-name" data-slug="cosim-boundary-transfer" title="cosim-boundary-transfer">Removing the co-simulation&#39;s boundary artifact: particle transfer, membrane geometry and curved-compartment creation</span>
     
     <span class="study-kind-tag study-kind-computational" data-study-kind="computational" title="Study kind">computational</span>
     
@@ -36,7 +36,7 @@
     
 
     
-    <div id="readiness-panel" data-slug="splitting-schemes"></div>
+    <div id="readiness-panel" data-slug="cosim-boundary-transfer"></div>
 
     
     
@@ -148,9 +148,12 @@
 
 
 
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> The embedded vcell-fvsolver hard-codes one lagged (Jacobi-type) splitting. With the
-coupling expressed as process-bigraph processes, can other splittings be used, and how
-much accuracy do they buy at a given coupling interval?
+<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
 </p>
 
 <nav class="study-tabs" aria-label="Study sections">
@@ -562,23 +565,34 @@ much accuracy do they buy at a given coupling interval?
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">The embedded vcell-fvsolver hard-codes one lagged (Jacobi-type) splitting. With the
-coupling expressed as process-bigraph processes, can other splittings be used, and how
-much accuracy do they buy at a given coupling interval?
+      <p class="ctr-text">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
 </p>
       
     </div>
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Test</h2>
-      <p class="ctr-text">A5&#39;s A_p + B_f → C_f (k = 2/(µM·s), 20,000 A, 11×11×3 slab); Δt = 0.005;
-τ = k·Δt with k ∈ {2, 4, 8, 16, 32}; 64 seeds per point.
-Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4.
+      <p class="ctr-text">Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
+Variants (particle_transfer / membrane):
+- grid / sphere (B2b/B2c);
+- positions / sphere;
+- grid / mesh;
+- positions / mesh.
+Cases and measures:
+- Conversion (uniform A, so E[B] is uniform): interior level against
+  E[B] = A₀(1 − e^(−kt))/(V_mesh·N_A), and the outer-shell bias (r &gt; R − 2Δ vs r &lt; R/2).
+- Exchange with field-dependent creation in the cell: final mass balance and steady ratio.
+- Wall time per simulated second.
 </p>
       
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>splitting-bimolecular</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Fitted order of the Jacobi (fvsolver) scheme.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Fitted order of Gauss–Seidel (particles first).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Strang error / Jacobi error at the largest coupling interval (k = 32, τ = 0.16 s).</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>ball-transfer-variants</code></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Outer-shell bias of the default co-sim (grid transfer, mesh membrane).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Exchange mass balance of the default co-sim at t = 5 s, signed.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Outer-shell bias with the exact-sphere membrane. Expected to FAIL; it documents the domain mismatch.</span></div>
       </div>
       
     </div>
@@ -604,12 +618,12 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
   <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
     <h2 class="overview-label" style="margin:0">Model composition</h2>
     
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'splitting-schemes', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'cosim-boundary-transfer', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
   </div>
 
   
   
-  <div id="model-composite-cards" class="model-composite-cards" data-study="splitting-schemes"
+  <div id="model-composite-cards" class="model-composite-cards" data-study="cosim-boundary-transfer"
        data-study-config="">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading composite card(s)…</span></div>
   </div>
@@ -630,9 +644,9 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
   <div class="overview-section" id="model-section">
     <h3>Runnable models <span class="muted" style="font-size:0.85em;font-weight:normal">— the composite(s) this study simulates</span></h3>
     
-    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.bimolecular_hybrid" data-model-overrides='{"dt": 0.005, "k": 2.0}'>
+    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.bimolecular_hybrid" data-model-overrides='{}'>
       <div class="cond-block-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>splitting-bimolecular</strong>
+        <strong>ball-transfer-variants</strong>
         
         <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.bimolecular_hybrid</code>
         <button type="button" class="action-btn" style="font-size:0.8em"
@@ -642,16 +656,16 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
       
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
         
-        <select class="baseline-composite-input" data-baseline-name="splitting-bimolecular"
+        <select class="baseline-composite-input" data-baseline-name="ball-transfer-variants"
                 data-current="viva_pde_particle.composites.examples.bimolecular_hybrid"
                 style="flex:1;min-width:200px;font-family:monospace;font-size:0.82em;padding:3px 6px">
           <option value="viva_pde_particle.composites.examples.bimolecular_hybrid" selected>viva_pde_particle.composites.examples.bimolecular_hybrid</option>
           
         </select>
         <button type="button" class="action-btn baseline-composite-set" style="font-size:0.8em"
-                data-baseline-name="splitting-bimolecular">Set composite</button>
+                data-baseline-name="ball-transfer-variants">Set composite</button>
       </div>
-      <div class="baseline-composite-status muted" data-baseline-name="splitting-bimolecular" style="font-size:0.8em;margin-top:2px"></div>
+      <div class="baseline-composite-status muted" data-baseline-name="ball-transfer-variants" style="font-size:0.8em;margin-top:2px"></div>
       
       
       
@@ -700,7 +714,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
 
   <h4>Latest run preview</h4>
   <p class="muted" style="font-size:0.9em">Per-store sparkline + first/last/min/max from the most recent run's emitted trajectory. This is a downsampled PREVIEW, not the full data — use the per-store or Download-all links for the complete arrays.</p>
-  <div id="results-preview" data-study="splitting-schemes">
+  <div id="results-preview" data-study="cosim-boundary-transfer">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading results preview…</span></div>
   </div>
 
@@ -720,7 +734,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
   
   <div class="overview-section" id="study-analyses-section">
     <h3>Analyses to run <span class="muted" style="font-size:0.85em;font-weight:normal">— which of the workspace's <code>ANALYSIS_REGISTRY</code> entries to compute on dispatch</span></h3>
-    <div id="study-analyses-list" data-study="splitting-schemes">
+    <div id="study-analyses-list" data-study="cosim-boundary-transfer">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading analyses…</span></div>
     </div>
     <div style="margin-top:8px">
@@ -736,9 +750,9 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
   <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
     <span class="muted" style="margin-right:auto;font-weight:600">Analysis result files</span>
     <a id="data-download-all" class="btn-mini" style="display:none"
-       href="/api/study-analysis-zip?study=splitting-schemes">Download all (.zip)</a>
+       href="/api/study-analysis-zip?study=cosim-boundary-transfer">Download all (.zip)</a>
   </div>
-  <div id="data-files" data-study="splitting-schemes">
+  <div id="data-files" data-study="cosim-boundary-transfer">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading result files…</span></div>
   </div>
 </div>
@@ -759,7 +773,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
     interval/buffer, output location, and emit scope — from
     <code>lib/emitters.py</code> and this study's (or the workspace's)
     <code>runtime.default_emitter</code>.</p>
-    <div id="readouts-emitter" data-study="splitting-schemes">
+    <div id="readouts-emitter" data-study="cosim-boundary-transfer">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading emitter configuration…</span></div>
     </div>
 
@@ -771,7 +785,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
     
     <div id="readouts-download" style="margin:0 0 16px 0"></div>
 
-    <div id="readouts-table" data-study="splitting-schemes">
+    <div id="readouts-table" data-study="cosim-boundary-transfer">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readouts from the composite emit plan…</span></div>
     </div>
 
@@ -779,7 +793,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
     <p class="muted" style="font-size:0.9em">Store path, dtype, shape
     <code>(n_steps, …)</code>, units, and a best-effort byte estimate for each emitted
     leaf.</p>
-    <div id="readouts-shapes" data-study="splitting-schemes">
+    <div id="readouts-shapes" data-study="cosim-boundary-transfer">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading output shapes…</span></div>
     </div>
 
@@ -794,7 +808,7 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
     
     
     <div class="viz-actions-row" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'splitting-schemes')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
+      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'cosim-boundary-transfer')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
     </div>
     
 
@@ -858,10 +872,10 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
     
     
     
-    <li class="expected-behavior-item" id="bt-jacobi-first-order"
+    <li class="expected-behavior-item" id="bt-mesh-membrane-removes-shell-bias"
         data-test-kind="behavioral"
         
-        data-pytest-node="jacobi-first-order"
+        data-pytest-node="mesh-membrane-removes-shell-bias"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -870,19 +884,19 @@ Error: max over time of |mean survival − continuum|. Orders fitted for k ≥ 4
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">jacobi-first-order</strong>
+        <strong style="font-size: 0.9em;">mesh-membrane-removes-shell-bias</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>splitting-bimolecular</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>ball-transfer-variants</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Fitted order of the Jacobi (fvsolver) scheme.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Outer-shell bias of the default co-sim (grid transfer, mesh membrane).</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b3_jacobi_order", "kind": "derived_scalar"}
-pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory", "note": "Explicit lagged splitting is first order."}}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2d_grid_mesh_shell_bias", "kind": "derived_scalar"}
+pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "theory", "note": "E[B] is uniform; 32 seeds give an SE of about 0.1%."}}</pre>
       </details>
       
       
@@ -897,10 +911,49 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
     
     
     
-    <li class="expected-behavior-item" id="bt-gauss-seidel-first-order"
+    <li class="expected-behavior-item" id="bt-mesh-membrane-exchange-balance"
         data-test-kind="behavioral"
         
-        data-pytest-node="gauss-seidel-first-order"
+        data-pytest-node="mesh-membrane-exchange-balance"
+        data-classification="primary"
+        data-result="pending"
+        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
+      
+        
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
+        <span class="classification-pill classification-primary">primary</span>
+        <strong style="font-size: 0.9em;">mesh-membrane-exchange-balance</strong>
+        
+        <span class="muted" style="font-size:0.78em">requires: <code>ball-transfer-variants</code></span>
+        
+      </div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Exchange mass balance of the default co-sim at t = 5 s, signed.</div>
+      
+      
+      <details style="margin-top: 6px; font-size: 0.82em;">
+        <summary class="muted" style="cursor: pointer;">Assertion</summary>
+        
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2d_grid_mesh_exchange_mass_balance_final_signed", "kind": "derived_scalar"}
+pass_if: {"high": 0.015, "low": -0.015, "op": "range", "provenance": {"kind": "theory", "note": "First-order coupling error only. The box-domain baseline (A3, two-way-exchange) is 1.2%."}}</pre>
+      </details>
+      
+      
+      
+      
+    </li>
+    
+    
+    
+    
+    
+    
+    
+    
+    <li class="expected-behavior-item" id="bt-sphere-membrane-shell-bias"
+        data-test-kind="behavioral"
+        
+        data-pytest-node="sphere-membrane-shell-bias"
         data-classification="secondary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #cbd5e1; background: #f8fafc; border-radius: 4px;">
@@ -909,58 +962,19 @@ pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-secondary">secondary</span>
-        <strong style="font-size: 0.9em;">gauss-seidel-first-order</strong>
+        <strong style="font-size: 0.9em;">sphere-membrane-shell-bias</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>splitting-bimolecular</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>ball-transfer-variants</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Fitted order of Gauss–Seidel (particles first).</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Outer-shell bias with the exact-sphere membrane. Expected to FAIL; it documents the domain mismatch.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b3_gs_particles_first_order", "kind": "derived_scalar"}
-pass_if: {"high": 1.5, "low": 0.7, "op": "range", "provenance": {"kind": "theory", "note": "Sequential (Lie) splitting is first order."}}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-strang-much-more-accurate"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="strang-much-more-accurate"
-        data-classification="primary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">strang-much-more-accurate</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>splitting-bimolecular</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Strang error / Jacobi error at the largest coupling interval (k = 32, τ = 0.16 s).</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b3_strang_over_jacobi_err_k32", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Symmetric splitting cancels the leading splitting error."}, "value": 0.25}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b2d_grid_sphere_shell_bias", "kind": "derived_scalar"}
+pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "theory", "note": "Kept so the artifact stays visible in the report card."}}</pre>
       </details>
       
       
@@ -1080,19 +1094,34 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Symmetric sp
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03; 32 seeds per variant; Smoldyn with the creation fix):</p>
+<p>| transfer / membrane | shell bias (z) | interior vs E[B] | exchange balance | wall s per sim s |
+|---|---|---|---|---|
+| grid / sphere | +1.27% (10.3) | −0.37% | +2.9% | 0.71 |
+| positions / sphere | +1.24% (10.0) | −0.36% | +2.9% | 2.98 |
+| grid / mesh | +0.12% (1.2) | +0.25% | +0.69% | 1.07 |
+| positions / mesh | +0.07% (0.7) | +0.27% | +1.0% | 3.56 |</p>
+<p><strong>The hypothesis was wrong: the membrane matters, not the transfer.</strong></p>
 <ul>
-<li><strong>First-order schemes:</strong> Jacobi (fvsolver) has order 1.23, Gauss–Seidel orders are
-1.01 and 1.08. At τ = 0.16 s their errors are about 0.021–0.023.</li>
-<li><strong>Strang:</strong> the error stays within about 2× of the sampling floor (4–11·10⁻⁴) for every
-τ up to 0.16 s, 25× smaller than Jacobi at τ = 0.16 s. It is too close to the floor to
-fit an order; more seeds or larger τ would resolve it.</li>
-<li><strong>Consequence:</strong> for this model, Strang splitting lets the particle side step about 32×
-less often than the PDE side at roughly the accuracy fvsolver's scheme reaches with
-k ≈ 1–2. That's a large potential speed-up for particle-dominated runs (A6).
-vcell-fvsolver's hybrid loop (SimTool.cpp) fixes one splitting order, so adopting
-Strang there would mean modifying the solver; here it is a coupler option.</li>
+<li>With the sphere membrane, the exact P1 load leaves the shell bias unchanged.</li>
+<li>The cause is the domain mismatch. Particles in the ~1.4% sliver between the sphere and the
+inscribed mesh are projected onto the boundary DOFs.</li>
+<li>Confining Smoldyn by the mesh's own boundary triangles removes the bias, with either
+transfer.</li>
+<li>With the mesh membrane, exchange mass balance is at the box-domain level (A3: 1.2%), so
+the curved geometry adds nothing.</li>
+<li>With the sphere membrane, the PDE removes B over the smaller mesh while creation covers
+the full sphere, so the balance is +2.9%.</li>
 </ul>
+<p><strong>Creation fix (Smoldyn fork).</strong> Before it, the sphere variants showed −1.2 to −1.4%
+exchange balance. That was two errors cancelling: a creation deficit of about −2.4% and
+the sphere's extra +1.4% of volume. The mesh membrane exposed the deficit (−3.2%); the fix
+removes it.</p>
+<p><strong>Cost.</strong> The mesh membrane costs about 1.5× the sphere (806 triangle panels instead of one
+sphere panel). Positions transfer costs about 4× (locating 20k particles every step), and
+buys nothing here once the membrane matches.</p>
+<p><strong>Default changed:</strong> build_mesh_hybrid_document now uses membrane=&quot;mesh&quot; with grid
+transfer. B2, B2b and B2c are re-run with it.</p>
 </div>
     </div>
     
@@ -1140,7 +1169,7 @@ Strang there would mean modifying the solver; here it is a coupler option.</li>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
-window._studyName = "splitting-schemes";
+window._studyName = "cosim-boundary-transfer";
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
