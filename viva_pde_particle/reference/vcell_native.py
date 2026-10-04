@@ -84,13 +84,20 @@ def validate_for_native(model: HybridModel) -> None:
 
 def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float,
                 step_multiplier: int = 1, seed: int | None = None, name: str = "hybrid",
-                geometry: dict | None = None):
+                geometry=None, region: str | None = None, domain_volume: float | None = None):
     """Build the pyvcell BioModel (one hybrid application, one simulation named ``sim``).
 
-    ``geometry``: None (the species fill the grid box) or ``{"kind": "sphere", "center",
-    "radius"}``. A sphere becomes VCell analytic geometry: the ``cell`` subvolume inside an
-    ``ec`` background, with a ``cell_ec_membrane`` surface. All species live in ``cell``,
-    and VCell discretizes it on its Cartesian grid with its membrane numerics.
+    ``geometry`` is one of:
+    - None: the species fill the grid box.
+    - ``{"kind": "sphere", "center", "radius"}``: VCell analytic geometry, the ``cell``
+      subvolume inside an ``ec`` background, with a ``cell_ec_membrane`` surface. All species
+      live in ``cell``, and VCell discretizes it on its Cartesian grid with its membrane
+      numerics.
+    - a vcell-fenics ``GeometryDescription`` (Phase 7e): converted by
+      :func:`viva_pde_particle.geometry.vcml.to_vcml_geometry`, with one compartment per
+      subvolume and surface class. The species live in ``region`` (default: the first
+      subvolume). ``domain_volume`` (µm³) converts particle totals into the initial
+      concentration VCell expects; give it when particles start non-empty.
     """
     validate_for_native(model)
     import pyvcell.vcml as vc
@@ -106,13 +113,21 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
 
     g = model.grid
 
+    is_description = geometry is not None and hasattr(geometry, "subvolumes")
+    comp = (region or geometry.subvolumes[0].name) if is_description else COMPARTMENT
     m = Model(name=name)
-    m.add_compartment(COMPARTMENT, dim=3)
-    if geometry is not None:
-        m.add_compartment("ec", dim=3)
-        m.add_compartment("pm", dim=2)
+    if is_description:
+        for sv in geometry.subvolumes:
+            m.add_compartment(sv.name, dim=3)
+        for sc in geometry.surfaces:
+            m.add_compartment(sc.name, dim=2)
+    else:
+        m.add_compartment(COMPARTMENT, dim=3)
+        if geometry is not None:
+            m.add_compartment("ec", dim=3)
+            m.add_compartment("pm", dim=2)
     for s in model.species:
-        m.add_species(s.name, COMPARTMENT)
+        m.add_species(s.name, comp)
     for r in model.reactions:
         if not r.reactants:
             # VCell mass action with no reactants keeps only the reverse term (rate = -Kr·Π products)
@@ -126,15 +141,24 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
                 KineticsParameter(name="Kf", value=r.k, role="forward rate constant", unit="", reaction_name=r.name),
                 KineticsParameter(name="Kr", value=0.0, role="reverse rate constant", unit="", reaction_name=r.name),
             ])
-        rx = Reaction(name=r.name, compartment_name=COMPARTMENT, reversible=False, is_flux=False, kinetics=kin)
+        rx = Reaction(name=r.name, compartment_name=comp, reversible=False, is_flux=False, kinetics=kin)
         for s, n in r.reactants.items():
             rx.reactants.append(SpeciesReference(name=s, stoichiometry=n, species_ref_type=SpeciesRefType.reactant))
         for s, n in r.products.items():
             rx.products.append(SpeciesReference(name=s, stoichiometry=n, species_ref_type=SpeciesRefType.product))
         m.reactions.append(rx)
 
-    geo = vc.Geometry(name=f"{name}_box", dim=3, extent=tuple(g.size), origin=(0.0, 0.0, 0.0))
-    if geometry is None:
+    if is_description:
+        from viva_pde_particle.geometry.vcml import to_vcml_geometry
+
+        geo = to_vcml_geometry(geometry, name=f"{name}_geometry")
+        if domain_volume is None:
+            domain_volume = float(g.element_volumes.sum())  # only matters for non-empty particle species
+    else:
+        geo = vc.Geometry(name=f"{name}_box", dim=3, extent=tuple(g.size), origin=(0.0, 0.0, 0.0))
+    if is_description:
+        pass
+    elif geometry is None:
         geo.add_background(SUBVOLUME)
         domain_volume = float(g.element_volumes.sum())
     elif geometry.get("kind") == "sphere":
@@ -147,10 +171,16 @@ def to_biomodel(model: HybridModel, *, t_end: float, dt: float, output_dt: float
 
     bm = Biomodel(name=name, model=m)
     app = bm.add_application("hybrid", geometry=geo, stochastic=True)
-    app.map_compartment(COMPARTMENT, SUBVOLUME)
-    if geometry is not None:
-        app.map_compartment("ec", "ec")
-        app.map_compartment("pm", "cell_ec_membrane")
+    if is_description:
+        for sv in geometry.subvolumes:
+            app.map_compartment(sv.name, sv.name)
+        for sc in geometry.surfaces:
+            app.map_compartment(sc.name, sc.name)
+    else:
+        app.map_compartment(COMPARTMENT, SUBVOLUME)
+        if geometry is not None:
+            app.map_compartment("ec", "ec")
+            app.map_compartment("pm", "cell_ec_membrane")
     for s in model.species:
         if s.particle:
             init = np.asarray(s.initial)

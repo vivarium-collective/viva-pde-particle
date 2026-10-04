@@ -929,7 +929,20 @@ The two compilers:
     creation fills the compartment at 1.009× rate·volume, evenly between the lobes. With a single compartment point
     it falls to 0.882× and is lopsided, because Smoldyn's line-of-sight compartment test can't see the whole region
     (`tests/test_smoldyn_geometry.py`).
-- **7e.4:** the VCell-FV compiler through libvcell.
+- **7e.4 (done):** the VCell-FV compiler (`geometry/vcell_fv.py`) and the VCML adapter (`geometry/vcml.py`).
+  - **`to_vcml_geometry`** turns a description into a pyvcell `Geometry`. Analytic subvolumes; `geom.x[i]` becomes
+    `x/y/z` and `**` becomes `^`.
+    - Coverage rule: the last subvolume is written as `1.0`. VCell needs every point owned, and complementary
+      strict predicates leave interface nodes unowned (libvcell then fails with `null`). Under VCell's priority rule
+      this changes only those gap points.
+    - `from_vcml_geometry` is the reverse, via vcell-fenics' importer. `to_biomodel` now accepts a description.
+  - **`VCellFVRealization`** asks libvcell to write a geometry-only hybrid input (no solve) and reads:
+    - the `.vcg`: VCell's node → region map and staircase volumes (`node_regions`, `node_mask`, `pde_volume`);
+    - the `.smoldynInput`: VCell's smooth membrane triangulation and compartment points.
+    `inside`/`locate` follow the smooth surface (VTK enclosed-points test).
+  - **The B2b ball reproduces native exactly:** staircase `cell` 266.734 µm³ over 17,071 nodes (nodes strictly
+    inside r = 4); smooth membrane of 9,516 triangles enclosing 261.818 µm³; VCell's 26 compartment points. Smoldyn
+    geometry derives from it unchanged. The tests need the `dev` env (spatial-hybrid pyvcell).
 - **7e.5:** the accessible-volume correction in both variants, plus the FV volume-fraction option; B2b and B2c
   re-run with both.
 - **7e.6:** a non-sphere geometry (CSG or image) end to end.
