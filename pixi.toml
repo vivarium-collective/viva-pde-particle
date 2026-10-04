@@ -69,7 +69,7 @@ viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basi
 investigation-contracts = { git = "https://github.com/vivarium-collective/investigation-contracts.git", rev = "65c793fd231d952e49a9cfe4244797dadde1bedc" }
 # GeometryDescription (VCell-style geometry formalism) and its Netgen realization (Phase 7e).
 # rev: vcell-fenics main, merge of #211 (lazy backend imports, so realize() needs no solver-only deps such
-# as scifem); move to main once merged.
+# as scifem).
 vcell-fenics = { git = "https://github.com/virtualcell/vcell-fenics.git", rev = "4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17" }
 
 [tasks]

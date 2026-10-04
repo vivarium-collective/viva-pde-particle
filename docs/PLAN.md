@@ -906,7 +906,7 @@ The two compilers:
 **Sub-steps:**
 - **7e.1 (done):** dependencies and plan.
   - vcell-fenics is pinned to its main branch at the merge of virtualcell/vcell-fenics#211, which makes its backend imports lazy, so `realize()` needs
-    none of the solver-only packages such as `scifem`. Move the pin to `main` once that PR merges.
+    none of the solver-only packages such as `scifem`.
   - Added from conda-forge: Netgen, scikit-image, pydantic and VTK.
   - Netgen realization of the B2b ball: at h = 0.8, 0.6 s and −2.1% volume; at h = 0.5, −1.1%.
 - **7e.2 (done):** `viva_pde_particle/geometry`.
