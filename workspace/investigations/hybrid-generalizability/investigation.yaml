@@ -35,6 +35,8 @@ at_a_glance:
   role: Removes the co-sim's boundary artifact (mesh membrane) and fixes curved-compartment creation in the Smoldyn fork.
 - study: vcell-geometry-cosim
   role: Co-sim on VCell's own geometry (staircase PDE, smooth membrane); the accessible-volume correction makes it unbiased and conservative.
+- study: dumbbell-three-ways
+  role: One non-convex GeometryDescription through native VCell, the co-sim on VCell's geometry and the Netgen co-sim; the correction removes VCell's −18–26% exchange loss.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
 - study: engine-swap
@@ -54,6 +56,7 @@ studies:
 - near-membrane-fields
 - cosim-boundary-transfer
 - vcell-geometry-cosim
+- dumbbell-three-ways
 - splitting-schemes
 expert_docs: []
 acceptance_criteria: []
