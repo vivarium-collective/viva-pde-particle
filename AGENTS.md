@@ -87,3 +87,18 @@ tracked artifact), commits on the branch, and opens a PR. **Never auto-
 merges.** Reviewer clicks merge in the GitHub UI.
 
 See `/viva-investigation close --help` for details.
+
+## Spatial results and 3D figures (Phase 8)
+
+- **Recording:** `viva_pde_particle.viz3d.attach_recorder(doc, out_dir, output_dt, membranes=...)` adds a
+  `SpatialRecorder` to any hybrid document. `run_document` finishes the bundle. For native VCell runs use
+  `write_native_bundle`. Recording never changes a run.
+- **Format:** bundles are vcell-fenics results bundles (VTU + zarr, ADR 010), stored under
+  `workspace/studies/<slug>/runs/` (gitignored). Membrane fields are named `<field>_<membrane>`.
+- **Figures:** `viz3d.static.render_png` / `render_gif` (PyVista, default env) and `viz3d.html.bundle_html` (three.js,
+  shown as `address: threejs:viz/<f>.html`). Give each figure its own file stem, because its `<stem>.meta.json`
+  sidecar carries `source_run_id`.
+- **VCell's vtk.wasm viewer:** `pixi run view3d workspace/studies/<slug>/runs/*.fenics`. It needs
+  `../vcell/webapp-viewer` with `npm run fetch:vtk-wasm` run once.
+- **Environments:** native VCell needs the `dev` env, and PyVista is only in `default`. Record in `dev` and render in
+  `default`; see `dumbbell-three-ways/sims/render_3d.py`.

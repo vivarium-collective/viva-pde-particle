@@ -83,6 +83,7 @@ def _bundle_payload(path, var: str, max_frames: int, max_particles: int, rng) ->
         out["particles"][s] = frames
     st = b.stats(vol, var)
     out["range"] = [float(np.nanmin(st[:, 2])), float(np.nanmax(st[:, 3]))]
+    out["frame_ranges"] = [[float(st[r, 2]), float(st[r, 3])] for r in rows]
     out["bounds"] = [float(x) for x in v.bounds]
     return out
 
@@ -124,14 +125,16 @@ _TEMPLATE = r"""<!doctype html>
  <label>run <select id="bundle"></select></label>
  <button id="play">▶</button>
  <input id="time" type="range" min="0" value="0" style="width:200px"><span id="tlabel"></span>
+ <label><input id="fixed" type="checkbox">fixed range (all times)</label>
  <label><input id="showMem" type="checkbox" checked>membrane</label>
- <label>open <input id="clip" type="range" min="0" max="100" value="50" style="width:90px"></label>
+ <label>open <input id="clip" type="range" min="0" max="100" value="45" style="width:90px"></label>
  <label><input id="showSlice" type="checkbox" checked>slice <select id="axis"><option>z</option><option>y</option><option>x</option></select></label>
  <label><input id="showPart" type="checkbox" checked>particles</label><span id="legend"></span>
 </div>
 <div id="view"><div id="cbar"><div id="cvar"></div><div id="grad"></div><div style="display:flex;justify-content:space-between"><span id="lo"></span><span id="hi"></span></div></div></div>
 <script>
-const DATA = __DATA__, VAR = __VAR__, RANGE = __RANGE__, CMAP = __CMAP__, SPC = __SPCOLORS__;
+const DATA = __DATA__, VAR = __VAR__, ALL_RANGE = __RANGE__, CMAP = __CMAP__, SPC = __SPCOLORS__;
+let RANGE = ALL_RANGE.slice();
 const dec = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
 const stops = CMAP.map(h => new THREE.Color(h));
 function cmap(v, out, i) {
@@ -141,7 +144,12 @@ function cmap(v, out, i) {
 }
 document.getElementById('cvar').textContent = VAR + ' (µM)';
 document.getElementById('grad').style.background = 'linear-gradient(to right,' + CMAP.join(',') + ')';
-document.getElementById('lo').textContent = RANGE[0].toPrecision(3); document.getElementById('hi').textContent = RANGE[1].toPrecision(3);
+function setRange() {  // this frame's range over every run (runs share their output times), or all times
+  if (document.getElementById('fixed').checked) RANGE = ALL_RANGE.slice();
+  else { RANGE = [Infinity, -Infinity]; for (const d of Object.values(DATA)) { const r = d.frame_ranges[Math.min(frame, d.frame_ranges.length - 1)]; RANGE[0] = Math.min(RANGE[0], r[0]); RANGE[1] = Math.max(RANGE[1], r[1]); }
+         if (!(RANGE[1] > RANGE[0])) RANGE[1] = RANGE[0] + 1e-12; }
+  document.getElementById('lo').textContent = RANGE[0].toPrecision(3); document.getElementById('hi').textContent = RANGE[1].toPrecision(3);
+}
 const view = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({antialias: true}); renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(view.clientWidth, view.clientHeight); renderer.localClippingEnabled = true; renderer.setClearColor(0xfafafa);
@@ -150,7 +158,7 @@ const scene = new THREE.Scene(); scene.add(new THREE.AmbientLight(0xffffff, 0.75
 const light = new THREE.DirectionalLight(0xffffff, 0.45); scene.add(light);
 const camera = new THREE.PerspectiveCamera(40, view.clientWidth / view.clientHeight, 0.01, 1e4);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-const clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+const clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);  // keeps y ≥ cut: opens the side facing the camera
 function surfaceMesh(s, clipped) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(dec(s.points, Float32Array), 3));
@@ -179,21 +187,22 @@ let cur = null, frame = 0, playing = null;
 const el = id => document.getElementById(id);
 function paint(mesh, vals) { const c = mesh.geometry.attributes.color; for (let i = 0; i < vals.length; i++) cmap(vals[i], c.array, i); c.needsUpdate = true; }
 function update() {
-  const r = runs[cur], d = r.d; frame = Math.min(frame, d.times.length - 1);
+  const r = runs[cur], d = r.d; frame = Math.min(frame, d.times.length - 1); setRange();
   el('time').max = d.times.length - 1; el('time').value = frame; el('tlabel').textContent = 't = ' + d.times[frame].toPrecision(3) + ' s';
   r.mem.visible = el('showMem').checked; if (r.memVals) paint(r.mem, r.memVals[frame]); else r.mem.material.color.set(0xcccccc);
-  const b = d.bounds, x = b[0] + (b[1] - b[0]) * el('clip').value / 100; clipPlane.constant = x;
+  const b = d.bounds; clipPlane.constant = -(b[2] + (b[3] - b[2]) * el('clip').value / 100);
   for (const [ax, s] of Object.entries(r.slices)) { s.m.visible = el('showSlice').checked && ax === el('axis').value; if (s.m.visible) paint(s.m, s.vals[frame]); }
   for (const p of Object.values(r.parts)) { p.p.visible = el('showPart').checked; p.p.geometry.setAttribute('position', new THREE.BufferAttribute(dec(p.frames[frame], Float32Array), 3)); }
 }
 function select(label) {
   if (cur) runs[cur].group.visible = false; cur = label; runs[cur].group.visible = true;
   const b = runs[cur].d.bounds, c = new THREE.Vector3((b[0]+b[1])/2, (b[2]+b[3])/2, (b[4]+b[5])/2), s = Math.max(b[1]-b[0], b[3]-b[2], b[5]-b[4]);
-  controls.target.copy(c); camera.position.set(c.x + 1.3*s, c.y + 1.1*s, c.z + 1.2*s); light.position.copy(camera.position); update();
+  controls.target.copy(c); camera.position.set(c.x + 0.45*s, c.y - 1.6*s, c.z + 0.9*s); camera.up.set(0, 0, 1);
+  light.position.copy(camera.position); update();
 }
 el('bundle').onchange = e => select(e.target.value);
 el('time').oninput = e => { frame = +e.target.value; update(); };
-['showMem', 'clip', 'showSlice', 'axis', 'showPart'].forEach(id => el(id).oninput = update);
+['fixed', 'showMem', 'clip', 'showSlice', 'axis', 'showPart'].forEach(id => el(id).oninput = update);
 el('play').onclick = () => { if (playing) { clearInterval(playing); playing = null; el('play').textContent = '▶'; return; }
   el('play').textContent = '❚❚'; playing = setInterval(() => { frame = (frame + 1) % runs[cur].d.times.length; update(); }, 350); };
 select(Object.keys(runs)[0]);
