@@ -715,6 +715,11 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   - B2 conversion balance 0.11%, B vs continuum 0.53% L2;
   - B2b co-sim exchange +0.51%;
   - B2c co-sim shell +0.12%.
+- **Credit:** VCell's Smoldyn input already confines particles with `panel tri` from its geometry (9,516 triangles,
+  261.8 µm³), and the co-sim now follows that practice.
+  - **Difference:** native's smoothed triangulation and voxel PDE domain differ by 1.8% in volume. The co-sim's are
+    identical.
+  - **Native creation:** 0.982 × 0.976 (centre-only creation) = 0.958, matching the measured 0.960.
 - **Smoldyn fork fix (pyhybrid a773562).** Field-dependent 0th-order creation in a compartment only drew in cells whose
   centre was inside. That gave a −2.4% deficit for this ball, the B2b "creation deficit", which had been cancelling
   the sphere's +1.4% extra volume. Every cell now draws, with exact thinning.
