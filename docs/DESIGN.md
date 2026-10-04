@@ -713,7 +713,7 @@ coupling timing of §6.3 is unchanged.
 | 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs and needs no grid; it builds from the mesh alone through a shared `mesh_space` cache. | **done**: bit-identical on the same six composites; same speed as 7a. |
 | 7c | The particle engine without the PDE clock: `SmoldynHybrid` reads at the start of each update and advances by its interval. fvsolver timing comes from a generic `Stepper` Process (tick dt; child on tick k−1 of every k, with interval k·dt). | **done**: bit-identical on the six composites, including fvsolver mode with k = 2. |
 | 7d | `SplittingCoordinator`: any PDE engine, particle engine and adapters, by address, in Jacobi, Gauss–Seidel or Strang order. It replaces `HybridCoupler`. | **done**: bit-identical on all four schemes and the earlier composites (20 arrays); new capability is splitting with the mesh engine. |
-| 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | next |
+| 7e | Geometry compilers. A vcell-fenics `GeometryDescription` is realized by a PDE compiler (FEniCS/Netgen, or VCell-FV via libvcell) into a `RealizedGeometry`. The Smoldyn membrane (always smooth), volume samples and the adapters' accessible volumes are derived from that realization (PLAN.md "Phase 7e plan"). | in progress: 7e.1 (dependencies) and 7e.2 (`RealizedGeometry`, FEniCS/Netgen compiler, `geometry=` composites) done |
 | 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
 
 **Costs to watch.**
