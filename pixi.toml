@@ -54,6 +54,8 @@ netgen = ">=6.2.2602,<7"
 scikit-image = "*"
 pydantic = ">=2.10,<3"
 vtk = "*"
+pyvista = ">=0.49.0,<0.50"
+imageio = ">=2.38.0,<3"
 
 [pypi-dependencies]
 viva-pde-particle = { path = ".", editable = true, extras = ["dev", "reference"] }
