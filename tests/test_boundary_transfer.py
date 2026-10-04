@@ -106,7 +106,10 @@ def test_positions_hybrid_conserves_and_confines(membrane):
     # first-order lag lets B run slightly ahead of the A lost (as in B2b); within ~2%
     assert (len(pos) + b) / 2000 == pytest.approx(1.0, abs=0.02)
     if membrane == "mesh":
-        assert pde.locator.inside(pos).all()  # particles never leave the PDE domain
+        from viva_pde_particle.mesh import mesh_locator
+
+        loc = mesh_locator(doc["pde"]["config"]["mesh"], g)
+        assert loc.inside(pos).all()  # particles never leave the PDE domain
     else:
         assert (np.linalg.norm(pos - C, axis=1) <= R + 1e-9).all()
 

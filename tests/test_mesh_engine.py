@@ -41,7 +41,13 @@ def test_mesh_process_conserves_and_sources_from_particles():
     counts = np.zeros(GRID.shape)
     counts[8, 8, 8] = 6022.14076  # 10 µM·µm³ worth of A at the centre
     dofs0 = proc.initial_dofs({"B": 0.0})
-    out = proc.update({"field_dofs": dofs0, "particle_counts": {"A": counts}}, 0.1)
+    from viva_pde_particle.steps import GridCountsToMeshConcentration
+
+    to_conc = GridCountsToMeshConcentration(core=allocate_core(), config={
+        "grid": GRID.to_config(), "mesh": MESH, "species": ["A"]})
+    conc = to_conc.update({"particle_counts": {"A": counts}})["particle_conc"]
+    assert (conc["A"] * proc.ml).sum() * 602.214076 == pytest.approx(counts.sum())  # Pᵀ conserves molecules
+    out = proc.update({"field_dofs": dofs0, "external_conc": conc}, 0.1)
     produced = (out["field_dofs"]["B"] * proc.ml).sum()  # µM·µm³ of B made in 0.1 s at rate k·[A]
     assert produced == pytest.approx(10.0 * 1.0 * 0.1, rel=1e-10)
     assert out["fields"]["B"].shape == GRID.shape

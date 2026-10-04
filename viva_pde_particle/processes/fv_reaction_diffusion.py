@@ -10,9 +10,11 @@ solver used in its hybrid runs. Per element ``i`` with volume fraction ``s_i``:
 - **Reactions** are forward Euler (explicit). The rate ``R`` is evaluated from the
   state at the start of the step.
 
-Particle species enter the reaction terms as binned concentrations, computed from
-the ``particle_counts`` store (``count / (element volume · 602.214)``) and held
-between particle updates.
+Species the engine reads but does not evolve (particle species in a hybrid) come in through
+``external_conc``: {species: µM array on this grid}, held between updates. The engine knows
+nothing about particles. In a hybrid composite a Step
+(:class:`viva_pde_particle.steps.GridCountsToConcentration`) fills ``external_conc`` from the
+particle histogram.
 """
 from __future__ import annotations
 
@@ -41,7 +43,7 @@ class FVReactionDiffusion(Process):
     Config:
         grid: ``{origin, size, num}`` (µm), VCell CartesianMesh conventions.
         pde: the ``pde`` part of a PartitionedModel, i.e. ``{species: {name: {diffusion}},
-            particle_species: [...], terms: [{species, coeff, k, reactants}]}``.
+            terms: [{species, coeff, k, reactants}]}``, optionally ``external_species``.
         dt: PDE time step (s); each update takes ``round(interval/dt)`` steps.
     """
 
@@ -55,7 +57,11 @@ class FVReactionDiffusion(Process):
         self.grid = CartesianGrid.from_config(config["grid"])
         self.pde = config["pde"]
         self.species = list(self.pde["species"])
-        self.particle_species = list(self.pde.get("particle_species", []))
+        # species read but not evolved here (e.g. particle species): an explicit list, or every
+        # reactant in the terms that is not one of this engine's species
+        self.external_species = list(self.pde.get("external_species") or sorted(
+            {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
+        self.particle_species = self.external_species  # alias kept for HybridCoupler (Phase 7d)
         self.dt = float(config["dt"])
         frac = self.grid.volume_fraction.ravel()
         self._s = frac
@@ -69,7 +75,7 @@ class FVReactionDiffusion(Process):
     def inputs(self):
         return {
             "fields": "map[array[float]]",
-            "particle_counts": "map[array[float]]",
+            "external_conc": "map[array[float]]",
         }
 
     def outputs(self):
@@ -79,8 +85,8 @@ class FVReactionDiffusion(Process):
         """dC/dt from reactions (µM/s) for each continuous species."""
         return reaction_rates(self.pde["terms"], self.species, conc, self.grid.shape)
 
-    def step(self, fields: dict[str, np.ndarray], particle_conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-        conc = {**particle_conc, **fields}
+    def step(self, fields: dict[str, np.ndarray], external_conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        conc = {**external_conc, **fields}
         rates = self.reaction_rates(conc)
         new = {}
         for s in self.species:
@@ -90,13 +96,12 @@ class FVReactionDiffusion(Process):
 
     def update(self, state, interval):
         fields = {s: np.asarray(state["fields"][s], dtype=float) for s in self.species}
-        counts = state.get("particle_counts") or {}
-        particle_conc = {
-            p: self.grid.counts_to_uM(np.asarray(counts[p], dtype=float))
-            if p in counts else np.zeros(self.grid.shape)
-            for p in self.particle_species
+        ext = state.get("external_conc") or {}
+        external_conc = {
+            s: np.asarray(ext[s], dtype=float) if s in ext else np.zeros(self.grid.shape)
+            for s in self.external_species
         }
         n_steps = max(1, int(round(interval / self.dt)))
         for _ in range(n_steps):
-            fields = self.step(fields, particle_conc)
+            fields = self.step(fields, external_conc)
         return {"fields": fields}

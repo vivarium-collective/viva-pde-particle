@@ -93,7 +93,7 @@ def test_explicit_reaction_term_and_particle_coupling():
     g = CartesianGrid((0.0, 0.0), (4.0, 4.0), (5, 5))
     k, dt = 0.5, 0.1
     decay = _fv(g, 0.0, dt, terms=[{"species": "B", "coeff": -1, "k": k, "reactants": {"B": 1}}])
-    out = decay.update({"fields": {"B": np.ones(g.shape)}, "particle_counts": {}}, dt)["fields"]["B"]
+    out = decay.update({"fields": {"B": np.ones(g.shape)}, "external_conc": {}}, dt)["fields"]["B"]
     np.testing.assert_allclose(out, 1 - k * dt)  # forward Euler reaction
 
     produce = _fv(g, 0.0, dt, particle_species=["A"],
@@ -101,6 +101,11 @@ def test_explicit_reaction_term_and_particle_coupling():
     counts = np.zeros(g.shape)
     counts[2, 2] = 602.214076  # 1 µM in the interior element (volume 1 µm³)
     counts[0, 0] = 602.214076 / 4  # 1 µM in the corner element (volume 1/4)
-    out = produce.update({"fields": {"B": np.zeros(g.shape)}, "particle_counts": {"A": counts}}, dt)["fields"]["B"]
+    from viva_pde_particle.steps import GridCountsToConcentration
+
+    to_conc = GridCountsToConcentration(config={"grid": g.to_config(), "species": ["A"]}, core=allocate_core())
+    conc = to_conc.update({"particle_counts": {"A": counts}})["particle_conc"]
+    np.testing.assert_allclose([conc["A"][2, 2], conc["A"][0, 0]], 1.0)  # counts / (V_element · 602.214)
+    out = produce.update({"fields": {"B": np.zeros(g.shape)}, "external_conc": conc}, dt)["fields"]["B"]
     assert out[2, 2] == pytest.approx(k * dt) and out[0, 0] == pytest.approx(k * dt)
     assert out.sum() == pytest.approx(2 * k * dt)

@@ -11,8 +11,8 @@ explicit reactions:
   lumped mass at a vertex equals the FV dual-cell volume exactly, so particle counts
   convert to µM identically. The stiffness K is the Q1 27-point (3D) / 9-point (2D)
   operator, a different second-order discretization from FV's 7/5-point stencil.
-- **Interface:** fields are exchanged as grid-shaped arrays in node order, so the process
-  is a drop-in replacement for FVReactionDiffusion next to SmoldynHybrid (an engine swap).
+- **Interface:** the same ports as FVReactionDiffusion (``fields`` and ``external_conc`` as
+  grid-shaped arrays in node order), so the process is a drop-in replacement for it (an engine swap).
   DOFs are permuted to and from grid order internally.
 """
 from __future__ import annotations
@@ -76,7 +76,11 @@ class FenicsxReactionDiffusion(Process):
         self.grid = CartesianGrid.from_config(config["grid"])
         self.pde = config["pde"]
         self.species = list(self.pde["species"])
-        self.particle_species = list(self.pde.get("particle_species", []))
+        # species read but not evolved here (e.g. particle species): an explicit list, or every
+        # reactant in the terms that is not one of this engine's species
+        self.external_species = list(self.pde.get("external_species") or sorted(
+            {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
+        self.particle_species = self.external_species  # alias kept for HybridCoupler (Phase 7d)
         self.dt = float(config["dt"])
         K, M, self._dof_to_node = q1_operators(self.grid)
         if config["mass"] == "lumped":
@@ -88,7 +92,7 @@ class FenicsxReactionDiffusion(Process):
         }
 
     def inputs(self):
-        return {"fields": "map[array[float]]", "particle_counts": "map[array[float]]"}
+        return {"fields": "map[array[float]]", "external_conc": "map[array[float]]"}
 
     def outputs(self):
         return {"fields": "map[overwrite[array[float]]]"}
@@ -101,8 +105,8 @@ class FenicsxReactionDiffusion(Process):
         out[self._dof_to_node] = dofs
         return out.reshape(self.grid.shape)
 
-    def step(self, fields: dict[str, np.ndarray], particle_conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-        rates = reaction_rates(self.pde["terms"], self.species, {**particle_conc, **fields}, self.grid.shape)
+    def step(self, fields: dict[str, np.ndarray], external_conc: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        rates = reaction_rates(self.pde["terms"], self.species, {**external_conc, **fields}, self.grid.shape)
         return {
             s: self._to_grid(self._solvers[s](self._M @ (self._to_dofs(fields[s]) + self.dt * self._to_dofs(rates[s]))))
             for s in self.species
@@ -110,11 +114,11 @@ class FenicsxReactionDiffusion(Process):
 
     def update(self, state, interval):
         fields = {s: np.asarray(state["fields"][s], dtype=float) for s in self.species}
-        counts = state.get("particle_counts") or {}
-        particle_conc = {
-            p: self.grid.counts_to_uM(np.asarray(counts[p], dtype=float)) if p in counts else np.zeros(self.grid.shape)
-            for p in self.particle_species
+        ext = state.get("external_conc") or {}
+        external_conc = {
+            s: np.asarray(ext[s], dtype=float) if s in ext else np.zeros(self.grid.shape)
+            for s in self.external_species
         }
         for _ in range(max(1, int(round(interval / self.dt)))):
-            fields = self.step(fields, particle_conc)
+            fields = self.step(fields, external_conc)
         return {"fields": fields}
