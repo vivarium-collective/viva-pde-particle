@@ -38,7 +38,7 @@ def coupling_timelines(k=4):
     """Which field value the particle step reads, and which particle state the PDE reads."""
     rows = [
         ("vcell-fvsolver (SimTool loop)", k - 1),
-        ('co-sim, coupling="fvsolver"\n(particles on the PDE clock,\nstep on every k-th call)', k - 1),
+        ('co-sim, coupling="fvsolver"\n(Stepper ticks every dt,\nruns Smoldyn on tick k−1 of k)', k - 1),
         ('co-sim, coupling="start-of-interval"\n(particles interval k·dt)', 0),
     ]
     fig, ax = plt.subplots(figsize=(9, 4.2))

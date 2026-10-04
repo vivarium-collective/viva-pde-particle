@@ -253,7 +253,7 @@ flowchart LR
     T[("particle_totals<br/>{A: float}")]
   end
   PDE["pde: FVReactionDiffusion<br/>interval = dt"]
-  PART["particles: SmoldynHybrid<br/>interval = dt (fvsolver mode)<br/>or k·dt (start-of-interval)"]
+  PART["particles: SmoldynHybrid<br/>interval k·dt (start-of-interval),<br/>or inside a Stepper ticking every dt (fvsolver)"]
   S{{"particle_to_field: GridCountsToConcentration<br/>Step: count / (V·602.214)"}}
   F -- inputs.fields --> PDE
   C -- inputs.particle_counts --> S
@@ -288,9 +288,11 @@ This is the actual document from `build_hybrid_document(two_way_exchange_model()
     "outputs": {"particle_conc": ["particle_conc"]}
   },
   "particles": {
-    "_type": "process", "address": "local:SmoldynHybrid", "interval": 0.01,
-    "config":  {"grid": {...}, "config_text": "<637 chars>", "particle_species": ["A"],
-                "field_species": ["B"], "dt": 0.01, "step_multiplier": 2, "coupling": "fvsolver"},
+    "_type": "process", "address": "local:Stepper", "interval": 0.01,
+    "config":  {"dt": 0.01, "every": 2, "phase": 1,           // coupling="fvsolver" (§6.3)
+                "process": {"address": "local:SmoldynHybrid",
+                            "config": {"grid": {...}, "config_text": "<637 chars>", "particle_species": ["A"],
+                                       "field_species": ["B"], "dt": 0.01, "step_multiplier": 2}}},
     "inputs":  {"fields": ["fields"]},
     "outputs": {"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]}
   }
@@ -320,10 +322,13 @@ vcell-fvsolver's `FV_SOLVER`.
 `smoldyn.Simulation` built from the generated configuration, plus a `smoldyn.HybridGrid` with the same node layout
 as the PDE grid.
 
-`update`:
+`update(state, interval)`:
 1. Copies each input field into the HybridGrid with `setField` (no text I/O).
-2. Advances Smoldyn by whole steps.
+2. Advances Smoldyn by the interval, in whole steps of k·dt.
 3. Returns `getMoleculeHistogram(species, grid)`, the nearest-node counts computed in C.
+
+The engine keeps no clock of the PDE (Phase 7c). When it runs, and which field time it therefore reads, is decided by
+how the composite schedules it (§6.3).
 
 ### 6.3 Two coupling modes, one exact match
 
@@ -334,21 +339,27 @@ Figure 1 shows which field value the Smoldyn step reads.
 *Figure 1.*
 - **vcell-fvsolver:** the Smoldyn step over `[T, T+τ]` runs after the k-th PDE iterate, but reads the *old* field,
   `u(T+(k−1)dt)`.
-- **`coupling="fvsolver"`:** the co-sim reproduces this by putting the particle process on the PDE clock
-  (interval dt). It does nothing on k−1 of every k calls and steps on the k-th call. At the start of that call it
-  reads `u(T+(k−1)dt)`, exactly the value fvsolver reads.
+- **`coupling="fvsolver"`:** the co-sim reproduces this with a generic **`Stepper`** Process
+  ([`processes/stepper.py`](../viva_pde_particle/processes/stepper.py)) that wraps the unchanged particle engine.
+  - The Stepper ticks every dt and calls its child only on tick k−1 of every k, with interval k·dt.
+  - The child therefore reads `u(T+(k−1)dt)`, exactly the value fvsolver reads, and its counts are first seen by the
+    PDE step that starts at T+k·dt.
+  - Plain process-bigraph scheduling cannot express this, because a process reads at the start of its interval and
+    publishes at the end.
+  - The Stepper knows nothing about Smoldyn: `every` and `phase` work for any child.
 - **`coupling="start-of-interval"`:** the natural process-bigraph form. The particle interval is k·dt, and the
   step reads `u(T)`.
 - **Both modes:** the PDE reads the counts of the last particle update for k steps.
 
-`interval_for(coupling, dt, k)` returns the matching process interval. The composite must set it consistently.
+`interval_for(coupling, dt, k)` returns the particle node's interval (dt for the Stepper, k·dt otherwise), and
+`composites.hybrid.particle_node` builds the node for either mode.
 
 **Mapping to Approach 0:**
 
 | vcell-fvsolver | co-simulation |
 |---|---|
 | `simulation->iterate()` | `FVReactionDiffusion.update` (interval dt) |
-| `smoldynOneStep` every k-th iterate | `SmoldynHybrid.update` (fvsolver mode: acts every k-th call) |
+| `smoldynOneStep` every k-th iterate | `SmoldynHybrid.update`, scheduled by a `Stepper` (every k, phase k−1) |
 | `computeHistogram` + `copyParticleCountsToConcentration` | `getMoleculeHistogram` (C) + the `GridCountsToConcentration` Step |
 | `VCellValueProvider::getValue` (nearest voxel) | `GridValueProvider` in the Smoldyn fork (nearest node) |
 | old/current arrays | process-bigraph's "read state at interval start" |
@@ -690,8 +701,8 @@ coupling timing of §6.3 is unchanged.
 |---|---|---|
 | 7a | `ParticlesToField` Steps: `GridCountsToConcentration` (FV, Q1), `GridCountsToMeshConcentration` (Pᵀ), `PositionsToMeshConcentration` (P1 load). The PDE engines take a generic `external_conc` and no longer know about particles. | **done**: bit-identical to the pre-refactor code on six composites (`scripts/component_regression.py`). The mesh composites run 1.8–3.5× faster, because the PDE no longer receives the grid histogram or positions through its ports. |
 | 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs and needs no grid; it builds from the mesh alone through a shared `mesh_space` cache. | **done**: bit-identical on the same six composites; same speed as 7a. |
-| 7c | The particle engine without the PDE clock: replace `coupling="fvsolver"` with a scheduling or field-snapshot construct that reproduces fvsolver timing bit-for-bit. | next |
-| 7d | A generic splitting coordinator in place of `HybridCoupler`'s hard-coded FV + Smoldyn pair. | planned |
+| 7c | The particle engine without the PDE clock: `SmoldynHybrid` reads at the start of each update and advances by its interval. fvsolver timing comes from a generic `Stepper` Process (tick dt; child on tick k−1 of every k, with interval k·dt). | **done**: bit-identical on the six composites, including fvsolver mode with k = 2. |
+| 7d | A generic splitting coordinator in place of `HybridCoupler`'s hard-coded FV + Smoldyn pair. | next |
 | 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | planned |
 | 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
 
@@ -723,6 +734,7 @@ coupling timing of §6.3 is unchanged.
 | FV PDE process | `viva_pde_particle/processes/fv_reaction_diffusion.py` |
 | Smoldyn process | `viva_pde_particle/processes/smoldyn_hybrid.py` |
 | Splitting coupler | `viva_pde_particle/processes/hybrid_coupler.py` |
+| Coarse/phase-shifted scheduling of any process (Phase 7c) | `viva_pde_particle/processes/stepper.py` |
 | Adapter Steps, both directions (Phase 7a, 7b) | `viva_pde_particle/steps/transfer.py` |
 | Bit-exact refactor regression | `scripts/component_regression.py` |
 | FEniCSx Q1 process | `viva_pde_particle/processes/fenicsx_reaction_diffusion.py` |

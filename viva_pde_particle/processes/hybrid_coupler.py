@@ -34,7 +34,7 @@ class HybridCoupler(Process):
     Config:
         pde: FVReactionDiffusion config (``grid``, ``pde``, ``dt``).
         particles: SmoldynHybrid config (``grid``, ``config_text``, ``particle_species``,
-            ``field_species``, ``dt``, ``step_multiplier``); its coupling mode is ignored.
+            ``field_species``, ``dt``, ``step_multiplier``).
         scheme: one of ``jacobi``, ``gs_particles_first``, ``gs_pde_first``, ``strang``.
     """
 
@@ -49,7 +49,7 @@ class HybridCoupler(Process):
             raise ValueError(f"scheme must be one of {SCHEMES}, got {config['scheme']!r}")
         self.scheme = config["scheme"]
         self.pde = FVReactionDiffusion(config=config["pde"], core=self.core)
-        particle_cfg = dict(config["particles"], coupling="start-of-interval")
+        particle_cfg = {k: v for k, v in config["particles"].items() if k != "coupling"}  # coupler orders the steps
         self.particles = SmoldynHybrid(config=particle_cfg, core=self.core)
         self.k = self.particles.k
         if self.scheme == "strang" and self.k % 2:

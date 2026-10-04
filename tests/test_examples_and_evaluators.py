@@ -19,8 +19,12 @@ def test_generators_registered_under_spec_ids(name):
 def test_field_modulated_decay_document_shape():
     doc = examples.field_modulated_decay(n_particles=100, k=2.0)
     assert set(doc) >= {"fields", "particle_counts", "pde", "particles"}
-    assert doc["particles"]["config"]["field_species"] == ["B"]
-    assert "reaction decay A -> 0 2.0*B;" in doc["particles"]["config"]["config_text"]
+    # default coupling "fvsolver": the Smoldyn engine sits inside a Stepper (tick dt, every k, phase k-1)
+    assert doc["particles"]["address"] == "local:Stepper"
+    engine = doc["particles"]["config"]["process"]
+    assert engine["address"] == "local:SmoldynHybrid"
+    assert engine["config"]["field_species"] == ["B"]
+    assert "reaction decay A -> 0 2.0*B;" in engine["config"]["config_text"]
     assert doc["particle_counts"]["A"].sum() == 100
 
 
