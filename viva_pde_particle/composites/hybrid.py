@@ -2,11 +2,13 @@
 
 Store layout::
 
-    fields           {species: µM array}       written by pde, read by particles
-    particle_counts  {species: count array}    written by particles, read by pde
-    particle_totals  {species: float}          written by particles
-    pde              FVReactionDiffusion       interval dt
-    particles        SmoldynHybrid             interval dt (fvsolver) or k·dt
+    fields            {species: µM array}       written by pde, read by particles
+    particle_counts   {species: count array}    written by particles, read by particle_to_field
+    particle_conc     {species: µM array}       written by particle_to_field, read by pde (external_conc)
+    particle_totals   {species: float}          written by particles
+    pde               FVReactionDiffusion       Process, interval dt
+    particles         SmoldynHybrid             Process, interval dt (fvsolver) or k·dt
+    particle_to_field GridCountsToConcentration Step, runs whenever particle_counts changes
 """
 from __future__ import annotations
 
@@ -47,17 +49,31 @@ def build_hybrid_document(
     config_text = write_smoldyn_config(
         parts.particles, model.grid, counts0, time_step=step_multiplier * dt, seed=seed
     )
+    from process_bigraph import allocate_core
+
+    from viva_pde_particle.steps import GridCountsToConcentration
+
+    to_field_cfg = {"grid": grid_cfg, "species": model.particle_species}
+    to_field = GridCountsToConcentration(config=to_field_cfg, core=allocate_core())
     return {
         "fields": initial_fields(model),
         "particle_counts": {s: c.copy() for s, c in counts0.items()},
+        "particle_conc": to_field.convert(counts0),  # Steps do not run at initialization
         "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
         "pde": {
             "_type": "process",
             "address": engines[pde_engine],
             "config": {"grid": grid_cfg, "pde": parts.pde, "dt": dt, **(pde_options or {})},
             "interval": dt,
-            "inputs": {"fields": ["fields"], "particle_counts": ["particle_counts"]},
+            "inputs": {"fields": ["fields"], "external_conc": ["particle_conc"]},
             "outputs": {"fields": ["fields"]},
+        },
+        "particle_to_field": {
+            "_type": "step",
+            "address": "local:GridCountsToConcentration",
+            "config": to_field_cfg,
+            "inputs": {"particle_counts": ["particle_counts"]},
+            "outputs": {"particle_conc": ["particle_conc"]},
         },
         "particles": {
             "_type": "process",
@@ -180,16 +196,19 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
     g = model.grid
     mesh_spec = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"],
                  "h": sphere.get("h", sphere["radius"] / 6)}
-    pde_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "pde": parts.pde, "dt": dt,
-               "particle_transfer": particle_transfer}
+    if particle_transfer not in ("grid", "positions"):
+        raise ValueError(f"particle_transfer must be 'grid' or 'positions', got {particle_transfer!r}")
+    pde_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "pde": parts.pde, "dt": dt}
     from process_bigraph import allocate_core
 
     probe = FenicsxMeshReactionDiffusion(config=pde_cfg, core=allocate_core())
     if membrane == "mesh":
-        from viva_pde_particle.mesh import PointLocator, boundary_triangles, uniform_in_mesh
+        from viva_pde_particle.mesh import boundary_triangles, uniform_in_mesh
 
         msh = probe.transfer.V.mesh
-        locator = getattr(probe, "locator", None) or PointLocator.build(msh, probe.transfer.V)
+        from viva_pde_particle.mesh import mesh_locator
+
+        locator = mesh_locator(mesh_spec, g)
         lo, hi = msh.geometry.x.min(axis=0), msh.geometry.x.max(axis=0)
         positions = {s.name: uniform_in_mesh(int(s.initial), locator, lo, hi, rng)
                      for s in model.species if s.particle}
@@ -211,18 +230,32 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
     config_text = write_smoldyn_config(parts.particles, g, counts0, time_step=step_multiplier * dt, seed=seed,
                                        geometry=geometry, positions=positions)
     by_position = particle_transfer == "positions"
+    from viva_pde_particle.steps import GridCountsToMeshConcentration, PositionsToMeshConcentration
+
+    step_cls = PositionsToMeshConcentration if by_position else GridCountsToMeshConcentration
+    to_field_cfg = {"grid": g.to_config(), "mesh": mesh_spec, "species": model.particle_species}
+    to_field = step_cls(config=to_field_cfg, core=allocate_core())
+    step_input = "particle_positions" if by_position else "particle_counts"
     doc = {
         "field_dofs": dofs0,
         "fields": {s: probe.to_grid(v) for s, v in dofs0.items()},
         "particle_counts": {s: c.copy() for s, c in counts0.items()},
+        "particle_conc": to_field.convert(positions if by_position else counts0),  # Steps don't run at init
         "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
         "pde": {
             "_type": "process",
             "address": "local:FenicsxMeshReactionDiffusion",
             "config": pde_cfg,
             "interval": dt,
-            "inputs": {"field_dofs": ["field_dofs"], "particle_counts": ["particle_counts"]},
+            "inputs": {"field_dofs": ["field_dofs"], "external_conc": ["particle_conc"]},
             "outputs": {"field_dofs": ["field_dofs"], "fields": ["fields"]},
+        },
+        "particle_to_field": {
+            "_type": "step",
+            "address": f"local:{step_cls.__name__}",
+            "config": to_field_cfg,
+            "inputs": {step_input: [step_input]},
+            "outputs": {"particle_conc": ["particle_conc"]},
         },
         "particles": {
             "_type": "process",
@@ -239,7 +272,6 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
     }
     if by_position:
         doc["particle_positions"] = {s: np.asarray(p, dtype=float) for s, p in positions.items()}
-        doc["pde"]["inputs"]["particle_positions"] = ["particle_positions"]
         doc["particles"]["outputs"]["particle_positions"] = ["particle_positions"]
     return doc
 

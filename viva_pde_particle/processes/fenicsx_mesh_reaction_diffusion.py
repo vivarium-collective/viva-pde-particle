@@ -1,13 +1,14 @@
 """FEniCSx reaction-diffusion on an unstructured mesh, coupled to particles through a background grid.
 
-Same ports as FVReactionDiffusion: ``particle_counts`` in and ``fields`` out, both on the
-Cartesian background grid that SmoldynHybrid uses. Internally the PDE is P1 on an
-unstructured mesh (e.g. a gmsh ball), with lumped mass, backward-Euler diffusion and
-explicit reactions. The authoritative state is the DOF vector, kept in ``field_dofs``.
-
-- **Grid → mesh:** particle loads b = Pᵀ·counts give nodal concentrations
-  b_j / (M_L,j · 602.214).
-- **Mesh → grid:** fields are sampled as P·u.
+Internally the PDE is P1 on an unstructured mesh (e.g. a gmsh ball), with lumped mass,
+backward-Euler diffusion and explicit reactions. The authoritative state is the DOF vector,
+kept in ``field_dofs``.
+- **Inputs:** species read but not evolved (particle species in a hybrid) come in through
+  ``external_conc`` as DOF arrays. A Step fills them from the particle engine:
+  :class:`~viva_pde_particle.steps.GridCountsToMeshConcentration` (Pᵀ of the grid histogram)
+  or :class:`~viva_pde_particle.steps.PositionsToMeshConcentration` (the exact P1 point load).
+- **Outputs:** ``field_dofs``, plus a grid-sampled view ``fields`` = P·u for the particle
+  engine's rate lookups. The view moves into a Step in Phase 7b.
 
 See :mod:`viva_pde_particle.mesh`.
 """
@@ -19,21 +20,8 @@ import scipy.sparse.linalg as spla
 from process_bigraph import Process
 
 from viva_pde_particle.grid import CartesianGrid
+from viva_pde_particle.mesh import build_mesh  # noqa: F401  (re-exported for existing callers)
 from viva_pde_particle.processes.fv_reaction_diffusion import reaction_rates
-from viva_pde_particle.units import MOLECULES_PER_UM3_PER_UM
-
-_MESH_CACHE: dict = {}
-
-
-def build_mesh(spec: dict):
-    key = tuple(sorted((k, tuple(v) if isinstance(v, list) else v) for k, v in spec.items()))
-    if key not in _MESH_CACHE:
-        from viva_pde_particle.mesh import sphere_mesh
-
-        if spec.get("kind") != "sphere":
-            raise ValueError(f"unsupported mesh kind {spec.get('kind')!r}")
-        _MESH_CACHE[key] = sphere_mesh(spec["radius"], tuple(spec["center"]), spec.get("h"))
-    return _MESH_CACHE[key]
 
 
 class FenicsxMeshReactionDiffusion(Process):
@@ -44,9 +32,6 @@ class FenicsxMeshReactionDiffusion(Process):
         mesh: ``{"kind": "sphere", "radius", "center", "h"}``.
         pde: the ``pde`` part of a PartitionedModel.
         dt: time step (s).
-        particle_transfer: how particles load the mesh.
-            - ``"grid"`` (default): Pᵀ applied to the grid histogram.
-            - ``"positions"``: the exact P1 load Σ_p φ_j(x_p) from ``particle_positions``.
     """
 
     config_schema = {
@@ -54,34 +39,25 @@ class FenicsxMeshReactionDiffusion(Process):
         "mesh": "map",
         "pde": "map",
         "dt": {"_type": "float", "_default": 0.01},
-        "particle_transfer": {"_type": "string", "_default": "grid"},
     }
 
     def initialize(self, config):
         import ufl
         from dolfinx import fem
 
-        from viva_pde_particle.mesh import MeshGridTransfer
+        from viva_pde_particle.mesh import mesh_transfer
 
         self.grid = CartesianGrid.from_config(config["grid"])
         self.pde = config["pde"]
         self.species = list(self.pde["species"])
-        self.particle_species = list(self.pde.get("particle_species", []))
+        self.external_species = list(self.pde.get("external_species") or sorted(
+            {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
         self.dt = float(config["dt"])
-        msh = build_mesh(config["mesh"])
-        self.transfer = MeshGridTransfer.build(msh, self.grid)
-        self.particle_transfer = config["particle_transfer"]
-        if self.particle_transfer not in ("grid", "positions"):
-            raise ValueError(f"particle_transfer must be 'grid' or 'positions', got {self.particle_transfer!r}")
-        if self.particle_transfer == "positions":
-            from viva_pde_particle.mesh import PointLocator
-
-            self.locator = PointLocator.build(msh, self.transfer.V)
+        self.transfer = mesh_transfer(config["mesh"], self.grid)
         V = self.transfer.V
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         K = fem.assemble_matrix(fem.form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)).to_scipy().tocsr()
-        M = fem.assemble_matrix(fem.form(u * v * ufl.dx)).to_scipy()
-        self.ml = np.asarray(M.sum(axis=1)).ravel()  # lumped mass = nodal control volumes (µm³)
+        self.ml = self.transfer.ml  # lumped mass = nodal control volumes (µm³)
         self.n_dofs = len(self.ml)
         self._solvers = {
             name: spla.factorized((sp.diags(self.ml) + float(spec["diffusion"]) * self.dt * K).tocsc())
@@ -95,26 +71,15 @@ class FenicsxMeshReactionDiffusion(Process):
         return (self.transfer.P @ dofs).reshape(self.grid.shape)
 
     def inputs(self):
-        ins = {"field_dofs": "map[array[float]]", "particle_counts": "map[array[float]]"}
-        if self.config["particle_transfer"] == "positions":
-            ins["particle_positions"] = "map[array[float]]"
-        return ins
-
-    def particle_load(self, state, species: str) -> np.ndarray:
-        """Molecules per DOF (P1 load) for one particle species."""
-        if self.particle_transfer == "positions":
-            pos = (state.get("particle_positions") or {}).get(species)
-            return self.locator.load(np.zeros((0, 3)) if pos is None else np.asarray(pos, dtype=float))
-        counts = (state.get("particle_counts") or {}).get(species)
-        h = np.zeros(self.grid.shape) if counts is None else np.asarray(counts, dtype=float)
-        return self.transfer.P.T @ h.ravel()
+        return {"field_dofs": "map[array[float]]", "external_conc": "map[array[float]]"}
 
     def outputs(self):
         return {"field_dofs": "map[overwrite[array[float]]]", "fields": "map[overwrite[array[float]]]"}
 
     def update(self, state, interval):
         u = {s: np.asarray(state["field_dofs"][s], dtype=float) for s in self.species}
-        pc = {p: self.particle_load(state, p) / (self.ml * MOLECULES_PER_UM3_PER_UM) for p in self.particle_species}
+        ext = state.get("external_conc") or {}
+        pc = {s: np.asarray(ext[s], dtype=float) if s in ext else np.zeros(self.n_dofs) for s in self.external_species}
         for _ in range(max(1, int(round(interval / self.dt)))):
             rates = reaction_rates(self.pde["terms"], self.species, {**pc, **u}, (self.n_dofs,))
             u = {s: self._solvers[s](self.ml * (u[s] + self.dt * rates[s])) for s in self.species}

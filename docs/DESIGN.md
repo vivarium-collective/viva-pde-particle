@@ -25,7 +25,7 @@ repository, not from a separate sketch.
 10. [Approach 4: an unstructured mesh behind a background grid](#10-approach-4-an-unstructured-mesh-behind-a-background-grid)
 11. [Approach 5: particles loaded from positions, membrane from the mesh](#11-approach-5-particles-loaded-from-positions-membrane-from-the-mesh)
 12. [The native VCell reference as a pipeline](#12-the-native-vcell-reference-as-a-pipeline)
-13. [Where Steps fit (and why there are none yet)](#13-where-steps-fit-and-why-there-are-none-yet)
+13. [Steps and the component architecture (Phase 7)](#13-steps-and-the-component-architecture-phase-7)
 14. [Summary table](#14-summary-table)
 15. [File map](#15-file-map)
 
@@ -211,7 +211,7 @@ All our ports are `overwrite[...]`: a field or histogram is a full new value, no
 
 A `Step` has **no interval**. The composite runs it whenever one of its input stores changes (its "triggers"), in
 dependency order, after process updates are applied. Steps are for instantaneous transformations: unit
-conversions, derived quantities, observers. See [§13](#13-where-steps-fit-and-why-there-are-none-yet) for how they
+conversions, derived quantities, observers. See [§13](#13-steps-and-the-component-architecture-phase-7) for how they
 could fit here.
 
 ### 5.3 The scheduling rule that makes operator splitting work
@@ -241,19 +241,24 @@ auto-discovery misses editable installs. Always build composites against `build_
 
 ## 6. Approach 1: two processes on a Cartesian grid
 
-The most direct translation of Approach 0 has **one PDE process and one particle process**, wired through two stores.
+The most direct translation of Approach 0 has **one PDE process and one particle process**, plus one **Step** that
+converts the particle histogram into concentrations for the PDE (Phase 7a). They are wired through four stores.
 
 ```mermaid
 flowchart LR
   subgraph stores["stores"]
     F[("fields<br/>{B: µM array}")]
     C[("particle_counts<br/>{A: count array}")]
+    PC[("particle_conc<br/>{A: µM array}")]
     T[("particle_totals<br/>{A: float}")]
   end
   PDE["pde: FVReactionDiffusion<br/>interval = dt"]
   PART["particles: SmoldynHybrid<br/>interval = dt (fvsolver mode)<br/>or k·dt (start-of-interval)"]
+  S{{"particle_to_field: GridCountsToConcentration<br/>Step: count / (V·602.214)"}}
   F -- inputs.fields --> PDE
-  C -- inputs.particle_counts --> PDE
+  C -- inputs.particle_counts --> S
+  S -- outputs.particle_conc --> PC
+  PC -- inputs.external_conc --> PDE
   PDE -- outputs.fields --> F
   F -- inputs.fields --> PART
   PART -- outputs.particle_counts --> C
@@ -267,13 +272,20 @@ This is the actual document from `build_hybrid_document(two_way_exchange_model()
 {
   "fields":          {"B": "<array (3, 11, 11)>"},
   "particle_counts": {"A": "<array (3, 11, 11)>"},
+  "particle_conc":   {"A": "<array (3, 11, 11)>"},
   "particle_totals": {"A": 0.0},
   "pde": {
     "_type": "process", "address": "local:FVReactionDiffusion", "interval": 0.01,
     "config":  {"grid": {"origin": [0,0,0], "size": [10,10,1], "num": [11,11,3]},
                 "pde": { /* the PDE half from §3 */ }, "dt": 0.01},
-    "inputs":  {"fields": ["fields"], "particle_counts": ["particle_counts"]},
+    "inputs":  {"fields": ["fields"], "external_conc": ["particle_conc"]},
     "outputs": {"fields": ["fields"]}
+  },
+  "particle_to_field": {
+    "_type": "step", "address": "local:GridCountsToConcentration",
+    "config":  {"grid": {...}, "species": ["A"]},
+    "inputs":  {"particle_counts": ["particle_counts"]},
+    "outputs": {"particle_conc": ["particle_conc"]}
   },
   "particles": {
     "_type": "process", "address": "local:SmoldynHybrid", "interval": 0.01,
@@ -292,7 +304,8 @@ vcell-fvsolver's `FV_SOLVER`.
 - **`initialize`:** builds the zero-flux Laplacian `K` on the grid and factorizes `S + D·dt·K` once per species,
   where `S` is the diagonal of element volume fractions.
 - **`update(state, interval)`:**
-  1. Converts `particle_counts` to µM: `count / (V_element · 602.214)`.
+  1. Reads `external_conc`: concentrations (µM) of species it uses but does not evolve, here A. The engine knows
+     nothing about particles. The `GridCountsToConcentration` Step computes them as `count / (V_element · 602.214)`.
   2. Takes `round(interval/dt)` steps of
 
      `s_i·uᵢⁿ⁺¹ + D·dt·Σⱼ K_ij·uⱼⁿ⁺¹ = s_i·(uᵢⁿ + Rᵢⁿ·dt)`
@@ -336,7 +349,7 @@ Figure 1 shows which field value the Smoldyn step reads.
 |---|---|
 | `simulation->iterate()` | `FVReactionDiffusion.update` (interval dt) |
 | `smoldynOneStep` every k-th iterate | `SmoldynHybrid.update` (fvsolver mode: acts every k-th call) |
-| `computeHistogram` + `copyParticleCountsToConcentration` | `getMoleculeHistogram` (C) + `counts_to_uM` in the PDE |
+| `computeHistogram` + `copyParticleCountsToConcentration` | `getMoleculeHistogram` (C) + the `GridCountsToConcentration` Step |
 | `VCellValueProvider::getValue` (nearest voxel) | `GridValueProvider` in the Smoldyn fork (nearest node) |
 | old/current arrays | process-bigraph's "read state at interval start" |
 | `.fvinput` + `.smoldynInput` from Java | `partition()` + `write_smoldyn_config()` from Python |
@@ -441,10 +454,14 @@ flowchart LR
   D[("field_dofs<br/>{B: P1 DOF vector}<br/>(authoritative)")]
   F[("fields<br/>{B: grid array}<br/>(view for Smoldyn)")]
   C[("particle_counts<br/>{A: grid counts}")]
+  PC[("particle_conc<br/>{A: DOF array}")]
+  S{{"GridCountsToMeshConcentration<br/>Step: Pᵀ·counts / (M_L·602.214)"}}
   PDE["pde: FenicsxMeshReactionDiffusion<br/>P1 on gmsh ball"]
   PART["particles: SmoldynHybrid<br/>reflecting sphere"]
   D --> PDE
-  C --> PDE
+  C --> S
+  S --> PC
+  PC -- external_conc --> PDE
   PDE --> D
   PDE -- "P · u" --> F
   F --> PART
@@ -494,14 +511,16 @@ Two options of `build_mesh_hybrid_document` control it:
 
 **The wiring adds one store:**
 - `SmoldynHybrid` (with `emit_positions: true`) writes `particle_positions` ({species: (n, 3) array}).
-- The mesh process reads it.
+- The `PositionsToMeshConcentration` Step reads it and writes `particle_conc` for the mesh process.
 
 ```mermaid
 flowchart LR
   F[("fields")] --> PART["particles: SmoldynHybrid<br/>emit_positions = true<br/>membrane = mesh triangles"]
   PART --> P[("particle_positions<br/>{A: (n,3)}")]
   PART --> C[("particle_counts")]
-  P --> PDE["pde: FenicsxMeshReactionDiffusion<br/>particle_transfer = positions"]
+  P --> S{{"PositionsToMeshConcentration<br/>Step: Σ_p φ_j(x_p) / (M_L·602.214)"}}
+  S --> PC[("particle_conc")]
+  PC -- external_conc --> PDE["pde: FenicsxMeshReactionDiffusion"]
   D[("field_dofs")] --> PDE
   PDE --> D
   PDE --> F
@@ -613,37 +632,68 @@ flowchart LR
 - **Post-processing.** The patches between generation and solve (`drop_noop_reactions`, `place_particles`) and the
   smoothed-grid analysis (`vcell_vtk.smoothed_domain`) are documented in their docstrings and in PLAN.md.
 
-## 13. Where Steps fit (and why there are none yet)
+## 13. Steps and the component architecture (Phase 7)
 
-Every unit in this repository today is a `Process`. That is deliberate for the engines: the PDE and Smoldyn
-advance time, and the coupler sequences substeps inside an interval ([§8](#8-approach-2-one-coupler-process-with-a-chosen-splitting)).
-Several *transformations* are currently buried inside processes, though, and would be natural **Steps**:
+**The goal (PLAN.md, Phase 7):** reusable process-bigraph components that assemble into an accurate hybrid
+co-simulation:
+- **Core engines,** a PDE solver and a particle solver, that are general and know nothing about each other;
+- **Adapters (Steps)** that do all the coupling work: unit conversion, binning and transfer between
+  discretizations;
+- **Orchestration and geometry** as separate, reusable pieces.
 
-| Transformation | Where it lives now | As a Step |
+Before Phase 7 every unit was a Process, and the coupling was buried inside the engines. The studies showed why
+that matters. Every accuracy problem we found was an adapter or geometry problem, not an engine problem:
+- exterior-node binning (vcell-fvsolver#25);
+- the membrane–voxel volume mismatch (B2c);
+- the sphere–mesh domain mismatch (B2d);
+- curved-compartment creation (vcell-fvsolver#26).
+
+**Target decomposition:**
+
+```mermaid
+flowchart LR
+  subgraph engines["core engines (general)"]
+    PDE["PDE process<br/>reaction–diffusion on its own discretization<br/>in: external_conc · out: fields/DOFs"]
+    PART["particle process<br/>Smoldyn<br/>in: rate fields (lookup grid) · out: positions, counts"]
+  end
+  subgraph adapters["adapters (Steps, swappable)"]
+    P2F{{"ParticlesToField<br/>grid counts→µM · Pᵀ · exact P1 load<br/>(+ compartment-aware, accessible-volume)"}}
+    F2P{{"FieldToParticles<br/>identity · P·u"}}
+  end
+  ORCH["splitting coordinator<br/>(jacobi by scheduling; GS/Strang by sequencing)"]
+  GEO["geometry compiler<br/>one spec → PDE mesh + Smoldyn membrane<br/>+ volume samples + accessible volumes"]
+  MODEL["model compiler<br/>partition() today, SBML-Spatial later"]
+  PART --> P2F --> PDE
+  PDE --> F2P --> PART
+  ORCH -.-> PDE
+  ORCH -.-> PART
+  GEO -.-> PDE
+  GEO -.-> PART
+  MODEL -.-> PDE
+  MODEL -.-> PART
+```
+
+**Why Steps are the right construct for adapters.** A Step runs when its inputs change, after the process updates of
+that time point are applied and before the next process intervals start. An adapter triggered by the particle output
+therefore computes exactly what the PDE would have computed from the raw output at the start of its interval. The
+coupling timing of §6.3 is unchanged.
+
+**Status:**
+
+| Sub-phase | Component | Status |
 |---|---|---|
-| counts → µM (`count / (V·602.214)`) | inside `FVReactionDiffusion.update` | `BinToConcentration`: `particle_counts` → `particle_conc` |
-| positions → P1 load (§11) | inside `FenicsxMeshReactionDiffusion.particle_load` | `PositionsToMeshLoad`: `particle_positions` → `particle_load` |
-| `Pᵀ·counts` (§10) | same | `GridToMeshLoad`: `particle_counts` → `particle_load` |
-| `P·u` (mesh → grid view) | inside the mesh process's output | `MeshToGrid`: `field_dofs` → `fields` |
-| observables (totals, radial profiles) | in study scripts after the run | observer Steps feeding an emitter |
+| 7a | `ParticlesToField` Steps: `GridCountsToConcentration` (FV, Q1), `GridCountsToMeshConcentration` (Pᵀ), `PositionsToMeshConcentration` (P1 load). The PDE engines take a generic `external_conc` and no longer know about particles. | **done**: bit-identical to the pre-refactor code on six composites (`scripts/component_regression.py`). The mesh composites run 1.8–3.5× faster, because the PDE no longer receives the grid histogram or positions through its ports. |
+| 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs. | next |
+| 7c | The particle engine without the PDE clock: replace `coupling="fvsolver"` with a scheduling or field-snapshot construct that reproduces fvsolver timing bit-for-bit. | planned |
+| 7d | A generic splitting coordinator in place of `HybridCoupler`'s hard-coded FV + Smoldyn pair. | planned |
+| 7e | A geometry compiler: one spec gives the PDE mesh, the Smoldyn membrane and volume samples, plus accessible-volume fractions for the adapters. | planned |
+| 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
 
-**Why this would be correct.** A Step runs when its inputs change, after the process updates of that time point are
-applied. For example, a `GridToMeshLoad` Step triggered by `particle_counts` would recompute the load exactly when the
-particle process publishes new counts. That is the same moment the PDE would next read it, so the coupling timing of
-§6.3 is unchanged.
-
-**What it would buy.** The transfer would become a swappable component, like the PDE engine in §9:
-`"grid"` vs `"positions"` would be a different Step at an address, rather than a config switch inside the mesh
-process. Each intermediate quantity (loads, binned concentrations) would also appear as a store that can be inspected
-and emitted.
-
-**What it would cost.**
-- **Another store per species,** with process-bigraph's type checking and copying each time it changes. For the
-  20k × 3 positions array every step, that overhead is not negligible.
-- **More wiring to keep consistent.**
-
-A reasonable next step is to factor out the transfers first, since they now have two implementations, and measure
-the overhead with the B2d workload.
+**Costs to watch.**
+- **Overhead:** each adapter adds a store, which process-bigraph types and copies when it changes. So far this has
+  been a net gain (7a).
+- **Configuration:** the composite builders, and later the geometry and model compilers, must configure every
+  component consistently. That is the price of not hard-wiring them.
 
 ## 14. Summary table
 
@@ -667,6 +717,8 @@ the overhead with the B2d workload.
 | FV PDE process | `viva_pde_particle/processes/fv_reaction_diffusion.py` |
 | Smoldyn process | `viva_pde_particle/processes/smoldyn_hybrid.py` |
 | Splitting coupler | `viva_pde_particle/processes/hybrid_coupler.py` |
+| Particle → PDE adapter Steps (Phase 7a) | `viva_pde_particle/steps/transfer.py` |
+| Bit-exact refactor regression | `scripts/component_regression.py` |
 | FEniCSx Q1 process | `viva_pde_particle/processes/fenicsx_reaction_diffusion.py` |
 | FEniCSx P1 mesh process | `viva_pde_particle/processes/fenicsx_mesh_reaction_diffusion.py` |
 | Mesh ↔ grid transfer, point location, mesh membrane | `viva_pde_particle/mesh.py` |

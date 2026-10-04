@@ -292,3 +292,47 @@ def volume_samples(locator: PointLocator, origin, size, num) -> np.ndarray:
         pts = np.column_stack([xy, np.full(len(xy), z)])
         out[k * nxy:(k + 1) * nxy] = np.where(locator.inside(pts), 0, 1)
     return out
+
+
+# ---------------------------------------------------------------- shared per-process caches
+# The PDE engine and the transfer Steps build the same mesh objects. Sharing them guarantees
+# identical DOF numbering, P and lumped mass (and avoids rebuilding them).
+_MESH_CACHE: dict = {}
+_TRANSFER_CACHE: dict = {}
+
+
+def _key(spec: dict) -> tuple:
+    return tuple(sorted((k, tuple(v) if isinstance(v, (list, tuple)) else v) for k, v in spec.items()))
+
+
+def build_mesh(spec: dict):
+    """The dolfinx mesh for ``spec`` (``{"kind": "sphere", "radius", "center", "h"}``), cached."""
+    key = _key(spec)
+    if key not in _MESH_CACHE:
+        if spec.get("kind") != "sphere":
+            raise ValueError(f"unsupported mesh kind {spec.get('kind')!r}")
+        _MESH_CACHE[key] = sphere_mesh(spec["radius"], tuple(spec["center"]), spec.get("h"))
+    return _MESH_CACHE[key]
+
+
+def mesh_transfer(spec: dict, grid: CartesianGrid) -> MeshGridTransfer:
+    """MeshGridTransfer for (mesh spec, background grid), cached, with ``ml`` (lumped mass) attached."""
+    key = (_key(spec), grid.origin, grid.size, grid.num)
+    if key not in _TRANSFER_CACHE:
+        import ufl
+        from dolfinx import fem
+
+        transfer = MeshGridTransfer.build(build_mesh(spec), grid)
+        u, v = ufl.TrialFunction(transfer.V), ufl.TestFunction(transfer.V)
+        M = fem.assemble_matrix(fem.form(u * v * ufl.dx)).to_scipy()
+        transfer.ml = np.asarray(M.sum(axis=1)).ravel()   # lumped mass = nodal control volumes (µm³)
+        _TRANSFER_CACHE[key] = transfer
+    return _TRANSFER_CACHE[key]
+
+
+def mesh_locator(spec: dict, grid: CartesianGrid) -> PointLocator:
+    """PointLocator on the cached transfer's P1 space, cached on the transfer."""
+    transfer = mesh_transfer(spec, grid)
+    if getattr(transfer, "locator", None) is None:
+        transfer.locator = PointLocator.build(build_mesh(spec), transfer.V)
+    return transfer.locator
