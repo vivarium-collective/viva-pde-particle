@@ -95,3 +95,37 @@ def test_cosim_on_vcell_geometry_is_wired_and_conservative(vcell_ball):
     b = float((np.asarray(sim.state["fields"]["B"]) * w).sum() * NA)
     assert a > 1000
     assert (a + b) / b0 == pytest.approx(1.0, abs=0.01)  # creation volume = PDE volume: no exchange drift
+
+
+@needs_hybrid
+def test_recorded_vcell_geometry_run_and_native_bundle(vcell_ball, tmp_path):
+    """A co-sim on VCell's geometry and a native VCell run, recorded into bundles on the same lattice."""
+    pytest.importorskip("smoldyn")
+    from vcell_fenics.results import Bundle
+
+    from viva_pde_particle.composites.hybrid import build_vcell_geometry_hybrid_document, run_document
+    from viva_pde_particle.model import HybridModel, Reaction, Species
+    from viva_pde_particle.reference.vcell_native import run_native
+    from viva_pde_particle.viz3d import attach_recorder, read_particles, write_native_bundle
+
+    g, r = vcell_ball
+    m = HybridModel(g, [Species("A", 1.0, particle=True, initial=2000), Species("B", 1.0, initial=0.0)],
+                    [Reaction("convert", {"A": 1}, {"B": 1}, k=0.5)])
+    desc = sphere_in_box((4.5, 4.5, 4.5), 4.0, (9, 9, 9))
+    membranes = {"pm": r.boundary_triangles("cell")}
+    doc = build_vcell_geometry_hybrid_document(m, desc, 0.01, realization=r)
+    attach_recorder(doc, tmp_path / "cosim.fenics", 0.05, membranes=membranes)
+    traj = run_document(doc, 0.1, 0.01, 0.05)
+    b = Bundle.open(tmp_path / "cosim.fenics")
+    mask = r.node_mask("cell")
+    assert b.manifest.domains["cell"].n_points < mask.size  # only the hexes touching the domain
+    vol = b.mesh("cell")
+    assert len(read_particles(tmp_path / "cosim.fenics", "A", 0)) == 2000
+    pm = b.field("pm", "B", 2)
+    assert np.isfinite(pm).all() and pm.min() > 0  # membrane values come from the extended field
+    assert np.allclose(b.times, traj.times)
+    nat = run_native(m, t_end=0.1, dt=0.01, output_dt=0.05, seed=1, geometry=desc, domain_volume=r.volume("cell"))
+    write_native_bundle(tmp_path / "native.fenics", nat, g, mask=mask, membranes=membranes)
+    n = Bundle.open(tmp_path / "native.fenics")
+    np.testing.assert_allclose(n.mesh("cell").points, vol.points)  # same lattice: viewable side by side
+    assert len(n.times) == 3 and n.field("cell", "B", 2).max() > 0

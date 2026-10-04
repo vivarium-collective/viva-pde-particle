@@ -4,9 +4,11 @@ created: "2026-10-03"
 plugin_version: 0.4.16
 package_path: viva_pde_particle
 
-# Persist study runs to parquet (as in viva-smoldyn); the Evaluate-stage analyses read it.
+# Workbench run history: the xarray/zarr emitter (the workbench default). It records scalar
+# stores such as particle_totals. Spatial fields and particle positions go to vcell-fenics
+# results bundles instead (viva_pde_particle.viz3d: attach_recorder / SpatialRecorder).
 runtime:
-  default_emitter: parquet
+  default_emitter: xarray
 
 # Directory layout. New workspaces group their research directories under a
 # tidy `workspace/` subtree (the dirs below); the hidden `.pbg/` machine state

@@ -984,6 +984,42 @@ The two compilers:
   - No engine imports or names another engine's concepts.
   - Every coupling concern is a separate component: transfers, scheduling, splitting, geometry.
 
+## Phase 8 (2026-10-04): 3D storage, static 3D figures, interactive spatial viewing
+
+**Why:** runs could not be viewed in 3D. Study scripts kept fields, positions and geometry in memory and wrote only
+metrics and 1D/2D plotly pages.
+
+**Decisions (user):**
+- **Storage:** both.
+  - vcell-fenics results bundles (ADR 010: VTU meshes + zarr point arrays), which VCell's field viewer already reads.
+  - The workbench's xarray/zarr emitter for run history.
+- **Interactive:** both.
+  - VCell's vtk.wasm field viewer, fed by a Python server.
+  - A self-contained HTML viewer embedded in the workbench.
+- **Static:** PyVista off-screen PNG and GIF.
+
+**Steps:**
+1. **8a (done):** bundles and the recorder.
+   - `viz3d/bundle.py` writes vcell-fenics schema-1 bundles from numpy (no dolfinx).
+     - Grid fields go on the node lattice cut into 6 tets per hex, keeping hexes that touch the PDE domain.
+     - P1 mesh fields use the engine's own cells.
+     - Membranes are triangle domains.
+     - Particle positions use an extension key outside the vcell-fenics manifest.
+   - `viz3d/record.py`:
+     - `BundleRecorder` writes the bundle rows; membrane values are sampled from the extended field.
+     - `attach_recorder(doc, out_dir, output_dt, membranes=)` works for the grid, mesh, VCell-geometry and splitting
+       documents.
+     - `write_native_bundle` handles native VCell trajectories.
+   - `processes/recorder.py`: `SpatialRecorder` ticks on the shortest process interval, so its clock is the PDE's
+     float for float. It has no outputs, so recording leaves the run bit-identical (tested). `run_document` records the
+     final state through `close`.
+   - **Emitter switch:** `workspace.yaml` now uses the xarray emitter (the workbench default) for scalar run history.
+     The workbench's xarray wiring emits scalar stores but not field arrays (it needs per-variable coordinates), so
+     spatial data lives in bundles.
+2. **8b and 8c:** PyVista PNG/GIF and a self-contained three.js viewer.
+3. **8d:** the Python server for VCell's vtk.wasm viewer, plus a vcell PR for particles (opened only).
+4. **8e:** study figures (B2f first).
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
