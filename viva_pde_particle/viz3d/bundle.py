@@ -137,6 +137,12 @@ def membrane_domain(name: str, triangles: np.ndarray, decimals: int = 9) -> Doma
     return Domain(name, "membrane", points, inverse.reshape(-1, 3).astype(np.int64), VTK_TRIANGLE)
 
 
+def membrane_variable(var: str, membrane: str) -> str:
+    """The bundle name of ``var`` sampled on ``membrane``: ``<var>_<membrane>``, VCell's convention, since
+    viewers select variables by name and a volume and a membrane variable must not share one."""
+    return f"{var}_{membrane}"
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 

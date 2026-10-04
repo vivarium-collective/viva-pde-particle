@@ -80,6 +80,9 @@ test = { cmd = "pytest tests -v", description = "Run the test suite" }
 lint = { cmd = "python scripts/lint-workspace.py", description = "Validate workspace.yaml / studies / investigations" }
 serve = { cmd = "vivarium-workbench serve --workspace .", description = "Start the vivarium-workbench dashboard" }
 check-engines = { cmd = "python scripts/check_engines.py", description = "Report versions of every engine importable in this env" }
+# VCell's vtk.wasm field viewer over recorded bundles: pixi run view3d path/to/run.fenics [...]
+# (needs ../vcell/webapp-viewer with `npm run fetch:vtk-wasm` run once, or --viewer / VCELL_WEBAPP_VIEWER).
+view3d = { cmd = "python -m viva_pde_particle.viz3d.viewer_server", description = "Serve results bundles to VCell's vtk.wasm field viewer" }
 # Local development against sibling checkouts in ../ (overrides the git/PyPI pins in this env only).
 dev-link = { cmd = "pip install --no-deps -e ../pyvcell -e ../vivarium-workbench -e ../process-bigraph -e ../bigraph-schema", description = "Editable-install sibling checkouts over the pinned versions" }
 

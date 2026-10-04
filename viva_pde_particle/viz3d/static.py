@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from viva_pde_particle.viz3d.bundle import particle_species, read_particles
+from viva_pde_particle.viz3d.bundle import membrane_variable, particle_species, read_particles
 
 _PARTICLE_COLORS = ("orangered", "crimson", "purple", "dimgray")
 _BAR = {"vertical": False, "position_x": 0.15, "position_y": 0.03, "width": 0.7, "height": 0.07,
@@ -47,7 +47,10 @@ def domain_mesh(bundle, domain: str, var: str | None = None, row: int | None = N
     cells = np.asarray(grid.cells, dtype=np.int64)
     ug = pv.UnstructuredGrid({int(grid.cell_types[0]): cells}, np.asarray(grid.points, dtype=float))
     if var is not None and row is not None:
-        ug.point_data[var] = bundle.field(domain, var, row)
+        names = {v.name for v in bundle.manifest.variables if v.domain == domain}
+        name = var if var in names else membrane_variable(var, domain)
+        if name in names:
+            ug.point_data[var] = bundle.field(domain, name, row)
     return ug
 
 

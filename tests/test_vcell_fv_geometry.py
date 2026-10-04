@@ -121,7 +121,7 @@ def test_recorded_vcell_geometry_run_and_native_bundle(vcell_ball, tmp_path):
     assert b.manifest.domains["cell"].n_points < mask.size  # only the hexes touching the domain
     vol = b.mesh("cell")
     assert len(read_particles(tmp_path / "cosim.fenics", "A", 0)) == 2000
-    pm = b.field("pm", "B", 2)
+    pm = b.field("pm", "B_pm", 2)
     assert np.isfinite(pm).all() and pm.min() > 0  # membrane values come from the extended field
     assert np.allclose(b.times, traj.times)
     nat = run_native(m, t_end=0.1, dt=0.01, output_dt=0.05, seed=1, geometry=desc, domain_volume=r.volume("cell"))

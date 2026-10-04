@@ -1026,7 +1026,16 @@ metrics and 1D/2D plotly pages.
      - Controls: a time slider and play button, a run selector, and a colour bar.
      - Data: base64 float32, subsampled; about 0.2 MB for a ball.
    - pyvista and imageio are in pixi only.
-3. **8d:** the Python server for VCell's vtk.wasm viewer, plus a vcell PR for particles (opened only).
+3. **8d (done):** `viz3d/viewer_server.py` (`pixi run view3d run.fenics ...`).
+   - A stdlib loopback server that serves `../vcell/webapp-viewer` and implements `FieldViewerServer`'s JSON
+     contract for bundles: `/health`, `/info`, `/grid`, `/field`, `/stats` and `/timeseries`, ported from
+     `FenicsBundleViews.java`.
+   - It also serves a `/particles` extension.
+   - VCell's own viewer renders our bundles. Checked with Playwright (Chromium 1.63, the viewer tests' pin):
+     "rendered B @ t = 1 on cell ✓".
+   - Membrane fields are named `<field>_<membrane>`, VCell's convention, because the viewer selects variables by
+     name.
+   - Still to do: the vcell PR that draws particles in the viewer (opened only).
 4. **8e:** study figures (B2f first).
 
 ## Risks / open items
