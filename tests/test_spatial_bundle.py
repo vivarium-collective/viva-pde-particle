@@ -122,6 +122,10 @@ def test_recorder_on_a_mesh_document_with_membrane(tmp_path):
     n_dofs = len(mesh_space(doc["pde"]["config"]["mesh"]).V.tabulate_dof_coordinates())
     assert b.manifest.domains["cell"].n_points == n_dofs
     np.testing.assert_array_equal(b.field("cell", "B", 2), np.asarray(traj.field_dofs["B"][2]))
+    m = b.mesh("cell")
+    p = np.asarray(m.points)[np.asarray(m.cells)]
+    vols = np.einsum("ij,ij->i", p[:, 1] - p[:, 0], np.cross(p[:, 2] - p[:, 0], p[:, 3] - p[:, 0])) / 6
+    assert (vols > 0).all()  # positively oriented: VTK's integrated volume is positive
     assert len(read_particles(tmp_path / "m.fenics", "A", 0)) == 20000  # initial positions recorded
     pm = b.field("pm", "B_pm", 2)
     assert np.isfinite(pm).all() and pm.max() > 0

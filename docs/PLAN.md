@@ -1035,7 +1035,11 @@ metrics and 1D/2D plotly pages.
      "rendered B @ t = 1 on cell ✓".
    - Membrane fields are named `<field>_<membrane>`, VCell's convention, because the viewer selects variables by
      name.
-   - Still to do: the vcell PR that draws particles in the viewer (opened only).
+   - **Particles in VCell's viewer:** virtualcell/vcell#2160 (opened; not merged here).
+     - Our bundles' particle extension is now a neutral root key `particles`, with whole-row chunks (#42), which
+       VCell's `FenicsBundle` reads.
+     - The PR adds `/particles`, `particleSpecies` in `/info`, and a Particles layer in the viewer. Its tests pass,
+       including the full browser suite: 225 tests across three engines.
 4. **8e:** study figures.
    - **B2f (`dumbbell-three-ways/sims/render_3d.py`):** done.
      - One seed per path (native, `none`, `adapters+volumes`, Netgen) recorded into bundles.
