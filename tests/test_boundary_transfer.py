@@ -109,3 +109,38 @@ def test_positions_hybrid_conserves_and_confines(membrane):
         assert pde.locator.inside(pos).all()  # particles never leave the PDE domain
     else:
         assert (np.linalg.norm(pos - C, axis=1) <= R + 1e-9).all()
+
+
+def test_volume_samples_map_matches_mesh(mesh_and_locator):
+    from viva_pde_particle.mesh import volume_samples
+
+    _, _, loc = mesh_and_locator
+    ids = volume_samples(loc, (0, 0, 0), (4, 4, 4), (16, 16, 16))
+    h = 4 / 16
+    k, rem = np.divmod(np.arange(ids.size), 16 * 16)
+    j, i = np.divmod(rem, 16)
+    centres = (np.stack([i, j, k], axis=1) + 0.5) * h      # x fastest, cell-centred
+    np.testing.assert_array_equal(ids == 0, loc.inside(centres))
+    assert ((ids == 0).sum() * h**3) == pytest.approx(4 / 3 * np.pi * R**3, rel=0.08)
+
+
+def test_config_writes_boxsize_and_volume_samples():
+    import zlib
+
+    from viva_pde_particle.grid import CartesianGrid
+
+    g = CartesianGrid((0, 0, 0), (4, 4, 4), (9, 9, 9))
+    parts = {"species": {"A": {"diffusion": 1.0}}, "reactions": [], "field_species": []}
+    ids = np.zeros(8 * 8 * 8, dtype=np.uint8)
+    ids[::3] = 1
+    tri = np.array([[[1, 1, 1], [3, 1, 1], [1, 3, 1]]], dtype=float)
+    text = write_smoldyn_config(parts, g, {"A": np.zeros(g.shape)}, 0.01, 1, geometry={
+        "kind": "triangles", "triangles": tri, "interior_point": [1.5, 1.5, 1.5],
+        "volume_samples": {"origin": [0, 0, 0], "size": [4, 4, 4], "num": [8, 8, 8], "ids": ids}})
+    assert "boxsize 1.0" in text  # two grid spacings of 0.5
+    lines = text.splitlines()
+    a, b = lines.index("start_highResVolumeSamples"), lines.index("end_highResVolumeSamples")
+    assert "VolumeSamples 8 8 8" in lines[a:b] and "domain 0" in lines[a:b]
+    hexdata = "".join(lines[lines.index("VolumeSamples 8 8 8") + 1:b])
+    np.testing.assert_array_equal(np.frombuffer(zlib.decompress(bytes.fromhex(hexdata)), np.uint8), ids)
+    assert lines.index("end_highResVolumeSamples") < lines.index("start_surface walls")

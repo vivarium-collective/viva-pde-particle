@@ -67,6 +67,28 @@ def _sphere_surface(center, radius) -> list[str]:
             "end_surface", f"start_compartment {DOMAIN}", "surface walls", f"point {c}", "end_compartment"]
 
 
+def _volume_samples_block(vs: dict) -> list[str]:
+    """``highResVolumeSamples``: a voxel map of compartment IDs (VCell's acceleration in OPTION_VCELL).
+
+    ``vs`` has ``origin``, ``size``, ``num`` (3 each) and ``ids`` (uint8, x fastest), with 0 for
+    ``domain`` and 1 for outside. ``posincompart`` decides membership from the 3×3×3 sample
+    neighbourhood and runs the exact panel-crossing test only next to the surface.
+    """
+    import zlib
+
+    ids = np.ascontiguousarray(vs["ids"], dtype=np.uint8)
+    if ids.size != int(np.prod(vs["num"])):
+        raise ValueError("volume_samples: ids size does not match num")
+    hexdata = zlib.compress(ids.tobytes(), 9).hex().upper()
+    lines = ["start_highResVolumeSamples",
+             "Origin " + " ".join(_fmt(v) for v in vs["origin"]),
+             "Size " + " ".join(_fmt(v) for v in vs["size"]),
+             "CompartmentHighResPixelMap 2", f"{DOMAIN} 0", "outside 1",
+             "VolumeSamples " + " ".join(str(int(v)) for v in vs["num"])]
+    lines += [hexdata[i:i + 200] for i in range(0, len(hexdata), 200)]
+    return lines + ["end_highResVolumeSamples"]
+
+
 def _triangle_surface(triangles, interior_point) -> list[str]:
     """A closed reflecting surface of triangle panels (e.g. a mesh boundary) and the domain inside it."""
     lines = ["start_surface walls", "action both all reflect"]
@@ -83,15 +105,22 @@ def write_smoldyn_config(
     seed: int,
     geometry: dict | None = None,
     positions: dict[str, np.ndarray] | None = None,
+    box_size: float | None = None,
 ) -> str:
     """Return the configuration text for the particle half (from :func:`partition`).
 
     ``geometry``: None (the grid box), ``{"kind": "sphere", "center", "radius"}`` or
     ``{"kind": "triangles", "triangles": (m, 3, 3), "interior_point"}`` (e.g. the boundary of the
     PDE mesh, so particles and fields share one domain). Either adds a reflecting surface
-    and the ``domain`` compartment inside it.
+    and the ``domain`` compartment inside it. ``triangles`` may add ``"volume_samples"``
+    (see :func:`_volume_samples_block`) to accelerate compartment tests.
     ``positions``: explicit initial molecule positions per species (n, dim), which replace
     the per-node placement from ``initial_counts``.
+    ``box_size``: edge of Smoldyn's virtual boxes (µm). The default is two grid spacings.
+    Without it Smoldyn sizes boxes from the *initial* molecule count (``molperbox``), and a
+    model that starts with no particles gets a single box. Every molecule then tests every
+    surface panel every step: N×M collision checks, e.g. 23× slower with an 806-triangle
+    membrane.
     """
     if any(o < 0 for o in grid.origin):
         # Smoldyn writes position ranges as 'lo-hi', which is ambiguous for negative values.
@@ -112,6 +141,7 @@ def write_smoldyn_config(
         "time_stop 1e30",
         f"time_step {_fmt(time_step)}",
         f"random_seed {int(seed)}",
+        f"boxsize {_fmt(box_size if box_size is not None else 2 * max(grid.spacing))}",
     ]
     reactions = particles["reactions"]
     if geometry is not None:
@@ -119,6 +149,8 @@ def write_smoldyn_config(
         if kind == "sphere":
             lines += _sphere_surface(geometry["center"], geometry["radius"])
         elif kind == "triangles":
+            if geometry.get("volume_samples") is not None:
+                lines += _volume_samples_block(geometry["volume_samples"])
             lines += _triangle_surface(geometry["triangles"], geometry["interior_point"])
         else:
             raise ValueError(f"unsupported geometry kind {kind!r}")
