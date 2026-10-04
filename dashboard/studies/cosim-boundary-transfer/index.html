@@ -6,8 +6,11 @@
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
-     same-origin, so it shares the parent's localStorage 'viv.theme'). -->
+     same-origin, so it shares the parent's localStorage 'viv.theme'; the
+     'storage' event, which the browser fires here when the parent toggles,
+     keeps an already-open page in step). -->
 <script>(function(){try{var t=localStorage.getItem('viv.theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>window.addEventListener('storage',function(e){if(e.key==='viv.theme'&&(e.newValue==='dark'||e.newValue==='light'))document.documentElement.setAttribute('data-theme',e.newValue);});</script>
 </head>
 <body>
 <main class="study-page">
@@ -1239,7 +1242,7 @@ transfer. B2, B2b and B2c are re-run with it.</p>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "c24d4b7f0b3a4906643204fd9c3e7dcf6be8bb23", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/c24d4b7f0b3a4906643204fd9c3e7dcf6be8bb23", "branch": "main", "lockfile": "uv.lock@4d084479be2d", "generated_at": "2026-10-04 01:06 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "d1331ecb75f8a44ab24fdba4d25213cbcebdb1bd", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/d1331ecb75f8a44ab24fdba4d25213cbcebdb1bd", "branch": "main", "lockfile": "uv.lock@664d5eabb62d", "generated_at": "2026-10-04 03:46 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
