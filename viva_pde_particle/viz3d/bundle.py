@@ -119,8 +119,12 @@ def grid_domain(name: str, grid, mask: np.ndarray | None = None) -> Domain:
     used, cells = np.unique(cells, return_inverse=True)
     cells = cells.reshape(-1, 4 if vtk_type == VTK_TETRA else 3)
     coords = np.stack([c.ravel() for c in grid.node_coordinates()], axis=1)[used]
-    dom = Domain(name, "volume", _pad3(coords), cells.astype(np.int64), vtk_type, node_index=used)
-    if vtk_type == VTK_TETRA:  # positive orientation
+    return _oriented(Domain(name, "volume", _pad3(coords), cells.astype(np.int64), vtk_type, node_index=used))
+
+
+def _oriented(dom: Domain) -> Domain:
+    """Tets with positive volume (VTK's convention; vtkIntegrateAttributes reports signed volumes)."""
+    if dom.vtk_type == VTK_TETRA:
         p = dom.points[dom.cells]
         neg = np.einsum("ij,ij->i", p[:, 1] - p[:, 0], np.cross(p[:, 2] - p[:, 0], p[:, 3] - p[:, 0])) < 0
         dom.cells[neg] = dom.cells[neg][:, [0, 2, 1, 3]]
@@ -135,7 +139,7 @@ def mesh_domain(name: str, mesh_spec: dict) -> Domain:
     cells = np.asarray(V.dofmap.list, dtype=np.int64)
     points = _pad3(V.tabulate_dof_coordinates())
     vtk_type = VTK_TETRA if cells.shape[1] == 4 else VTK_TRIANGLE
-    return Domain(name, "volume", points, cells, vtk_type)
+    return _oriented(Domain(name, "volume", points, cells.copy(), vtk_type))
 
 
 def membrane_domain(name: str, triangles: np.ndarray, decimals: int = 9) -> Domain:
