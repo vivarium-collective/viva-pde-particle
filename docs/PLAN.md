@@ -1016,7 +1016,16 @@ metrics and 1D/2D plotly pages.
    - **Emitter switch:** `workspace.yaml` now uses the xarray emitter (the workbench default) for scalar run history.
      The workbench's xarray wiring emits scalar stores but not field arrays (it needs per-variable coordinates), so
      spatial data lives in bundles.
-2. **8b and 8c:** PyVista PNG/GIF and a self-contained three.js viewer.
+2. **8b and 8c (done):**
+   - `viz3d/static.py`:
+     - `render_png`: panels per bundle on a shared colour range. The mid-plane slice with the membrane outline, and the
+       field on a cut-away membrane with the particles.
+     - `render_gif`: one run over time.
+   - `viz3d/html.py` `bundle_html`: a self-contained three.js page.
+     - Layers: the membrane coloured by the field with a clipping plane, x/y/z mid-plane slices, and particles.
+     - Controls: a time slider and play button, a run selector, and a colour bar.
+     - Data: base64 float32, subsampled; about 0.2 MB for a ball.
+   - pyvista and imageio are in pixi only.
 3. **8d:** the Python server for VCell's vtk.wasm viewer, plus a vcell PR for particles (opened only).
 4. **8e:** study figures (B2f first).
 
