@@ -65,3 +65,33 @@ def test_smoldyn_geometry_derives_from_the_vcell_realization(vcell_ball):
     np.testing.assert_array_equal(geom["interior_point"], r.interior_points("cell"))  # VCell's own points
     inside_frac = (geom["volume_samples"]["ids"] == 0).mean()
     assert inside_frac * 729.0 == pytest.approx(r.volume("cell"), rel=0.03)
+
+
+@needs_hybrid
+def test_cosim_on_vcell_geometry_is_wired_and_conservative(vcell_ball):
+    pytest.importorskip("smoldyn")
+    from process_bigraph import Composite
+
+    from viva_pde_particle.composites.hybrid import build_vcell_geometry_hybrid_document
+    from viva_pde_particle.core import build_core
+    from viva_pde_particle.model import HybridModel, Reaction, Species
+    from viva_pde_particle.units import MOLECULES_PER_UM3_PER_UM as NA
+
+    g, r = vcell_ball
+    m = HybridModel(g, [Species("A", 1.0, particle=True, initial=0), Species("B", 1.0, initial=0.2)],
+                    [Reaction("a_to_b", {"A": 1}, {"B": 1}, k=1.0), Reaction("b_to_a", {"B": 1}, {"A": 1}, k=0.5)])
+    doc = build_vcell_geometry_hybrid_document(m, sphere_in_box((4.5, 4.5, 4.5), 4.0, (9, 9, 9)), 0.01, seed=2,
+                                               realization=r)
+    dom = doc["pde"]["config"]["domain"]
+    assert (dom["mask"] == r.node_mask("cell")).all()
+    assert (dom["volume_fraction"] * g.full_volume)[dom["mask"]].sum() == pytest.approx(r.volume("cell"), rel=0.01)
+    assert doc["particles"]["inputs"] == {"fields": ["lookup_fields"]}  # extended fields for rate lookups
+    sim = Composite({"state": doc}, core=build_core())
+    w = sim.state["pde"]["instance"]._s.reshape(g.shape) * g.full_volume * dom["mask"]
+    b0 = float((np.asarray(sim.state["fields"]["B"]) * w).sum() * NA)
+    sim.run(0.005)
+    sim.run(1.0)
+    a = float(np.asarray(sim.state["particle_counts"]["A"]).sum())
+    b = float((np.asarray(sim.state["fields"]["B"]) * w).sum() * NA)
+    assert a > 1000
+    assert (a + b) / b0 == pytest.approx(1.0, abs=0.01)  # creation volume = PDE volume: no exchange drift

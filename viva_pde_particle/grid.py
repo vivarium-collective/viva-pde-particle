@@ -149,7 +149,7 @@ class CartesianGrid:
         return lo, hi
 
     # ------------------------------------------------------------------ diffusion operator
-    def diffusion_matrix(self) -> sp.csr_matrix:
+    def diffusion_matrix(self, mask: np.ndarray | None = None) -> sp.csr_matrix:
         """Volume-scaled negative Laplacian ``K`` with zero-flux boundaries.
 
         For element i and neighbour j along axis d: ``K_ij = -a_ij/dx_d²`` and
@@ -158,6 +158,10 @@ class CartesianGrid:
         in vcell-fvsolver's SparseVolumeEqnBuilder, with the system scaled by
         dt/VOLUME. A backward-Euler step is then ``(diag(s) + D·dt·K) uⁿ⁺¹ = s·(uⁿ + R·dt)``,
         with ``s`` the volume fraction.
+
+        ``mask`` (grid-shaped bool) restricts the operator to a subdomain (e.g. VCell's staircase
+        region): a face is kept only if both its nodes are in the mask, so the mask boundary is
+        zero-flux and nodes outside it are uncoupled.
         """
         n_el = self.num_elements
         flat = np.arange(n_el).reshape(self.shape)
@@ -177,6 +181,10 @@ class CartesianGrid:
             i_idx = flat[tuple(lo)].ravel()
             j_idx = flat[tuple(hi)].ravel()
             coeff = (area[tuple(lo)] / self.spacing[d] ** 2).ravel()  # a_ij equal on both sides
+            if mask is not None:
+                m = np.asarray(mask, dtype=bool)
+                keep = (m[tuple(lo)] & m[tuple(hi)]).ravel()
+                i_idx, j_idx, coeff = i_idx[keep], j_idx[keep], coeff[keep]
             rows += [i_idx, j_idx, i_idx, j_idx]
             cols += [j_idx, i_idx, i_idx, j_idx]
             vals += [-coeff, -coeff, coeff, coeff]

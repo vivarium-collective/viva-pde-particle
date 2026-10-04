@@ -11,7 +11,9 @@ solve is needed: libvcell writes a hybrid application's inputs for the geometry 
   (from the ``.smoldynInput`` that VCell writes for Smoldyn).
 
 As decided for Phase 7e, ``inside``/``locate`` (and so the Smoldyn geometry derived from this
-realization) follow the **smooth** surface. The staircase is exposed separately
+realization) follow the **smooth** surface, tested by robust vertical-ray parity
+(:class:`~viva_pde_particle.geometry.inside.TriangleInside`; VTK's enclosed-points filter misclassifies
+lattice-aligned points against VCell's surface). The staircase is exposed separately
 (``node_regions``, ``pde_volume``) for the FV engine and the accessible-volume correction (7e.5).
 """
 from __future__ import annotations
@@ -131,42 +133,14 @@ class VCellFVRealization(RealizedGeometry):
                 work / next(f for f in files if f.endswith(".smoldynInput")))
 
     # the smooth (particle) domain
-    def _encloser(self, region: str):
-        if region not in self._enclosers:
-            import vtk
-            from vtk.util.numpy_support import numpy_to_vtk
-
-            tri = np.concatenate([self.surface_triangles[s] for s in self._surfaces_of[region]])
-            pts = vtk.vtkPoints()
-            pts.SetData(numpy_to_vtk(np.ascontiguousarray(tri.reshape(-1, 3)), deep=True))
-            polys = vtk.vtkCellArray()
-            for i in range(len(tri)):
-                polys.InsertNextCell(3, [3 * i, 3 * i + 1, 3 * i + 2])
-            surf = vtk.vtkPolyData()
-            surf.SetPoints(pts)
-            surf.SetPolys(polys)
-            clean = vtk.vtkCleanPolyData()
-            clean.SetInputData(surf)
-            clean.Update()
-            self._enclosers[region] = clean.GetOutput()
-        return self._enclosers[region]
-
     def _enclosed(self, region: str, points: np.ndarray) -> np.ndarray:
-        import vtk
-        from vtk.util.numpy_support import numpy_to_vtk, vtk_to_numpy
+        """Inside the region's closed smooth surface (robust vertical-ray parity; see geometry.inside)."""
+        from viva_pde_particle.geometry.inside import TriangleInside
 
-        if not len(points):
-            return np.zeros(0, dtype=bool)
-        vp = vtk.vtkPoints()
-        vp.SetData(numpy_to_vtk(np.ascontiguousarray(points, dtype=float), deep=True))
-        pd = vtk.vtkPolyData()
-        pd.SetPoints(vp)
-        sel = vtk.vtkSelectEnclosedPoints()
-        sel.SetInputData(pd)
-        sel.SetSurfaceData(self._encloser(region))
-        sel.SetTolerance(1e-9)
-        sel.Update()
-        return vtk_to_numpy(sel.GetOutput().GetPointData().GetArray("SelectedPoints")).astype(bool)
+        if region not in self._enclosers:
+            self._enclosers[region] = TriangleInside(np.concatenate([self.surface_triangles[s]
+                                                                     for s in self._surfaces_of[region]]))
+        return self._enclosers[region](points)
 
     def _in_box(self, pts):
         return ((pts >= self.lo) & (pts <= self.hi)).all(axis=1)

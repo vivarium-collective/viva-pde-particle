@@ -45,12 +45,18 @@ class FVReactionDiffusion(Process):
         pde: the ``pde`` part of a PartitionedModel, i.e. ``{species: {name: {diffusion}},
             terms: [{species, coeff, k, reactants}]}``, optionally ``external_species``.
         dt: PDE time step (s); each update takes ``round(interval/dt)`` steps.
+        domain: optional ``{"mask", "volume_fraction"}`` (grid-shaped arrays). ``mask`` restricts
+            the PDE to a subdomain (zero flux at its boundary; nodes outside are frozen and get no
+            reactions), e.g. VCell's staircase region. ``volume_fraction`` replaces the element
+            volume fractions ``s`` inside the mask, e.g. accessible volumes from a smooth
+            membrane (Phase 7e.5).
     """
 
     config_schema = {
         "grid": "map",
         "pde": "map",
         "dt": {"_type": "float", "_default": 0.01},
+        "domain": {"_type": "map", "_default": {}},
     }
 
     def initialize(self, config):
@@ -62,9 +68,18 @@ class FVReactionDiffusion(Process):
         self.external_species = list(self.pde.get("external_species") or sorted(
             {s for t in self.pde["terms"] for s in t["reactants"]} - set(self.species)))
         self.dt = float(config["dt"])
+        domain = config.get("domain") or {}
+        mask = domain.get("mask")
         frac = self.grid.volume_fraction.ravel()
+        self._mask = None
+        if mask is not None:
+            self._mask = np.asarray(mask, dtype=bool).ravel()
+            vf = domain.get("volume_fraction")
+            if vf is not None:
+                frac = np.asarray(vf, dtype=float).ravel()
+            frac = np.where(self._mask, frac, 1.0)  # frozen outside: unit diagonal, no coupling, no reactions
         self._s = frac
-        K = self.grid.diffusion_matrix()
+        K = self.grid.diffusion_matrix(mask)
         self._solvers = {}
         for name, spec in self.pde["species"].items():
             D = float(spec["diffusion"])
@@ -89,7 +104,8 @@ class FVReactionDiffusion(Process):
         rates = self.reaction_rates(conc)
         new = {}
         for s in self.species:
-            rhs = self._s * (fields[s].ravel() + rates[s].ravel() * self.dt)
+            rate = rates[s].ravel() if self._mask is None else np.where(self._mask, rates[s].ravel(), 0.0)
+            rhs = self._s * (fields[s].ravel() + rate * self.dt)
             new[s] = self._solvers[s](rhs).reshape(self.grid.shape)
         return new
 

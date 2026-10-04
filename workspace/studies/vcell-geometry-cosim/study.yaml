@@ -1,0 +1,159 @@
+schema_version: 4
+name: vcell-geometry-cosim
+title: "The co-simulation on VCell's own geometry: staircase PDE, smooth membrane, accessible-volume correction"
+investigation: hybrid-generalizability
+created: '2026-10-04'
+status: ran
+phase: Evaluate
+parent_studies:
+- near-membrane-fields
+- cosim-boundary-transfer
+
+question: |
+  Native VCell solves the PDE on the voxel staircase but confines particles by a smooth membrane.
+  For the B2b ball the two domains differ by ~1.8% in volume. That leaves a −1.4% outer-shell
+  depletion and an exchange drift, even with the binning correction of vcell-fvsolver#25
+  (Study B2c). With the co-simulation running on exactly VCell's geometry, can an
+  accessible-volume correction make the coupling both unbiased and conservative?
+hypothesis: |
+  Three variants of the particle → field transfer:
+  - **`none`** (full voxel volumes): reproduces native VCell with the #25 correction. The shell
+    is depleted by ~1.4%, and exchange drifts by the smooth-vs-staircase volume mismatch.
+  - **`adapters`** (accessible volumes in the adapter only): removes the shell bias, but the PDE
+    still integrates over full voxels, so particle sources are overcounted (~+1.4% in conversion).
+  - **`adapters+volumes`** (accessible volumes in the adapter and as the FV element volumes):
+    unbiased and conservative.
+objective: |
+  The B2b ball as a vcell-fenics GeometryDescription, realized by VCell itself
+  (VCellFVRealization, via libvcell):
+  - **PDE:** FV on VCell's staircase `cell` (266.734 µm³).
+  - **Smoldyn:** VCell's smooth membrane (9,516 triangles enclosing 261.818 µm³) and VCell's
+    compartment points.
+  - **Adapters:** counts at exterior nodes are folded into the domain (compartment-aware
+    binning), and fields are extended into the exterior band for 0th-order creation.
+
+  32 seeds per variant.
+  - Conversion (k = 0.5, 20,000 A uniform in the smooth cell): interior B against
+    E[B] = A₀(1 − e^(−kt))/(V_PDE·N_A), the outer-shell bias (r > 3.5 vs r < 2) and A + B balance.
+  - Exchange (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): A + B balance and the steady ratio.
+
+  All PDE masses and averages use the PDE's own element volumes.
+description: |
+  Infrastructure (Phase 7e.5):
+  - `geometry/accessible.py`: accessible fractions, the fold map and effective volumes for the
+    three variants;
+  - `GridCountsToConcentration` with a `staircase` option (fold and volumes), and the new
+    `ExtendGridField` Step;
+  - an FV `domain` option (mask and volume fractions) with a masked diffusion matrix;
+  - `build_vcell_geometry_hybrid_document`.
+
+  Found while building it: VTK's `vtkSelectEnclosedPoints` misclassifies lattice-aligned points
+  against VCell's smooth surface, depending on process state (inside fraction 0.16 against a true
+  0.33 after a composite had been created). The VCell realization now uses a robust vertical-ray
+  parity test (`geometry/inside.py`). The B2c forward model's lattice results were re-checked
+  with it and are unchanged (96 staircase nodes outside the smooth membrane).
+
+baseline:
+- name: vcell-ball
+  composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+  params: {}
+  note: >-
+    Built in sims/run.py: build_vcell_geometry_hybrid_document(model, sphere_in_box(...),
+    correction=...).
+
+variants: []
+
+behavior_tests:
+- name: corrected-shell-unbiased
+  classification: primary
+  description: Outer-shell mean B relative to the interior with correction="adapters+volumes".
+  measure:
+    kind: derived_scalar
+    field: b2e_adapters_volumes_shell_bias
+  pass_if:
+    op: range
+    low: -0.005
+    high: 0.005
+    provenance:
+      kind: theory
+      note: E[B] is spatially uniform; 32 seeds give an SE of about 0.1%.
+  requires_simulation: vcell-ball
+- name: corrected-interior-matches
+  classification: primary
+  description: Interior mean B relative to E[B] with correction="adapters+volumes".
+  measure:
+    kind: derived_scalar
+    field: b2e_adapters_volumes_interior_rel
+  pass_if:
+    op: range
+    low: -0.01
+    high: 0.01
+    provenance:
+      kind: theory
+      note: First-order conversion; the expectation is exact on the PDE's own volume.
+  requires_simulation: vcell-ball
+- name: corrected-exchange-conserves
+  classification: primary
+  description: A + B balance at t = 5 s (exchange) with correction="adapters+volumes".
+  measure:
+    kind: derived_scalar
+    field: b2e_adapters_volumes_exchange_balance
+  pass_if:
+    op: range
+    low: -0.015
+    high: 0.015
+    provenance:
+      kind: theory
+      note: First-order coupling error only; the box-domain baseline (A3) is 1.2%.
+  requires_simulation: vcell-ball
+- name: vcell-like-shell-depletion
+  classification: secondary
+  description: >-
+    Outer-shell bias with correction="none" (VCell's full voxel volumes). Expected to FAIL; it
+    reproduces native VCell with the #25 binning correction (B2c: −1.41%).
+  measure:
+    kind: derived_scalar
+    field: b2e_none_shell_bias
+  pass_if:
+    op: range
+    low: -0.005
+    high: 0.005
+    provenance:
+      kind: theory
+      note: Kept so the volume mismatch stays visible in the report card.
+  requires_simulation: vcell-ball
+
+canonical_runs:
+- name: default
+  script: workspace/studies/vcell-geometry-cosim/sims/run.py
+  args: []
+  label: "Co-sim on VCell's realization of the ball: 3 corrections × conversion + exchange, 32 seeds (dev env)"
+  default: true
+
+visualizations:
+- name: vcell-geometry-cosim
+  chart: viz/vcell_geometry_cosim.html
+  render: "python sims/run.py"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-04; 32 seeds per variant):
+
+  | variant | shell vs interior (z) | interior vs E[B] | conversion balance | exchange balance | steady ratio err |
+  |---|---|---|---|---|---|
+  | none | −1.36% (−12.5) | +1.07% | +0.12% | −2.7% | 1.2% |
+  | adapters | +0.02% (0.2) | +2.06% | +1.30% | +0.19% | 1.8% |
+  | adapters+volumes | +0.02% (0.15) | +0.20% | +0.12% | +0.96% | 0.13% |
+
+  - **`none` reproduces native VCell with the vcell-fvsolver#25 binning correction.** The shell is
+    −1.36% (native −1.41%; the forward model −1.33%) and the interior +1.07% (native +1.14%).
+    Exchange drifts −2.7%: creation runs over the smooth volume, while consumption runs over the
+    staircase volume.
+  - **`adapters`** removes the shell bias but overcounts particle sources (+1.30% in conversion).
+    In exchange this overcount happens to cancel the creation mismatch, which is not a principled
+    result.
+  - **`adapters+volumes` is unbiased and conservative.** The shell bias is +0.02% (z = 0.15); the
+    interior is within 0.2% of E[B]; conversion is at the lag level (+0.12%) and exchange at the
+    first-order coupling level (+0.96%, against 1.2% for the box-domain A3). It also has the best
+    steady ratio.
+  - Native vcell-fvsolver keeps full voxel volumes. The co-simulation offers both: `none` to
+    compare with VCell, and `adapters+volumes` (the default) for accuracy.

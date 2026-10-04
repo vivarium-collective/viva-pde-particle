@@ -307,6 +307,95 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict | None, dt: floa
     return doc
 
 
+def build_vcell_geometry_hybrid_document(model: HybridModel, description, dt: float, step_multiplier: int = 1,
+                                         coupling: str = "fvsolver", seed: int = 1, region: str | None = None,
+                                         correction: str = "adapters+volumes", volume_samples: int | None = 2,
+                                         realization=None) -> dict:
+    """FV + Smoldyn on a geometry discretized exactly as native VCell does (Phase 7e.5).
+
+    The geometry (a vcell-fenics ``GeometryDescription``) is realized by VCell itself
+    (:class:`~viva_pde_particle.geometry.vcell_fv.VCellFVRealization`, via libvcell):
+
+    - **PDE:** FVReactionDiffusion on VCell's staircase ``region`` (domain mask; zero flux at its
+      boundary). With ``correction="adapters+volumes"`` its element volumes are the accessible
+      volumes.
+    - **Particles:** Smoldyn confined by VCell's smooth membrane, with VCell's compartment points
+      and a volume-sample map, all derived from the realization (7e.3).
+    - **Adapters:** ``GridCountsToConcentration`` folds counts at exterior nodes into the domain
+      (compartment-aware binning) and divides by the ``correction``'s effective volumes.
+      ``ExtendGridField`` extends fields into the exterior band for the particle engine's lookups.
+
+    ``correction``: ``"none"`` (VCell-like full voxel volumes), ``"adapters"`` or
+    ``"adapters+volumes"`` (default); see :mod:`viva_pde_particle.geometry.accessible`. Particle
+    species need scalar initial totals (placed uniformly in the smooth region), and continuous
+    species scalar initial concentrations. Needs pyvcell with spatial-hybrid support and libvcell
+    (the ``dev`` env), unless ``realization`` is given.
+    """
+    from process_bigraph import allocate_core
+
+    from viva_pde_particle.geometry import smoldyn_geometry
+    from viva_pde_particle.geometry.accessible import accessible_fractions, effective_volumes, fold_map
+    from viva_pde_particle.steps import ExtendGridField, GridCountsToConcentration
+
+    g = model.grid
+    if realization is None:
+        from viva_pde_particle.geometry.vcell_fv import VCellFVRealization
+
+        realization = VCellFVRealization(description, g)
+    region = region or realization.regions[0]
+    parts = partition(model)
+    rng = np.random.default_rng(seed)
+    mask = realization.node_mask(region)
+    fractions = accessible_fractions(realization, region, g)
+    fold = fold_map(mask, g)
+    volumes = effective_volumes(g, mask, fractions, fold, correction)
+    domain = {"mask": mask}
+    if correction == "adapters+volumes":
+        domain["volume_fraction"] = volumes / g.full_volume
+    positions = {s.name: realization.uniform_points(region, int(s.initial), rng) for s in model.species if s.particle}
+    counts0 = {name: g.histogram(p) for name, p in positions.items()}
+    config_text = write_smoldyn_config(parts.particles, g, counts0, time_step=step_multiplier * dt, seed=seed,
+                                       geometry=smoldyn_geometry(realization, region, g, volume_samples),
+                                       positions=positions)
+    grid_cfg = g.to_config()
+    to_field_cfg = {"grid": grid_cfg, "species": model.particle_species,
+                    "staircase": {"fold": fold, "volumes": volumes}}
+    to_field = GridCountsToConcentration(config=to_field_cfg, core=allocate_core())
+    field_species = list(parts.pde["species"])
+    lookup_cfg = {"grid": grid_cfg, "species": field_species, "staircase": {"fold": fold}}
+    lookup = ExtendGridField(config=lookup_cfg, core=allocate_core())
+    fields0 = initial_fields(model)
+    return {
+        "fields": fields0,
+        "lookup_fields": lookup.convert(fields0),  # Steps do not run at initialization
+        "particle_counts": {s: c.copy() for s, c in counts0.items()},
+        "particle_conc": to_field.convert(counts0),
+        "particle_totals": {s: float(c.sum()) for s, c in counts0.items()},
+        "pde": {
+            "_type": "process",
+            "address": "local:FVReactionDiffusion",
+            "config": {"grid": grid_cfg, "pde": parts.pde, "dt": dt, "domain": domain},
+            "interval": dt,
+            "inputs": {"fields": ["fields"], "external_conc": ["particle_conc"]},
+            "outputs": {"fields": ["fields"]},
+        },
+        "particles": particle_node(
+            {"grid": grid_cfg, "config_text": config_text, "particle_species": model.particle_species,
+             "field_species": parts.particles["field_species"], "dt": dt, "step_multiplier": step_multiplier},
+            coupling, dt, step_multiplier,
+            inputs={"fields": ["lookup_fields"]},
+            outputs={"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]}),
+        "particle_to_field": {
+            "_type": "step", "address": "local:GridCountsToConcentration", "config": to_field_cfg,
+            "inputs": {"particle_counts": ["particle_counts"]}, "outputs": {"particle_conc": ["particle_conc"]},
+        },
+        "field_to_particles": {
+            "_type": "step", "address": "local:ExtendGridField", "config": lookup_cfg,
+            "inputs": {"fields": ["fields"]}, "outputs": {"lookup_fields": ["lookup_fields"]},
+        },
+    }
+
+
 def to_splitting_document(doc: dict, scheme: str, dt: float, step_multiplier: int) -> dict:
     """Replace the engine and adapter nodes of a two-process document with one SplittingCoordinator.
 
