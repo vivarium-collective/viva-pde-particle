@@ -5,17 +5,18 @@ rates written ``k*B;`` then read them at each molecule, or at each grid node for
 0th-order creation. Smoldyn advances, and the process returns per-node particle
 counts binned on the same grid.
 
-Coupling modes (``coupling`` config):
+The engine has no notion of the PDE clock. Each update reads the fields at its start and
+advances Smoldyn by the update's interval (whole Smoldyn steps of ``step_multiplier·dt``).
 
-- ``"fvsolver"`` (default) reproduces vcell-fvsolver exactly. The process runs on
-  the PDE clock (interval ``dt``) and takes one Smoldyn step of ``k·dt`` on every
-  k-th call. That step reads the field at ``T+(k-1)·dt``, as fvsolver's Smoldyn
-  step does (it runs after the k-th PDE iterate; see docs/fvsolver-hybrid-notes.md).
-- ``"start-of-interval"`` is the plain process-bigraph form: interval ``k·dt``,
-  reading the field at the start of the Smoldyn step ``T``.
+**Scheduling is the composite's job.**
+- ``coupling="start-of-interval"``: the composite gives the engine interval k·dt, so a step
+  over [T, T+k·dt] reads the field at T.
+- ``coupling="fvsolver"``: vcell-fvsolver's exact timing (the step reads the field at
+  T+(k−1)·dt, see docs/fvsolver-hybrid-notes.md). The composite wraps the engine in a
+  :class:`~viva_pde_particle.processes.stepper.Stepper` that ticks every dt and runs it on every
+  k-th tick with interval k·dt.
 
-The composite must set the process interval to match: ``dt`` for ``fvsolver``,
-``k·dt`` for ``start-of-interval``. See :func:`interval_for`.
+:func:`interval_for` gives the particle node's interval for each mode.
 """
 from __future__ import annotations
 
@@ -73,9 +74,8 @@ class SmoldynHybrid(Process):
         particle_species: species whose per-node counts are reported.
         field_species: continuous species referenced by rate expressions.
         dt: PDE time step (s).
-        step_multiplier: Smoldyn steps once per k PDE steps (vcell-fvsolver
-            ``SMOLDYN_STEP_MULTIPLIER``).
-        coupling: ``"fvsolver"`` or ``"start-of-interval"``.
+        step_multiplier: k; the Smoldyn time step is k·dt (vcell-fvsolver
+            ``SMOLDYN_STEP_MULTIPLIER``) and must match ``config_text``.
     """
 
     config_schema = {
@@ -85,7 +85,6 @@ class SmoldynHybrid(Process):
         "field_species": {"_type": "list[string]", "_default": []},
         "dt": {"_type": "float", "_default": 0.01},
         "step_multiplier": {"_type": "integer", "_default": 1},
-        "coupling": {"_type": "string", "_default": "fvsolver"},
         "quiet": {"_type": "boolean", "_default": True},
         "emit_positions": {"_type": "boolean", "_default": False},
     }
@@ -93,16 +92,12 @@ class SmoldynHybrid(Process):
     def initialize(self, config):
         import smoldyn._smoldyn as _smoldyn
 
-        if config["coupling"] not in COUPLING_MODES:
-            raise ValueError(f"coupling must be one of {COUPLING_MODES}, got {config['coupling']!r}")
         self.grid = CartesianGrid.from_config(config["grid"])
         self.k = int(config["step_multiplier"])
         self.dt = float(config["dt"])
         self.smoldyn_dt = self.k * self.dt
-        self.coupling = config["coupling"]
         self.particle_species = list(config["particle_species"])
         self.field_species = list(config["field_species"])
-        self._calls = 0
         self.time = 0.0
 
         g = self.grid
@@ -164,12 +159,6 @@ class SmoldynHybrid(Process):
         self.time += n_steps * self.smoldyn_dt
 
     def update(self, state, interval):
-        if self.coupling == "fvsolver":
-            self._calls += 1
-            if self._calls % self.k != 0:
-                return {}
-            n_steps = 1
-        else:
-            n_steps = max(1, int(round(interval / self.smoldyn_dt)))
+        n_steps = max(1, int(round(interval / self.smoldyn_dt)))
         self._run(state.get("fields", {}), n_steps)
         return self._report()

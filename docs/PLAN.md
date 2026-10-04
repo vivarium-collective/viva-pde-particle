@@ -343,7 +343,8 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
      - **7b:** PDE → particle adapter Step (`MeshToGridField`, P·u); the mesh engine publishes only DOFs. Done; see
        "Phase 7b results".
      - **7c:** take the PDE clock out of the particle engine. Replace `coupling="fvsolver"` with a scheduling or
-       field-snapshot construct that keeps fvsolver timing exact; the Investigation A studies must reproduce.
+       field-snapshot construct that keeps fvsolver timing exact; the Investigation A studies must reproduce. Done;
+       see "Phase 7c results".
      - **7d:** a generic splitting coordinator. It sequences any child processes and adapters (Jacobi, Gauss–Seidel,
        Strang) in place of `HybridCoupler`'s hard-coded classes; B3 must reproduce.
      - **7e:** a geometry compiler. One spec yields the PDE mesh, the Smoldyn membrane, the volume samples and the
@@ -825,6 +826,25 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
   across components. `mesh_locator` now needs only the mesh spec.
 - **Equivalence and cost:** bit-identical to the pre-refactor code on the six regression composites. Timing is the
   same as 7a (mesh with grid transfer 0.37, with positions 0.95 wall s per simulated s).
+
+## Phase 7c results (2026-10-03): the particle engine without the PDE clock
+
+- **`SmoldynHybrid`:** a plain engine. Each update reads the fields at its start and advances Smoldyn by the update's
+  interval. The `coupling` config, the call counter and the PDE clock are gone.
+- **`Stepper`** (`processes/stepper.py`): a generic Process that ticks every `dt` and calls any child process on tick
+  `phase` of every `every`, with interval `every·dt`. With `every = k` and `phase = k−1`:
+  - the child reads its inputs at T+(k−1)·dt;
+  - its outputs are first seen at T+k·dt.
+  That is vcell-fvsolver's hybrid timing, which plain process-bigraph scheduling (read at start, publish at end)
+  cannot express.
+- **Builders:** `composites.hybrid.particle_node` builds the particle node for either coupling.
+  - `start-of-interval`: `SmoldynHybrid` with interval k·dt.
+  - `fvsolver`: `Stepper(SmoldynHybrid)` with interval dt.
+- **`HybridCoupler`:** no longer passes a coupling mode.
+- **Verification:**
+  - bit-identical on the six regression composites, including fvsolver mode with k = 2;
+  - `tests/test_stepper.py` checks the read and publish times for k = 1, 2, 3 with toy clock processes;
+  - timing within noise of 7b.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

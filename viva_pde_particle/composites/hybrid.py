@@ -25,6 +25,26 @@ from viva_pde_particle.model import (
     write_smoldyn_config,
 )
 from viva_pde_particle.processes import interval_for
+from viva_pde_particle.processes.smoldyn_hybrid import COUPLING_MODES
+
+
+def particle_node(smoldyn_config: dict, coupling: str, dt: float, step_multiplier: int,
+                  inputs: dict, outputs: dict) -> dict:
+    """The particle engine node for a coupling mode (the engine itself has no clock of the PDE).
+
+    - ``"start-of-interval"``: SmoldynHybrid with interval k·dt (reads the field at T).
+    - ``"fvsolver"``: SmoldynHybrid inside a Stepper (tick dt, every k, phase k−1), which reads
+      the field at T+(k−1)·dt and publishes at T+k·dt, as vcell-fvsolver does.
+    """
+    if coupling not in COUPLING_MODES:
+        raise ValueError(f"coupling must be one of {COUPLING_MODES}, got {coupling!r}")
+    node = {"_type": "process", "interval": interval_for(coupling, dt, step_multiplier),
+            "inputs": inputs, "outputs": outputs}
+    if coupling == "start-of-interval":
+        return {**node, "address": "local:SmoldynHybrid", "config": smoldyn_config}
+    return {**node, "address": "local:Stepper", "config": {
+        "process": {"address": "local:SmoldynHybrid", "config": smoldyn_config},
+        "dt": dt, "every": step_multiplier, "phase": step_multiplier - 1}}
 
 
 def build_hybrid_document(
@@ -75,22 +95,12 @@ def build_hybrid_document(
             "inputs": {"particle_counts": ["particle_counts"]},
             "outputs": {"particle_conc": ["particle_conc"]},
         },
-        "particles": {
-            "_type": "process",
-            "address": "local:SmoldynHybrid",
-            "config": {
-                "grid": grid_cfg,
-                "config_text": config_text,
-                "particle_species": model.particle_species,
-                "field_species": parts.particles["field_species"],
-                "dt": dt,
-                "step_multiplier": step_multiplier,
-                "coupling": coupling,
-            },
-            "interval": interval_for(coupling, dt, step_multiplier),
-            "inputs": {"fields": ["fields"]},
-            "outputs": {"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]},
-        },
+        "particles": particle_node(
+            {"grid": grid_cfg, "config_text": config_text, "particle_species": model.particle_species,
+             "field_species": parts.particles["field_species"], "dt": dt, "step_multiplier": step_multiplier},
+            coupling, dt, step_multiplier,
+            inputs={"fields": ["fields"]},
+            outputs={"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]}),
     }
 
 
@@ -266,22 +276,17 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
             "inputs": {step_input: [step_input]},
             "outputs": {"particle_conc": ["particle_conc"]},
         },
-        "particles": {
-            "_type": "process",
-            "address": "local:SmoldynHybrid",
-            "config": {
-                "grid": g.to_config(), "config_text": config_text, "particle_species": model.particle_species,
-                "field_species": parts.particles["field_species"], "dt": dt,
-                "step_multiplier": step_multiplier, "coupling": coupling, "emit_positions": by_position,
-            },
-            "interval": interval_for(coupling, dt, step_multiplier),
-            "inputs": {"fields": ["fields"]},
-            "outputs": {"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]},
-        },
+        "particles": particle_node(
+            {"grid": g.to_config(), "config_text": config_text, "particle_species": model.particle_species,
+             "field_species": parts.particles["field_species"], "dt": dt, "step_multiplier": step_multiplier,
+             "emit_positions": by_position},
+            coupling, dt, step_multiplier,
+            inputs={"fields": ["fields"]},
+            outputs={"particle_counts": ["particle_counts"], "particle_totals": ["particle_totals"]}),
     }
     if by_position:
         doc["particle_positions"] = {s: np.asarray(p, dtype=float) for s, p in positions.items()}
-        doc["particles"]["outputs"]["particle_positions"] = ["particle_positions"]
+        doc["particles"]["outputs"]["particle_positions"] = ["particle_positions"]  # shared dict in both modes
     return doc
 
 

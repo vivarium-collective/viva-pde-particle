@@ -4,6 +4,7 @@ from viva_pde_particle.processes.fenicsx_reaction_diffusion import FenicsxReacti
 from viva_pde_particle.processes.fv_reaction_diffusion import FVReactionDiffusion
 from viva_pde_particle.processes.hybrid_coupler import HybridCoupler
 from viva_pde_particle.processes.smoldyn_hybrid import SmoldynHybrid, interval_for
+from viva_pde_particle.processes.stepper import Stepper
 
 __all__ = ["FVReactionDiffusion", "FenicsxMeshReactionDiffusion", "FenicsxReactionDiffusion", "HybridCoupler",
-           "SmoldynHybrid", "interval_for"]
+           "SmoldynHybrid", "Stepper", "interval_for"]
