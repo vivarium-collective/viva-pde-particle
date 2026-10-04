@@ -93,8 +93,9 @@ def _triangle_surface(triangles, interior_point) -> list[str]:
     """A closed reflecting surface of triangle panels (e.g. a mesh boundary) and the domain inside it."""
     lines = ["start_surface walls", "action both all reflect"]
     lines += ["panel tri " + " ".join(_fmt(v) for v in np.asarray(t, dtype=float).ravel()) for t in triangles]
-    c = " ".join(_fmt(v) for v in interior_point)
-    return lines + ["end_surface", f"start_compartment {DOMAIN}", "surface walls", f"point {c}", "end_compartment"]
+    pts = np.atleast_2d(np.asarray(interior_point, dtype=float))  # one point, or several for non-convex domains
+    points = ["point " + " ".join(_fmt(v) for v in p) for p in pts]
+    return lines + ["end_surface", f"start_compartment {DOMAIN}", "surface walls", *points, "end_compartment"]
 
 
 def write_smoldyn_config(
@@ -110,7 +111,8 @@ def write_smoldyn_config(
     """Return the configuration text for the particle half (from :func:`partition`).
 
     ``geometry``: None (the grid box), ``{"kind": "sphere", "center", "radius"}`` or
-    ``{"kind": "triangles", "triangles": (m, 3, 3), "interior_point"}`` (e.g. the boundary of the
+    ``{"kind": "triangles", "triangles": (m, 3, 3), "interior_point"}`` (one point, or an (n, 3) array
+    for non-convex domains) (e.g. the boundary of the
     PDE mesh, so particles and fields share one domain). Either adds a reflecting surface
     and the ``domain`` compartment inside it. ``triangles`` may add ``"volume_samples"``
     (see :func:`_volume_samples_block`) to accelerate compartment tests.

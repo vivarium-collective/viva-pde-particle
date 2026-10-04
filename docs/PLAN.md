@@ -350,7 +350,8 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
        Strang) in place of `HybridCoupler`'s hard-coded classes; B3 must reproduce. Done; see "Phase 7d results".
      - **7e:** a geometry compiler. One spec yields the PDE mesh, the Smoldyn membrane, the volume samples and the
        accessible-volume fractions, so the domains cannot diverge (B2d). It also covers compartment-aware and
-       accessible-volume binning options for the adapters (the vcell-fvsolver#25 and B2c lessons).
+       accessible-volume binning options for the adapters (the vcell-fvsolver#25 and B2c lessons). In progress; see
+       "Phase 7e plan".
      - **7f:** packaging. A written component contract (units, array layouts, timing), catalog and workbench
        registration, and example composites that mix components; for example the FV engine with
        positions-based binning on a mesh-derived grid.
@@ -864,6 +865,65 @@ Four variants (`particle_transfer` grid/positions × `membrane` sphere/mesh), 32
 - **Equivalence:** the regression harness now covers all four schemes (nine composites, 20 arrays). The result is
   bit-identical to the code before 7d, and therefore to the original pre-Phase-7 code.
 - **Cleanup:** the FV and Q1 engines lost their `particle_species` alias, which only `HybridCoupler` used.
+
+## Phase 7e plan (2026-10-04): geometry compilers
+
+**Decisions (from discussion):**
+1. **Geometry format:** the internal format is vcell-fenics' `GeometryDescription` (VCell-style analytic, CSG, image
+   or compartmental subvolumes, surface classes and named faces). It is new and used only by vcell-fenics, so it sits
+   behind adapters. VCML `Geometry` (pyvcell) and SBML-Spatial adapters come later; SBML-Spatial ties in with Phase 6.
+2. **Meshing:** Netgen, through vcell-fenics' `realize()`. vcell-fenics is public and is a pinned git dependency.
+3. **Smoldyn membrane:** always the **smooth** surface, with an **accessible-volume correction**. A staircase
+   membrane is not faithful to VCell, which corrects the staircase with implicit surfaces (membrane areas and
+   normals) but does not remesh it watertight. The correction is switchable:
+   - `"adapters+volumes"` (default): the particle→field adapter divides by the accessible volume Aᵢ, and the FV
+     engine uses volume fractions Aᵢ/Vᵢ at membrane voxels. Both come from the same smooth surface, so the result is
+     conservative and unbiased.
+   - `"adapters"` (VCell-faithful PDE volumes): only the adapter divides by Aᵢ. The FV engine keeps vcell-fvsolver's
+     full-voxel volumes. This overcounts particle sources by Vᵢ/Aᵢ (about +1.9% for the B2b ball).
+   - For the body-fitted mesh, the mesh boundary is the smooth surface, so Aᵢ equals the lumped mass and the
+     correction is the identity.
+
+**Architecture.** Each PDE geometry compiler turns the `GeometryDescription` into a `RealizedGeometry`:
+- region names and a vectorized `locate(points) → region`;
+- each region's smooth boundary as outward-oriented triangles;
+- the measure behind each PDE value;
+- the bounding box.
+
+Everything on the particle side is then derived from that `RealizedGeometry`, never from the description
+independently. This is the lesson of B2b–B2d, where independently realized domains disagreed at the membrane. The
+derived pieces:
+- the Smoldyn membrane, compartments and interior points;
+- the `highResVolumeSamples` map and `boxsize`;
+- the adapters' accessible volumes and node region labels.
+
+The two compilers:
+- **FEniCS (Netgen):** `vcell_fenics.backend.realize`, giving a tet mesh per subvolume plus the membrane surface mesh.
+- **VCell-FV:** VCell's own `CartesianMesh` via libvcell (`.vcg` region map), with VCell's smooth membrane
+  triangulation and volume samples (from the `.smoldynInput` that libvcell writes). The co-sim FV then runs on
+  exactly the geometry native VCell uses.
+
+**Sub-steps:**
+- **7e.1 (done):** dependencies and plan.
+  - vcell-fenics is pinned to virtualcell/vcell-fenics#211, which makes its backend imports lazy, so `realize()` needs
+    none of the solver-only packages such as `scifem`. Move the pin to `main` once that PR merges.
+  - Added from conda-forge: Netgen, scikit-image, pydantic and VTK.
+  - Netgen realization of the B2b ball: at h = 0.8, 0.6 s and −2.1% volume; at h = 0.5, −1.1%.
+- **7e.2 (done):** `viva_pde_particle/geometry`.
+  - `sphere_in_box`, and a dict carrier for process configs.
+  - The `RealizedGeometry` interface: `locate`, outward boundary triangles, interior points and volumes.
+  - `FenicsRealization` / `realize_fenics` (Netgen, cached).
+  - `build_mesh` accepts `{"kind": "geometry", "description", "region", "h"}`, and
+    `build_mesh_hybrid_document(..., geometry=...)` builds the composite from a description. The Smoldyn membrane is
+    the region mesh's boundary, with several interior points. The gmsh sphere path is kept, bit-identical, for the
+    pre-7e studies.
+  - A hybrid on the Netgen ball conserves mass (1 s: conversion +0.64%, exchange +0.45%) and confines its particles
+    to the PDE domain (`tests/test_geometry.py`).
+- **7e.3:** Smoldyn geometry derived from a `RealizedGeometry` (membrane, compartments, volume samples, boxsize).
+- **7e.4:** the VCell-FV compiler through libvcell.
+- **7e.5:** the accessible-volume correction in both variants, plus the FV volume-fraction option; B2b and B2c
+  re-run with both.
+- **7e.6:** a non-sphere geometry (CSG or image) end to end.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

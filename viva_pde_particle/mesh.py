@@ -302,17 +302,31 @@ _MESH_CACHE: dict = {}
 _TRANSFER_CACHE: dict = {}
 
 
-def _key(spec: dict) -> tuple:
-    return tuple(sorted((k, tuple(v) if isinstance(v, (list, tuple)) else v) for k, v in spec.items()))
+def _key(spec: dict) -> str:
+    import json
+
+    return json.dumps(spec, sort_keys=True, default=lambda v: list(v) if isinstance(v, tuple) else str(v))
 
 
 def build_mesh(spec: dict):
-    """The dolfinx mesh for ``spec`` (``{"kind": "sphere", "radius", "center", "h"}``), cached."""
+    """The dolfinx mesh for a mesh spec, cached per process.
+
+    - ``{"kind": "geometry", "description": <GeometryDescription as a dict>, "region", "h"}``: the
+      region's mesh from the Netgen realization of a VCell-style geometry (Phase 7e).
+    - ``{"kind": "sphere", "radius", "center", "h"}``: a gmsh ball (pre-7e studies).
+    """
     key = _key(spec)
     if key not in _MESH_CACHE:
-        if spec.get("kind") != "sphere":
-            raise ValueError(f"unsupported mesh kind {spec.get('kind')!r}")
-        _MESH_CACHE[key] = sphere_mesh(spec["radius"], tuple(spec["center"]), spec.get("h"))
+        kind = spec.get("kind")
+        if kind == "geometry":
+            from viva_pde_particle.geometry import description_from_config, realize_fenics
+
+            realization = realize_fenics(description_from_config(spec["description"]), spec["h"])
+            _MESH_CACHE[key] = realization.meshes[spec["region"]]
+        elif kind == "sphere":
+            _MESH_CACHE[key] = sphere_mesh(spec["radius"], tuple(spec["center"]), spec.get("h"))
+        else:
+            raise ValueError(f"unsupported mesh kind {kind!r}")
     return _MESH_CACHE[key]
 
 

@@ -175,14 +175,20 @@ def uniform_in_sphere(n: int, center, radius: float, rng: np.random.Generator) -
     return np.asarray(center) + pts * radius * rng.random(n)[:, None] ** (1.0 / 3.0)
 
 
-def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step_multiplier: int = 1,
+def build_mesh_hybrid_document(model: HybridModel, sphere: dict | None, dt: float, step_multiplier: int = 1,
                                coupling: str = "fvsolver", seed: int = 1, particle_transfer: str = "grid",
-                               membrane: str = "mesh", volume_samples: int | None = 2) -> dict:
-    """Hybrid co-simulation in a ball: unstructured FEniCSx PDE + Smoldyn confined to the ball.
+                               membrane: str = "mesh", volume_samples: int | None = 2,
+                               geometry: dict | None = None) -> dict:
+    """Hybrid co-simulation on an unstructured mesh: FEniCSx PDE + Smoldyn confined to the PDE domain.
 
-    ``model.grid`` is the background Cartesian grid (it must contain the ball). Particle
+    The domain is given by one of:
+    - ``geometry``: ``{"description": GeometryDescription (or its dict), "region", "h"}``, a
+      VCell-style geometry realized by Netgen (Phase 7e; any analytic/CSG/image subvolume);
+    - ``sphere``: ``{"center", "radius", "h"}``, a gmsh ball (pre-7e studies).
+
+    ``model.grid`` is the background Cartesian grid (it must contain the domain). Particle
     species need scalar initial totals, placed uniformly in the particle domain, and continuous
-    species scalar initial concentrations. ``sphere``: ``{"center", "radius", "h"}``.
+    species scalar initial concentrations.
 
     - ``particle_transfer``: ``"grid"`` (Pᵀ of the grid histogram) or ``"positions"`` (exact P1
       load from molecule positions); see FenicsxMeshReactionDiffusion.
@@ -201,11 +207,25 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
 
     if membrane not in ("sphere", "mesh"):
         raise ValueError(f"membrane must be 'sphere' or 'mesh', got {membrane!r}")
+    if (sphere is None) == (geometry is None):
+        raise ValueError("give exactly one of sphere= or geometry=")
     parts = partition(model)
     rng = np.random.default_rng(seed)
     g = model.grid
-    mesh_spec = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"],
-                 "h": sphere.get("h", sphere["radius"] / 6)}
+    realization = None
+    if geometry is not None:
+        if membrane != "mesh":
+            raise ValueError("a geometry= domain uses the mesh boundary as the membrane (membrane='mesh')")
+        from viva_pde_particle.geometry import description_from_config, description_to_config, realize_fenics
+
+        desc = geometry["description"]
+        desc_cfg = desc if isinstance(desc, dict) else description_to_config(desc)
+        mesh_spec = {"kind": "geometry", "description": desc_cfg, "region": geometry["region"],
+                     "h": float(geometry["h"])}
+        realization = realize_fenics(description_from_config(desc_cfg), mesh_spec["h"])
+    else:
+        mesh_spec = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"],
+                     "h": sphere.get("h", sphere["radius"] / 6)}
     if particle_transfer not in ("grid", "positions"):
         raise ValueError(f"particle_transfer must be 'grid' or 'positions', got {particle_transfer!r}")
     pde_cfg = {"mesh": mesh_spec, "pde": parts.pde, "dt": dt}
@@ -222,23 +242,24 @@ def build_mesh_hybrid_document(model: HybridModel, sphere: dict, dt: float, step
         lo, hi = msh.geometry.x.min(axis=0), msh.geometry.x.max(axis=0)
         positions = {s.name: uniform_in_mesh(int(s.initial), locator, lo, hi, rng)
                      for s in model.species if s.particle}
-        geometry = {"kind": "triangles", "triangles": boundary_triangles(msh),
-                    "interior_point": list(sphere["center"])}
+        interior = (realization.interior_points(mesh_spec["region"]) if realization is not None
+                    else list(sphere["center"]))
+        smoldyn_geometry = {"kind": "triangles", "triangles": boundary_triangles(msh), "interior_point": interior}
         if volume_samples:
             from viva_pde_particle.mesh import volume_samples as sample_map
 
             num = [int(round((n - 1) * volume_samples)) or 1 for n in g.num]
-            geometry["volume_samples"] = {"origin": list(g.origin), "size": list(g.size), "num": num,
-                                          "ids": sample_map(locator, g.origin, g.size, num)}
+            smoldyn_geometry["volume_samples"] = {"origin": list(g.origin), "size": list(g.size), "num": num,
+                                                  "ids": sample_map(locator, g.origin, g.size, num)}
     else:
         positions = {s.name: uniform_in_sphere(int(s.initial), sphere["center"], sphere["radius"], rng)
                      for s in model.species if s.particle}
-        geometry = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"]}
+        smoldyn_geometry = {"kind": "sphere", "center": list(sphere["center"]), "radius": sphere["radius"]}
     counts0 = {name: g.histogram(p) for name, p in positions.items()}
     # initial field DOFs (scalar initial conditions only)
     dofs0 = probe.initial_dofs({s.name: float(s.initial) for s in model.species if not s.particle})
     config_text = write_smoldyn_config(parts.particles, g, counts0, time_step=step_multiplier * dt, seed=seed,
-                                       geometry=geometry, positions=positions)
+                                       geometry=smoldyn_geometry, positions=positions)
     by_position = particle_transfer == "positions"
     from viva_pde_particle.steps import GridCountsToMeshConcentration, MeshToGridField, PositionsToMeshConcentration
 
