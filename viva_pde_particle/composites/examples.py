@@ -198,3 +198,95 @@ def bimolecular_model(n_particles: int = 20000, k: float = 1.0, b0: float = 0.5,
 def bimolecular_hybrid(core=None, *, n_particles=20000, k=1.0, b0=0.5, dt=0.01, step_multiplier=1,
                        coupling="fvsolver", seed=1):
     return build_hybrid_document(bimolecular_model(n_particles, k, b0), dt, step_multiplier, coupling, seed)
+
+
+# ---------------------------------------------------------------- Phase 7: assembled components
+
+_BALL_CASE = {"type": "string", "default": "conversion",
+              "description": "'conversion' (A_p -> B_f, k = 0.5) or 'exchange' (A_p <-> B_f, k1 = 1, k2 = 0.5)"}
+
+
+def ball_model(case: str = "conversion", radius: float = 4.0, n_particles: int = 20000) -> HybridModel:
+    """The B2b/B2e ball problems on a box of side 2R + 1 µm with Δ = 0.25 µm."""
+    side = 2 * radius + 1.0
+    g = CartesianGrid((0.0, 0.0, 0.0), (side, side, side), (int(round(side / 0.25)) + 1,) * 3)
+    if case == "conversion":
+        return HybridModel(g, [Species("A", 1.0, particle=True, initial=n_particles), Species("B", 1.0, initial=0.0)],
+                           [Reaction("convert", {"A": 1}, {"B": 1}, k=0.5)])
+    if case == "exchange":
+        return HybridModel(g, [Species("A", 1.0, particle=True, initial=0), Species("B", 1.0, initial=0.2)],
+                           [Reaction("a_to_b", {"A": 1}, {"B": 1}, k=1.0), Reaction("b_to_a", {"B": 1}, {"A": 1}, k=0.5)])
+    raise ValueError(f"case must be 'conversion' or 'exchange', got {case!r}")
+
+
+def _ball_description(model: HybridModel, radius: float):
+    from viva_pde_particle.geometry import sphere_in_box
+
+    side = model.grid.size[0]
+    return sphere_in_box((side / 2,) * 3, radius, (side,) * 3)
+
+
+@composite_generator(
+    name="ball_netgen_hybrid",
+    description=("A ball as a VCell-style GeometryDescription, meshed by Netgen: FEniCSx P1 PDE + Smoldyn "
+                 "confined by the mesh boundary, with Steps for both transfers (Phase 7)."),
+    parameters={
+        "case": _BALL_CASE,
+        "radius": {"type": "float", "default": 4.0, "description": "Ball radius (µm)"},
+        "h": {"type": "float", "default": 0.8, "description": "Netgen mesh size (µm)"},
+        "particle_transfer": {"type": "string", "default": "grid", "description": "'grid' (Pᵀ) or 'positions' (P1 load)"},
+        **_COUPLING_PARAMS,
+    },
+)
+def ball_netgen_hybrid(core=None, *, case="conversion", radius=4.0, h=0.8, particle_transfer="grid", dt=0.01,
+                       step_multiplier=1, coupling="fvsolver", seed=1):
+    from viva_pde_particle.composites.hybrid import build_mesh_hybrid_document
+
+    m = ball_model(case, radius)
+    return build_mesh_hybrid_document(m, None, dt, step_multiplier, coupling, seed, particle_transfer,
+                                      geometry={"description": _ball_description(m, radius), "region": "cell", "h": h})
+
+
+@composite_generator(
+    name="ball_vcell_geometry_hybrid",
+    description=("A ball realized by VCell itself (libvcell): FV on VCell's staircase + Smoldyn in VCell's smooth "
+                 "membrane, with the accessible-volume correction (Phase 7e.5; needs the dev env)."),
+    parameters={
+        "case": _BALL_CASE,
+        "radius": {"type": "float", "default": 4.0, "description": "Ball radius (µm)"},
+        "correction": {"type": "string", "default": "adapters+volumes",
+                       "description": "'none' (VCell's full voxel volumes), 'adapters' or 'adapters+volumes'"},
+        **_COUPLING_PARAMS,
+    },
+)
+def ball_vcell_geometry_hybrid(core=None, *, case="conversion", radius=4.0, correction="adapters+volumes", dt=0.01,
+                               step_multiplier=1, coupling="fvsolver", seed=1):
+    from viva_pde_particle.composites.hybrid import build_vcell_geometry_hybrid_document
+
+    m = ball_model(case, radius)
+    return build_vcell_geometry_hybrid_document(m, _ball_description(m, radius), dt, step_multiplier, coupling, seed,
+                                                correction=correction)
+
+
+@composite_generator(
+    name="exchange_splitting",
+    description=("Two-way exchange run by the SplittingCoordinator: any PDE engine (FV or FEniCSx Q1) and splitting "
+                 "scheme (jacobi, gs_particles_first, gs_pde_first, strang) (Phase 7d)."),
+    parameters={
+        "scheme": {"type": "string", "default": "strang",
+                   "description": "'jacobi', 'gs_particles_first', 'gs_pde_first' or 'strang'"},
+        "pde_engine": {"type": "string", "default": "fv", "description": "'fv' or 'fenicsx' (Q1)"},
+        "k1": {"type": "float", "default": 1.0, "description": "A -> B rate (1/s)"},
+        "k2": {"type": "float", "default": 0.5, "description": "B -> A rate (1/s)"},
+        "b0": {"type": "float", "default": 0.2, "description": "Initial B (µM)"},
+        "dt": {"type": "float", "default": 0.01, "description": "PDE time step (s)"},
+        "step_multiplier": {"type": "integer", "default": 2, "description": "k; the coupling interval is k·dt"},
+        "seed": {"type": "integer", "default": 1, "description": "Random seed"},
+    },
+)
+def exchange_splitting(core=None, *, scheme="strang", pde_engine="fv", k1=1.0, k2=0.5, b0=0.2, dt=0.01,
+                       step_multiplier=2, seed=1):
+    from viva_pde_particle.composites.hybrid import build_coupler_document
+
+    return build_coupler_document(two_way_exchange_model(k1, k2, b0), dt, step_multiplier, scheme, seed,
+                                  pde_engine=pde_engine)

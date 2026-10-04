@@ -713,8 +713,51 @@ coupling timing of §6.3 is unchanged.
 | 7b | `FieldToParticles` Step (`MeshToGridField`, P·u). The mesh engine publishes only DOFs and needs no grid; it builds from the mesh alone through a shared `mesh_space` cache. | **done**: bit-identical on the same six composites; same speed as 7a. |
 | 7c | The particle engine without the PDE clock: `SmoldynHybrid` reads at the start of each update and advances by its interval. fvsolver timing comes from a generic `Stepper` Process (tick dt; child on tick k−1 of every k, with interval k·dt). | **done**: bit-identical on the six composites, including fvsolver mode with k = 2. |
 | 7d | `SplittingCoordinator`: any PDE engine, particle engine and adapters, by address, in Jacobi, Gauss–Seidel or Strang order. It replaces `HybridCoupler`. | **done**: bit-identical on all four schemes and the earlier composites (20 arrays); new capability is splitting with the mesh engine. |
-| 7e | Geometry compilers. A vcell-fenics `GeometryDescription` is realized by a PDE compiler (FEniCS/Netgen, or VCell-FV via libvcell) into a `RealizedGeometry`. The Smoldyn membrane (always smooth), volume samples and the adapters' accessible volumes are derived from that realization (PLAN.md "Phase 7e plan"). | in progress: 7e.1 (dependencies), 7e.2 (`RealizedGeometry`, FEniCS/Netgen compiler, `geometry=` composites) 7e.3 (Smoldyn geometry derived from the realization; non-convex domains) 7e.4 (VCell-FV compiler: VCell's staircase region map plus its smooth membrane, through libvcell) 7e.5 (accessible-volume correction: unbiased and conservative on VCell's geometry, Study B2e) and 7e.6 (one non-convex description through native VCell and both co-sim paths, Study B2f) done |
-| 7f | Packaging: a component contract (units, array layouts, timing), catalog registration, and mixed example composites. | planned |
+| 7e | Geometry compilers. A vcell-fenics `GeometryDescription` is realized into a `RealizedGeometry` by FEniCS/Netgen or by VCell itself (libvcell). The Smoldyn geometry and the adapters' accessible volumes are derived from that realization; the accessible-volume correction is switchable (Studies B2e, B2f). | **done** (7e.1–7e.6) |
+| 7f | The component contract (below), shared kinetics outside the engines (`kinetics.py`), and workbench generators assembling the components (`ball_netgen_hybrid`, `ball_vcell_geometry_hybrid`, `exchange_splitting`). | **done** |
+
+### Component contract
+
+Every component talks to the others only through stores, using these conventions:
+- **Units:** µm, s, µM for fields, molecule counts for particles.
+- **Grid arrays:** shape `(Nz, Ny, Nx)` (C order is VCell's x-fastest global index), on the node-centred grid of
+  `grid.py`.
+- **Mesh arrays:** P1 DOF vectors in the numbering of `mesh.mesh_space(spec)`.
+- **Processes:** read their inputs at the start of their interval and publish at the end.
+- **Steps:** run after a time point's process updates, before the next intervals start. A Step's initial output must
+  be in the document, because Steps do not run at initialization.
+
+Processes:
+
+| Component | Interval | Inputs | Outputs | Config |
+|---|---|---|---|---|
+| `FVReactionDiffusion` | dt | `fields` (µM, grid), `external_conc` (µM, grid) | `fields` | `grid`, `pde` (species, terms[, external_species]), `dt`, `domain` (`mask`, `volume_fraction`) |
+| `FenicsxReactionDiffusion` (Q1) | dt | as FV | `fields` | as FV, plus `mass` |
+| `FenicsxMeshReactionDiffusion` (P1) | dt | `field_dofs` (µM, DOFs), `external_conc` (µM, DOFs) | `field_dofs` | `mesh` (`geometry` or `sphere` spec), `pde`, `dt` |
+| `SmoldynHybrid` | its advance | `fields` (µM on its lookup grid) | `particle_counts` (counts, grid), `particle_totals`[, `particle_positions`] | `grid`, `config_text`, `particle_species`, `field_species`, `dt`, `step_multiplier`, `emit_positions` |
+| `Stepper` | dt | the child's | the child's | `process` (address + config), `dt`, `every`, `phase` |
+| `SplittingCoordinator` | k·dt | union of its children's | union of its children's | `pde`, `particles`, `adapters` (nodes), `scheme`, `dt`, `step_multiplier` |
+
+Steps (adapters):
+
+| Component | Input → output | Config |
+|---|---|---|
+| `GridCountsToConcentration` | `particle_counts` → `particle_conc` (µM, grid) | `grid`, `species`[, `staircase`: `fold`, `volumes`] |
+| `GridCountsToMeshConcentration` | `particle_counts` → `particle_conc` (µM, DOFs; Pᵀ) | `grid`, `mesh`, `species` |
+| `PositionsToMeshConcentration` | `particle_positions` → `particle_conc` (µM, DOFs; exact P1 load) | `grid`, `mesh`, `species` |
+| `MeshToGridField` | `field_dofs` → `fields` (µM, grid; P·u) | `grid`, `mesh`, `species` |
+| `ExtendGridField` | `fields` → `lookup_fields` (extended into the exterior band) | `grid`, `species`, `staircase`: `fold` |
+
+Assembly:
+- **Geometry compilers:** `geometry.realize_fenics`, `geometry.vcell_fv.VCellFVRealization`.
+- **Derivations:** `geometry.smoldyn_geometry`, plus `geometry.accessible` (accessible fractions, fold map,
+  effective volumes).
+- **Builders** (`composites/hybrid.py`): `build_hybrid_document`, `build_mesh_hybrid_document(geometry=...)`,
+  `build_vcell_geometry_hybrid_document(correction=...)` and `to_splitting_document`.
+- **Workbench generators:** `composites/examples.py`.
+
+No engine imports another. The PDE engines share only `kinetics.reaction_rates`, and the scheduling components
+(`Stepper`, `SplittingCoordinator`) resolve their children by address.
 
 **Costs to watch.**
 - **Overhead:** each adapter adds a store, which process-bigraph types and copies when it changes. So far this has

@@ -23,7 +23,7 @@ import scipy.sparse.linalg as spla
 from process_bigraph import Process
 
 from viva_pde_particle.grid import CartesianGrid
-from viva_pde_particle.processes.fv_reaction_diffusion import reaction_rates
+from viva_pde_particle.kinetics import reaction_rates
 
 
 def q1_operators(grid: CartesianGrid):
