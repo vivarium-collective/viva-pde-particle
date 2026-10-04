@@ -1,0 +1,7 @@
+{
+  "title": "B at 2 s: four solver paths on one colour range",
+  "caption": "Top: mid-plane slice with the membrane outline. Bottom: B on the cut-away membrane with the A particles.",
+  "simulations": "One seed per path, conversion (20,000 A \u2192 B, k = 0.5), recorded every 0.25 s to 2 s into vcell-fenics results bundles (sims/render_3d.py); the native bundle has fields only.",
+  "interpretation": "Every path converts the same 20,000 molecules, so the level of B shows each path's PDE volume: VCell's staircase (27.7 \u00b5m\u00b3; native and 'none'), the accessible volume (24.6 \u00b5m\u00b3; 'adapters+volumes', which matches the particles' smooth domain) and the Netgen mesh (27.3 \u00b5m\u00b3). The ~1% near-membrane depletion of the uncorrected paths is below single-seed noise; the 16-seed metrics resolve it. The staircase panels also show the exterior band the particles see (fields extended by the fold map).",
+  "source_run_id": "55d6093988df442ca4d11e3ca5cae26c"
+}

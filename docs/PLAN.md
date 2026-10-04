@@ -1036,7 +1036,15 @@ metrics and 1D/2D plotly pages.
    - Membrane fields are named `<field>_<membrane>`, VCell's convention, because the viewer selects variables by
      name.
    - Still to do: the vcell PR that draws particles in the viewer (opened only).
-4. **8e:** study figures (B2f first).
+4. **8e:** study figures.
+   - **B2f (`dumbbell-three-ways/sims/render_3d.py`):** done.
+     - One seed per path (native, `none`, `adapters+volumes`, Netgen) recorded into bundles.
+     - Figures: a PNG of the four paths on one colour range, a GIF of the corrected co-sim, and a three.js page with
+       all four. The page has a per-frame shared range.
+     - **Finding:** VCell places an initial particle concentration over its *staircase* volume. Native runs given the
+       smooth volume therefore start with ~12% more molecules (22,400 vs 20,000). B2f's metrics are relative to each
+       run's own A₀ and are unaffected; the figures use the staircase volume, so every path starts at 20,000.
+   - **Next:** B2e, B2b and the calcium sparks.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

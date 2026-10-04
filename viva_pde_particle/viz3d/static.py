@@ -104,7 +104,7 @@ def render_png(bundles: dict, var: str, t: float, out, *, clim=None, normal: str
         if outline is not None and outline.n_points:
             p.add_mesh(outline, color="black", line_width=2)
         p.add_text(f"{label}\nt = {tt:g} s (mid-plane {normal})", font_size=9)
-        p.view_vector({"x": (1, 0, 0), "y": (0, 1, 0), "z": (0, 0, 1)}[normal])
+        {"x": p.view_yz, "y": p.view_xz, "z": p.view_xy}[normal]()
         p.subplot(1, j)
         cut = _cutaway(m)
         if var in m.point_data:
