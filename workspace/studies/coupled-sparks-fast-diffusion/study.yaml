@@ -117,11 +117,25 @@ canonical_runs:
   args: []
   label: "Fig 2: p(U,t), P(n,t) at t = 1, 2, 3 s; 500 trials per solver vs 20,000 exact realizations"
   default: true
+- name: render-3d
+  script: workspace/studies/coupled-sparks-fast-diffusion/sims/render_3d.py
+  args: []
+  label: "3D figures: one trial per solver recorded into results bundles (record: dev env; render: default env)"
 
 visualizations:
 - name: calcium-sparks-fig2
   chart: viz/calcium_sparks_fig2.html
   render: "python sims/run.py"
+- name: coupled-sparks-3d
+  chart: viz/coupled_sparks_3d.png
+  render: "python sims/render_3d.py render"
+  requires: "sims/render_3d.py record (dev env) writes the bundles in runs/"
+- name: coupled-sparks-3d-movie
+  chart: viz/coupled_sparks_3d_movie.gif
+  render: "python sims/render_3d.py render"
+- name: coupled-sparks-3d-interactive
+  address: threejs:viz/coupled_sparks_3d_interactive.html
+  render: "python sims/render_3d.py render"
 
 conclusion: |
   Results (results/metrics.json, 2026-10-03; 500 trials per solver):

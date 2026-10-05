@@ -1,0 +1,7 @@
+{
+  "title": "Coupled channels over time (co-simulation)",
+  "caption": "U at z = 0 and channel states, every 0.05 s.",
+  "simulations": "One trial (seed 1) of Test 2 per solver, \u0394t = 0.0002 s, recorded every 0.05 s to 3 s into results bundles (sims/render_3d.py). Native channel states come from VCell's per-node counts (exact: channels sit on nodes).",
+  "interpretation": "U rises uniformly as channels open, which opens more; it relaxes by pumping once they close.",
+  "source_run_id": "765bf6d15f664e9296640cef27356de3"
+}
