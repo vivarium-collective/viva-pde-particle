@@ -56,9 +56,14 @@ def build_hybrid_document(
     particle_init: str = "exact",
     pde_engine: str = "fv",
     pde_options: dict | None = None,
+    element_volumes: np.ndarray | None = None,
 ) -> dict:
     """``pde_engine``: ``"fv"`` (FVReactionDiffusion) or ``"fenicsx"`` (FenicsxReactionDiffusion,
-    ``pde_options={"mass": "lumped" | "consistent"}``)."""
+    ``pde_options={"mass": "lumped" | "consistent"}``).
+
+    ``element_volumes`` (grid-shaped, FV only) replaces the grid's node-centred element volumes in
+    both the PDE and the particle → field adapter, e.g. equal volumes at the end nodes for a
+    cell-centred reference discretization (Study C3)."""
     engines = {"fv": "local:FVReactionDiffusion", "fenicsx": "local:FenicsxReactionDiffusion"}
     if pde_engine not in engines:
         raise ValueError(f"pde_engine must be one of {sorted(engines)}, got {pde_engine!r}")
@@ -74,6 +79,13 @@ def build_hybrid_document(
     from viva_pde_particle.steps import GridCountsToConcentration
 
     to_field_cfg = {"grid": grid_cfg, "species": model.particle_species}
+    pde_cfg = {"grid": grid_cfg, "pde": parts.pde, "dt": dt, **(pde_options or {})}
+    if element_volumes is not None:
+        if pde_engine != "fv":
+            raise ValueError("element_volumes needs the FV engine")
+        vol = np.asarray(element_volumes, dtype=float).reshape(model.grid.shape)
+        to_field_cfg["staircase"] = {"volumes": vol}
+        pde_cfg["domain"] = {"mask": np.ones(model.grid.shape, bool), "volume_fraction": vol / model.grid.full_volume}
     to_field = GridCountsToConcentration(config=to_field_cfg, core=allocate_core())
     return {
         "fields": initial_fields(model),
@@ -83,7 +95,7 @@ def build_hybrid_document(
         "pde": {
             "_type": "process",
             "address": engines[pde_engine],
-            "config": {"grid": grid_cfg, "pde": parts.pde, "dt": dt, **(pde_options or {})},
+            "config": pde_cfg,
             "interval": dt,
             "inputs": {"fields": ["fields"], "external_conc": ["particle_conc"]},
             "outputs": {"fields": ["fields"]},

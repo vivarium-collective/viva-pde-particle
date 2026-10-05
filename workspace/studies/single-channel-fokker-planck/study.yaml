@@ -1,0 +1,158 @@
+schema_version: 4
+name: single-channel-fokker-planck
+title: "Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions"
+investigation: vcell-hybrid-paper-benchmarks
+created: '2026-10-04'
+status: ran
+phase: Evaluate
+parent_studies:
+- coupled-sparks-fast-diffusion
+
+question: |
+  With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+  co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+  solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+  finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+hypothesis: |
+  The hybrid samples the same piecewise-deterministic process the Fokker–Planck equations
+  describe, so its histograms should match them to within sampling noise (reduced χ² ≈ 1). The
+  paper reports L2 differences of 1–3% of the maximum.
+objective: |
+  Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
+  at α; it starts closed, with ρ = 0.
+
+  - **Test 3:** α = β = 1, a = 24, d = 10⁴, 3D cube of side 1 (Δx = 0.1, channel at the centre),
+    Δτ = 0.002.
+    - Compared: p(ρ̄) at τ = 30.
+    - Reference: Eq 4, solved in time and checked against its exact steady state.
+    - Ensembles: 10,000 co-sim trials, and the same on native VCell.
+  - **Test 4:** α = 10, β = 1, a = 20/3, d = 1, two cells with Δx = 2, Δτ = 10⁻⁴.
+    - Compared: p(ρᵢ) at τ = 1.
+    - Reference: the S2-Text master equation (Eq T2.1) at Δρ = 2.5, 1.2 and 0.6 × 10⁻³, extrapolated
+      to Δρ → 0.
+    - Ensembles: 12,500 trials.
+  - **Test 5:** α = 20, β = 0.5, a = 20, d = 50, three cells.
+    - Reference: four Δρ, extrapolated as in the paper.
+    - Ensembles: 12,500 trials at Δτ = 10⁻⁴.
+
+  Densities are 20-bin histograms on [0, ρ_max(i)] (40 bins on [0, 24] for Test 3), compared with the
+  reference averaged over the same bins. Reported: the relative L2 (RMS over bins / reference
+  maximum), the absolute L2, and the reduced χ² against multinomial sampling noise.
+description: |
+  The references are in viva_pde_particle.benchmarks.fokker_planck:
+  - `fast_steady_state`: the closed form of Eq 4's stationary density,
+    p ∝ (a − ρ)^(α−1) ρ^(αβ−1) e^(αβρ);
+  - `solve_fast`: upwind finite volumes, backward Euler;
+  - `solve_master`: Eq T2.1, explicit and matrix-free, with `extrapolate`.
+
+  The equations come from the paper and its S2 Text. The finite-diffusion model is `imax` equal cells
+  of width Δx with the channel in cell 0. The co-sim reproduces it with the new `element_volumes`
+  option of `build_hybrid_document`, which gives every node a full Δx in both the PDE and the
+  adapter (the node-centred grid would halve the end nodes).
+
+  **Deviations:**
+  - Test 5 runs at Δτ = 10⁻⁴, not 2 × 10⁻⁵.
+  - Tests 4–5 run only the co-simulation: VCell's node-centred mesh has half-volume end nodes, a
+    different discrete model from Eq T2.1.
+  - Test 3's cube is [0, 1]³ instead of [−0.5, 0.5]³ (Smoldyn placement); this is equivalent.
+
+baseline:
+- name: single-channel
+  composite: viva_pde_particle.composites.examples.calcium_sparks
+  params: {}
+  note: Built in sims/run.py from viva_pde_particle.benchmarks.fokker_planck.channel_model.
+
+variants: []
+
+behavior_tests:
+- name: test3-cosim-matches-fokker-planck
+  classification: primary
+  description: Reduced χ² of the co-sim histogram of ρ̄ (τ = 30) against Eq 4.
+  measure:
+    kind: derived_scalar
+    field: c3_test3_cosim_chi2
+  pass_if:
+    op: range
+    low: 0.0
+    high: 2.0
+    provenance:
+      kind: theory
+      note: Sampling noise alone gives ≈ 1 (the 99th percentile of χ²/k for k ≈ 20–40 bins is about 1.7–1.9).
+  requires_simulation: single-channel
+- name: test3-native-matches-fokker-planck
+  classification: primary
+  description: Reduced χ² of native VCell's histogram of ρ̄ (τ = 30) against Eq 4.
+  measure:
+    kind: derived_scalar
+    field: c3_test3_native_chi2
+  pass_if:
+    op: range
+    low: 0.0
+    high: 2.0
+    provenance:
+      kind: theory
+      note: As above.
+  requires_simulation: single-channel
+- name: test4-cosim-matches-fokker-planck
+  classification: primary
+  description: Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.
+  measure:
+    kind: derived_scalar
+    field: c3_test4_i0_cosim_chi2
+  pass_if:
+    op: range
+    low: 0.0
+    high: 2.0
+    provenance:
+      kind: theory
+      note: As above. The paper reports a relative L2 of 1.9% (i = 0) and 3.3% (i = 1).
+  requires_simulation: single-channel
+- name: test5-cosim-matches-fokker-planck
+  classification: primary
+  description: Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.
+  measure:
+    kind: derived_scalar
+    field: c3_test5_i0_cosim_chi2
+  pass_if:
+    op: range
+    low: 0.0
+    high: 2.0
+    provenance:
+      kind: theory
+      note: As above. The paper reports 1.3–1.5%.
+  requires_simulation: single-channel
+
+canonical_runs:
+- name: default
+  script: workspace/studies/single-channel-fokker-planck/sims/run.py
+  args: []
+  label: "Tests 3–5: references, co-sim ensembles (10,000 / 12,500 / 12,500), native Test 3 (dev env), report"
+  default: true
+
+visualizations:
+- name: fokker-planck
+  chart: viz/fokker_planck.html
+  render: "python sims/run.py report"
+
+conclusion: |
+  Results (results/metrics.json, 2026-10-05; relative L2 = RMS over bins / reference maximum):
+
+  | test | solver, trials | rel. L2 | sampling noise | reduced χ² | paper |
+  |---|---|---|---|---|---|
+  | 3 (d = 10⁴), ρ̄ at τ = 30 | co-sim, 10,000 | 0.58% | 0.30% | 2.48 | abs. L2 0.0137 (ours 0.021) |
+  | 3 | native VCell, 10,000 | 0.58% | 0.30% | 1.82 | |
+  | 4 (d = 1), ρ(x₀) / ρ(x₁) at τ = 1 | co-sim, 12,500 | 1.0% / 1.6% | 1.5% / 1.7% | 0.54 / 0.80 | 1.9% / 3.3% |
+  | 5 (d = 50), ρ(x₀) / ρ(x₁) / ρ(x₂) | co-sim, 12,500 | 0.9% / 1.2% / 1.4% | ≈ 1.4% | 0.80 / 0.89 / 0.86 | 1.3% / 1.3% / 1.5% |
+
+  - **Finite diffusion (Tests 4–5):** the co-simulation matches the functional Fokker–Planck solutions to within
+    sampling noise in every cell (reduced χ² 0.54–0.89), with smaller differences than the paper reports.
+    - Extrapolating the reference to Δρ → 0 matters: it shifts the Test 5 reference by about 4% of its maximum and
+      Test 4's cell 1 by 1.7%. These are the size of the discrepancies the paper attributes to under-resolved
+      Δρ.
+  - **Fast diffusion (Test 3):** the reference itself is exact. Eq 4 at τ = 30 agrees with its closed-form steady
+    state to 0.03%.
+    - Both hybrid solvers differ from it by the same 0.58%, about twice the sampling noise. Native VCell's
+      reduced χ² (1.82) sits just under the threshold, and the co-sim's (2.48) just over it.
+    - Since the two solvers share the same small bias, it belongs to the spatial hybrid at Δτ = 0.002, not to the
+      co-simulation. Candidates are the one-step coupling lag, and the channel reading ρ at its own node rather
+      than ρ̄. The Δτ check follows.

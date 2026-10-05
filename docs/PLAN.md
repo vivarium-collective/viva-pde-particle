@@ -1069,6 +1069,18 @@ metrics and 1D/2D plotly pages.
      - `bundle_html`: `colors`, `camera="top"` and `slice_origin`.
      - `viz3d/study.py`: `logged_run` and `write_meta` for study scripts.
 
+## Study C3 results (2026-10-05): single channel vs direct Fokker–Planck solutions (Tests 3–5)
+
+- **References** (`benchmarks/fokker_planck.py`), built from the paper and its S2 Text:
+  - Eq 4: solved in time, plus its closed-form steady state.
+  - Eq T2.1, the finite-diffusion master equation, solved at several Δρ and extrapolated to Δρ → 0.
+- **Co-sim setup:** `build_hybrid_document(..., element_volumes=)` gives the co-sim the reference's equal cells.
+  The node-centred grid halves the end nodes, and so does VCell, which is why Tests 4–5 have no native runs.
+- **Tests 4–5:** the co-sim matches to within sampling noise (reduced χ² 0.54–0.89; relative L2 0.9–1.6%, against the
+  paper's 1.3–3.3%).
+- **Test 3:** both solvers differ from the exact steady state by the same 0.58% (twice the sampling noise; χ² 1.82
+  native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation. A Δτ check follows.
+
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in
   Phase 0: it needed 9 small build fixes (`patches/smoldyn/0001-*.patch`), and it builds and runs natively
