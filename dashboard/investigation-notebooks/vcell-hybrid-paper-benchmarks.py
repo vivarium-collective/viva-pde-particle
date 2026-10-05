@@ -210,6 +210,21 @@ def _save_viz(study, slug, html):
 # calcium-sparks-fig1b
 _save_viz('separable-calcium-sparks', 'calcium-sparks-fig1b', _render_one('', {}, RUNS_DB, STUDY_YAML))
 
+# **sparks-3d**
+
+# sparks-3d
+_save_viz('separable-calcium-sparks', 'sparks-3d', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **sparks-3d-movie**
+
+# sparks-3d-movie
+_save_viz('separable-calcium-sparks', 'sparks-3d-movie', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **sparks-3d-interactive**
+
+# sparks-3d-interactive
+_save_viz('separable-calcium-sparks', 'sparks-3d-interactive', _render_one('threejs:viz/sparks_3d_interactive.html', {}, RUNS_DB, STUDY_YAML))
+
 # ### Acceptance criteria
 #
 # _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
@@ -275,6 +290,21 @@ print("No recorded runs for this study; nothing to reproduce.")
 
 # calcium-sparks-fig2
 _save_viz('coupled-sparks-fast-diffusion', 'calcium-sparks-fig2', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **coupled-sparks-3d**
+
+# coupled-sparks-3d
+_save_viz('coupled-sparks-fast-diffusion', 'coupled-sparks-3d', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **coupled-sparks-3d-movie**
+
+# coupled-sparks-3d-movie
+_save_viz('coupled-sparks-fast-diffusion', 'coupled-sparks-3d-movie', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **coupled-sparks-3d-interactive**
+
+# coupled-sparks-3d-interactive
+_save_viz('coupled-sparks-fast-diffusion', 'coupled-sparks-3d-interactive', _render_one('threejs:viz/coupled_sparks_3d_interactive.html', {}, RUNS_DB, STUDY_YAML))
 
 # ### Acceptance criteria
 #

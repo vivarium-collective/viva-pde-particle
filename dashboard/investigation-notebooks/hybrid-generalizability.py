@@ -335,6 +335,26 @@ print("No recorded runs for this study; nothing to reproduce.")
 # sphere-cosim-vs-native
 _save_viz('sphere-cosim-vs-native', 'sphere-cosim-vs-native', _render_one('', {}, RUNS_DB, STUDY_YAML))
 
+# **sphere-3d-conversion**
+
+# sphere-3d-conversion
+_save_viz('sphere-cosim-vs-native', 'sphere-3d-conversion', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **sphere-3d-exchange**
+
+# sphere-3d-exchange
+_save_viz('sphere-cosim-vs-native', 'sphere-3d-exchange', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **sphere-3d-movie**
+
+# sphere-3d-movie
+_save_viz('sphere-cosim-vs-native', 'sphere-3d-movie', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **sphere-3d-interactive**
+
+# sphere-3d-interactive
+_save_viz('sphere-cosim-vs-native', 'sphere-3d-interactive', _render_one('threejs:viz/sphere_3d_interactive.html', {}, RUNS_DB, STUDY_YAML))
+
 # ### Acceptance criteria
 #
 # _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
@@ -550,6 +570,21 @@ print("No recorded runs for this study; nothing to reproduce.")
 
 # vcell-geometry-cosim
 _save_viz('vcell-geometry-cosim', 'vcell-geometry-cosim', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **vcell-geometry-3d**
+
+# vcell-geometry-3d
+_save_viz('vcell-geometry-cosim', 'vcell-geometry-3d', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **vcell-geometry-3d-movie**
+
+# vcell-geometry-3d-movie
+_save_viz('vcell-geometry-cosim', 'vcell-geometry-3d-movie', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# **vcell-geometry-3d-interactive**
+
+# vcell-geometry-3d-interactive
+_save_viz('vcell-geometry-cosim', 'vcell-geometry-3d-interactive', _render_one('threejs:viz/vcell_geometry_3d_interactive.html', {}, RUNS_DB, STUDY_YAML))
 
 # ### Acceptance criteria
 #
