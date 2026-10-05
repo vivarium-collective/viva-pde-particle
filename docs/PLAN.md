@@ -1054,6 +1054,11 @@ metrics and 1D/2D plotly pages.
      - **B2b:** native VCell vs the gmsh co-sim, for conversion and exchange.
        - At 5 s native B is about 7% below the co-sim, which matches its −6.8% exchange balance.
      - **C1 (calcium sparks):** both solvers at 1, 2 and 3 s.
+     - **C2 (coupled sparks, fast diffusion):** one trial per solver, every 0.05 s.
+       - The PNG shows the three outputs with the most open channels.
+       - Opening speeds up with U, so channels open in bursts: up to 15 and 19 of 24 open at once, with U reaching
+         ~10 µM.
+       - U stays uniform to < 0.2 µM across the slab, which is the well-mixed limit the study tests.
        - The figure shows U in the channel plane on a log scale, with the 24 channels closed or open. Native channel
          states come from VCell's per-node counts.
        - Co-sim channels sit inside their node's voxel, because Smoldyn places them there.
