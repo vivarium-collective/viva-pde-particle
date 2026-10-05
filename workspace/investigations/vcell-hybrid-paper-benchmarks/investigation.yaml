@@ -45,5 +45,6 @@ executive:
 studies:
 - separable-calcium-sparks
 - coupled-sparks-fast-diffusion
+- single-channel-fokker-planck
 expert_docs: []
 acceptance_criteria: []
