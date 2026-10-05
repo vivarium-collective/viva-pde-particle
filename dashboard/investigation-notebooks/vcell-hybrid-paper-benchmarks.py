@@ -317,3 +317,81 @@ _save_viz('coupled-sparks-fast-diffusion', 'coupled-sparks-3d-interactive', _ren
 # | cosim-channel-distribution-l2 | kind=derived_scalar field=c2_cosim_max_l2_n | op < value 0.1 provenance {'kind': 'literature', 'note': "The paper's metric (Fig 2, 10,000 realizations gave about 0.002–0.003). With 500 trials the sampling floor is about 0.05."} |
 # | native-channel-distribution-l2 | kind=derived_scalar field=c2_native_max_l2_n | op < value 0.1 provenance {'kind': 'literature', 'note': 'As above.'} |
 # | solvers-agree | kind=derived_scalar field=c2_cosim_vs_native_min_ks_pvalue | op > value 0.001 provenance {'kind': 'theory', 'note': 'The two solvers should agree; 6 comparisons with ties in n make KS conservative.'} |
+
+# ## Study: Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions (`single-channel-fokker-planck`)
+#
+# **Question.** With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+# co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+# solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+# finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+#
+# **Objective.** Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
+# at α; it starts closed, with ρ = 0.
+#
+# - **Test 3:** α = β = 1, a = 24, d = 10⁴, 3D cube of side 1 (Δx = 0.1, channel at the centre),
+#   Δτ = 0.002.
+#   - Compared: p(ρ̄) at τ = 30.
+#   - Reference: Eq 4, solved in time and checked against its exact steady state.
+#   - Ensembles: 10,000 co-sim trials, and the same on native VCell.
+# - **Test 4:** α = 10, β = 1, a = 20/3, d = 1, two cells with Δx = 2, Δτ = 10⁻⁴.
+#   - Compared: p(ρᵢ) at τ = 1.
+#   - Reference: the S2-Text master equation (Eq T2.1) at Δρ = 2.5, 1.2 and 0.6 × 10⁻³, extrapolated
+#     to Δρ → 0.
+#   - Ensembles: 12,500 trials.
+# - **Test 5:** α = 20, β = 0.5, a = 20, d = 50, three cells.
+#   - Reference: four Δρ, extrapolated as in the paper.
+#   - Ensembles: 12,500 trials at Δτ = 10⁻⁴.
+#
+# Densities are 20-bin histograms on [0, ρ_max(i)] (40 bins on [0, 24] for Test 3), compared with the
+# reference averaged over the same bins. Reported: the relative L2 (RMS over bins / reference
+# maximum), the absolute L2, and the reduced χ² against multinomial sampling noise.
+#
+# **Hypothesis.** The hybrid samples the same piecewise-deterministic process the Fokker–Planck equations
+# describe, so its histograms should match them to within sampling noise (reduced χ² ≈ 1). The
+# paper reports L2 differences of 1–3% of the maximum.
+
+# ### Parameters
+#
+# | simulation | composite | steps | params |
+# | --- | --- | --- | --- |
+# | `single-channel` | `viva_pde_particle.composites.examples.calcium_sparks` | 0 | — |
+
+# ### Specification (process-bigraph) — load, inspect, edit
+#
+# Each composite is a process-bigraph *document*: named processes (`_type: process`) bound to an `address`, wired by `inputs`/`outputs` ports over shared stores. For every composite below the first cell loads the spec into a plain **editable Python dict** and prints its structure; the second cell is a **control panel** listing every configuration value and per-process `interval` so you can tweak any of them. Your edits are read when the composite is built and run, in the **Run** section.
+
+# **Composite `viva_pde_particle.composites.examples.calcium_sparks`** — `spec_viva_pde_particle_composites_examples_calcium_sparks` (a plain, editable dict)
+
+# _composite spec file for `viva_pde_particle.composites.examples.calcium_sparks` not found under `viva_pde_particle/composites/` — skipped._
+
+# ### Run
+#
+# _Set the runtime (`STEPS`) and step size (`INTERVAL`), then run. Each simulation builds the (edited) spec above and writes `runs.db`; the figures below read it. Set `RERUN = False` to skip re-simulating._
+
+# === Study: single-channel-fokker-planck ===
+STUDY = 'single-channel-fokker-planck'
+STUDY_DIR = REPO / 'workspace/studies' / STUDY
+STUDY_YAML = str(STUDY_DIR / "study.yaml")
+RUNS_DB = str(STUDY_DIR / "runs.db")
+
+print("No recorded runs for this study; nothing to reproduce.")
+
+# ### Visualizations
+#
+# _Results are shown by the figures below, produced by the run above._
+
+# **fokker-planck**
+
+# fokker-planck
+_save_viz('single-channel-fokker-planck', 'fokker-planck', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# ### Acceptance criteria
+#
+# _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
+#
+# | test | measures | passes if |
+# | --- | --- | --- |
+# | test3-cosim-matches-fokker-planck | kind=derived_scalar field=c3_test3_cosim_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'Sampling noise alone gives ≈ 1 (the 99th percentile of χ²/k for k ≈ 20–40 bins is about 1.7–1.9).'} |
+# | test3-native-matches-fokker-planck | kind=derived_scalar field=c3_test3_native_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above.'} |
+# | test4-cosim-matches-fokker-planck | kind=derived_scalar field=c3_test4_i0_cosim_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above. The paper reports a relative L2 of 1.9% (i = 0) and 3.3% (i = 1).'} |
+# | test5-cosim-matches-fokker-planck | kind=derived_scalar field=c3_test5_i0_cosim_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above. The paper reports 1.3–1.5%.'} |

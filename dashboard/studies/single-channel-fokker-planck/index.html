@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Study: field-modulated-decay</title>
+<title>Study: single-channel-fokker-planck</title>
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
@@ -17,7 +17,7 @@
 <header class="study-header">
   <div style="display:flex; align-items:baseline; gap:12px; justify-content:space-between;">
   <h1 class="study-title">
-    <span class="study-name" id="study-name" data-slug="field-modulated-decay" title="field-modulated-decay">Field-to-particle coupling, A_particle -&gt; 0 at rate k·[B](x)</span>
+    <span class="study-name" id="study-name" data-slug="single-channel-fokker-planck" title="single-channel-fokker-planck">Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions</span>
     
     <span class="study-kind-tag study-kind-computational" data-study-kind="computational" title="Study kind">computational</span>
     
@@ -39,7 +39,7 @@
     
 
     
-    <div id="readiness-panel" data-slug="field-modulated-decay"></div>
+    <div id="readiness-panel" data-slug="single-channel-fokker-planck"></div>
 
     
     
@@ -151,9 +151,10 @@
 
 
 
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Does the Smoldyn process read the PDE field at each molecule as vcell-fvsolver does
-(nearest node, value from the previous coupling step)? Does the coupled model approach
-its deterministic continuum limit?
+<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 </p>
 
 <nav class="study-tabs" aria-label="Study sections">
@@ -616,25 +617,41 @@ its deterministic continuum limit?
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">Does the Smoldyn process read the PDE field at each molecule as vcell-fvsolver does
-(nearest node, value from the previous coupling step)? Does the coupled model approach
-its deterministic continuum limit?
+      <p class="ctr-text">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 </p>
       
     </div>
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Test</h2>
-      <p class="ctr-text">Part 1: B rises linearly from 0 to 1 µM across x; 4,000 immobile A per run; k = 1/(µM·s);
-8 seeds; t = 1 s. Compare per-column survival to exp(-k·B_col·t) with binomial z-scores.
-Part 2: B is a Gaussian (1 µM peak, D_B = 0.5); 20,000 A with D_A = 1; 8 seeds. Compare
-the ensemble-mean A (µM) at t = 1 s to continuum_model() solved by FVReactionDiffusion
-alone (relative L2 over the grid, and total A).
+      <p class="ctr-text">Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
+at α; it starts closed, with ρ = 0.
+
+- **Test 3:** α = β = 1, a = 24, d = 10⁴, 3D cube of side 1 (Δx = 0.1, channel at the centre),
+  Δτ = 0.002.
+  - Compared: p(ρ̄) at τ = 30.
+  - Reference: Eq 4, solved in time and checked against its exact steady state.
+  - Ensembles: 10,000 co-sim trials, and the same on native VCell.
+- **Test 4:** α = 10, β = 1, a = 20/3, d = 1, two cells with Δx = 2, Δτ = 10⁻⁴.
+  - Compared: p(ρᵢ) at τ = 1.
+  - Reference: the S2-Text master equation (Eq T2.1) at Δρ = 2.5, 1.2 and 0.6 × 10⁻³, extrapolated
+    to Δρ → 0.
+  - Ensembles: 12,500 trials.
+- **Test 5:** α = 20, β = 0.5, a = 20, d = 50, three cells.
+  - Reference: four Δρ, extrapolated as in the paper.
+  - Ensembles: 12,500 trials at Δτ = 10⁻⁴.
+
+Densities are 20-bin histograms on [0, ρ_max(i)] (40 bins on [0, 24] for Test 3), compared with the
+reference averaged over the same bins. Reported: the relative L2 (RMS over bins / reference
+maximum), the absolute L2, and the reduced χ² against multinomial sampling noise.
 </p>
       
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>field-modulated-decay-baseline</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Max |z| over x-columns of survivors vs N0·exp(-k·B_col·t) (static B, immobile A).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Molecules lost from the B = 0 column.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Relative L2 error of the ensemble-mean A (µM) vs the continuum FV solution at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Relative error of the ensemble-mean total A vs the continuum total at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Native VCell hybrid, static B (slab, 8 seeds); max |z| over x-columns of survivors vs N0·exp(-k·B·t).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Two-sample max |z| over x-columns of per-run survival fractions, co-simulation vs native VCell (static B).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Two-sample max |z| over x-columns of the final A profile, co-simulation vs native VCell (diffusing A and B).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Relative difference of mean total survival, co-simulation vs native VCell (diffusing A and B).</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>single-channel</code></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Reduced χ² of the co-sim histogram of ρ̄ (τ = 30) against Eq 4.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Reduced χ² of native VCell&#39;s histogram of ρ̄ (τ = 30) against Eq 4.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.</span></div>
       </div>
       
     </div>
@@ -660,12 +677,12 @@ alone (relative L2 over the grid, and total A).
   <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
     <h2 class="overview-label" style="margin:0">Model composition</h2>
     
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'field-modulated-decay', 'cosim-vs-embedded-hybrid')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'single-channel-fokker-planck', 'vcell-hybrid-paper-benchmarks')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
   </div>
 
   
   
-  <div id="model-composite-cards" class="model-composite-cards" data-study="field-modulated-decay"
+  <div id="model-composite-cards" class="model-composite-cards" data-study="single-channel-fokker-planck"
        data-study-config="">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading composite card(s)…</span></div>
   </div>
@@ -686,28 +703,28 @@ alone (relative L2 over the grid, and total A).
   <div class="overview-section" id="model-section">
     <h3>Runnable models <span class="muted" style="font-size:0.85em;font-weight:normal">— the composite(s) this study simulates</span></h3>
     
-    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.field_modulated_decay" data-model-overrides='{"b_profile": "linear", "d_a": 0.0, "d_b": 0.0, "dt": 0.01, "k": 1.0, "n_particles": 4000}'>
+    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.calcium_sparks" data-model-overrides='{}'>
       <div class="cond-block-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>field-modulated-decay-baseline</strong>
+        <strong>single-channel</strong>
         
-        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.field_modulated_decay</code>
+        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.calcium_sparks</code>
         <button type="button" class="action-btn" style="font-size:0.8em"
-                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.field_modulated_decay')">🧬 explore &amp; run ↗</button>
+                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.calcium_sparks')">🧬 explore &amp; run ↗</button>
         
       </div>
       
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
         
-        <select class="baseline-composite-input" data-baseline-name="field-modulated-decay-baseline"
-                data-current="viva_pde_particle.composites.examples.field_modulated_decay"
+        <select class="baseline-composite-input" data-baseline-name="single-channel"
+                data-current="viva_pde_particle.composites.examples.calcium_sparks"
                 style="flex:1;min-width:200px;font-family:monospace;font-size:0.82em;padding:3px 6px">
-          <option value="viva_pde_particle.composites.examples.field_modulated_decay" selected>viva_pde_particle.composites.examples.field_modulated_decay</option>
+          <option value="viva_pde_particle.composites.examples.calcium_sparks" selected>viva_pde_particle.composites.examples.calcium_sparks</option>
           
         </select>
         <button type="button" class="action-btn baseline-composite-set" style="font-size:0.8em"
-                data-baseline-name="field-modulated-decay-baseline">Set composite</button>
+                data-baseline-name="single-channel">Set composite</button>
       </div>
-      <div class="baseline-composite-status muted" data-baseline-name="field-modulated-decay-baseline" style="font-size:0.8em;margin-top:2px"></div>
+      <div class="baseline-composite-status muted" data-baseline-name="single-channel" style="font-size:0.8em;margin-top:2px"></div>
       
       
       
@@ -756,7 +773,7 @@ alone (relative L2 over the grid, and total A).
 
   <h4>Latest run preview</h4>
   <p class="muted" style="font-size:0.9em">Per-store sparkline + first/last/min/max from the most recent run's emitted trajectory. This is a downsampled PREVIEW, not the full data — use the per-store or Download-all links for the complete arrays. For a cross-engine comparison run, this shows how closely the simulators agree, model by model, instead.</p>
-  <div id="results-preview" data-study="field-modulated-decay">
+  <div id="results-preview" data-study="single-channel-fokker-planck">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading results preview…</span></div>
   </div>
 
@@ -776,7 +793,7 @@ alone (relative L2 over the grid, and total A).
   
   <div class="overview-section" id="study-analyses-section">
     <h3>Analyses to run <span class="muted" style="font-size:0.85em;font-weight:normal">— which of the workspace's <code>ANALYSIS_REGISTRY</code> entries to compute on dispatch</span></h3>
-    <div id="study-analyses-list" data-study="field-modulated-decay">
+    <div id="study-analyses-list" data-study="single-channel-fokker-planck">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading analyses…</span></div>
     </div>
     <div style="margin-top:8px">
@@ -792,9 +809,9 @@ alone (relative L2 over the grid, and total A).
   <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
     <span class="muted" style="margin-right:auto;font-weight:600">Analysis result files</span>
     <a id="data-download-all" class="btn-mini" style="display:none"
-       href="/api/study-analysis-zip?study=field-modulated-decay">Download all (.zip)</a>
+       href="/api/study-analysis-zip?study=single-channel-fokker-planck">Download all (.zip)</a>
   </div>
-  <div id="data-files" data-study="field-modulated-decay">
+  <div id="data-files" data-study="single-channel-fokker-planck">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading result files…</span></div>
   </div>
 </div>
@@ -815,7 +832,7 @@ alone (relative L2 over the grid, and total A).
     interval/buffer, output location, and emit scope — from
     <code>lib/emitters.py</code> and this study's (or the workspace's)
     <code>runtime.default_emitter</code>.</p>
-    <div id="readouts-emitter" data-study="field-modulated-decay">
+    <div id="readouts-emitter" data-study="single-channel-fokker-planck">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading emitter configuration…</span></div>
     </div>
 
@@ -827,7 +844,7 @@ alone (relative L2 over the grid, and total A).
     
     <div id="readouts-download" style="margin:0 0 16px 0"></div>
 
-    <div id="readouts-table" data-study="field-modulated-decay">
+    <div id="readouts-table" data-study="single-channel-fokker-planck">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readouts from the composite emit plan…</span></div>
     </div>
 
@@ -835,7 +852,7 @@ alone (relative L2 over the grid, and total A).
     <p class="muted" style="font-size:0.9em">Store path, dtype, shape
     <code>(n_steps, …)</code>, units, and a best-effort byte estimate for each emitted
     leaf.</p>
-    <div id="readouts-shapes" data-study="field-modulated-decay">
+    <div id="readouts-shapes" data-study="single-channel-fokker-planck">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading output shapes…</span></div>
     </div>
 
@@ -850,7 +867,7 @@ alone (relative L2 over the grid, and total A).
     
     
     <div class="viz-actions-row" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'field-modulated-decay')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
+      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'single-channel-fokker-planck')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
     </div>
     
 
@@ -914,10 +931,10 @@ alone (relative L2 over the grid, and total A).
     
     
     
-    <li class="expected-behavior-item" id="bt-survival-follows-local-field"
+    <li class="expected-behavior-item" id="bt-test3-cosim-matches-fokker-planck"
         data-test-kind="behavioral"
         
-        data-pytest-node="survival-follows-local-field"
+        data-pytest-node="test3-cosim-matches-fokker-planck"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -926,19 +943,19 @@ alone (relative L2 over the grid, and total A).
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">survival-follows-local-field</strong>
+        <strong style="font-size: 0.9em;">test3-cosim-matches-fokker-planck</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>field-modulated-decay-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>single-channel</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max |z| over x-columns of survivors vs N0·exp(-k·B_col·t) (static B, immobile A).</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Reduced χ² of the co-sim histogram of ρ̄ (τ = 30) against Eq 4.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_static_field_max_abs_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Smoldyn\u0027s first-order reaction probability per step is 1-exp(-rate\u00b7dt), so survival is exp(-k\u00b7B\u00b7t) exactly in expectation."}, "value": 4.0}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "c3_test3_cosim_chi2", "kind": "derived_scalar"}
+pass_if: {"high": 2.0, "low": 0.0, "op": "range", "provenance": {"kind": "theory", "note": "Sampling noise alone gives \u2248 1 (the 99th percentile of \u03c7\u00b2/k for k \u2248 20\u201340 bins is about 1.7\u20131.9)."}}</pre>
       </details>
       
       
@@ -953,10 +970,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Smoldyn\u002
     
     
     
-    <li class="expected-behavior-item" id="bt-no-decay-where-field-is-zero"
+    <li class="expected-behavior-item" id="bt-test3-native-matches-fokker-planck"
         data-test-kind="behavioral"
         
-        data-pytest-node="no-decay-where-field-is-zero"
+        data-pytest-node="test3-native-matches-fokker-planck"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -965,19 +982,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Smoldyn\u002
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">no-decay-where-field-is-zero</strong>
+        <strong style="font-size: 0.9em;">test3-native-matches-fokker-planck</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>field-modulated-decay-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>single-channel</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Molecules lost from the B = 0 column.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Reduced χ² of native VCell&#39;s histogram of ρ̄ (τ = 30) against Eq 4.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_zero_field_decays", "kind": "derived_scalar"}
-pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Rate k\u00b70 = 0 at the B = 0 nodes."}, "value": 0}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "c3_test3_native_chi2", "kind": "derived_scalar"}
+pass_if: {"high": 2.0, "low": 0.0, "op": "range", "provenance": {"kind": "theory", "note": "As above."}}</pre>
       </details>
       
       
@@ -992,10 +1009,10 @@ pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Rate k\u00b70 = 
     
     
     
-    <li class="expected-behavior-item" id="bt-approaches-continuum-limit"
+    <li class="expected-behavior-item" id="bt-test4-cosim-matches-fokker-planck"
         data-test-kind="behavioral"
         
-        data-pytest-node="approaches-continuum-limit"
+        data-pytest-node="test4-cosim-matches-fokker-planck"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -1004,19 +1021,19 @@ pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Rate k\u00b70 = 
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">approaches-continuum-limit</strong>
+        <strong style="font-size: 0.9em;">test4-cosim-matches-fokker-planck</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>continuum-limit</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>single-channel</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Relative L2 error of the ensemble-mean A (µM) vs the continuum FV solution at t = 1 s.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_continuum_rel_l2_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Per-node sampling noise of the 8-run mean is about 1/sqrt(8\u00b7165), roughly 2.8%; the threshold allows about 2x that."}, "value": 0.06}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "c3_test4_i0_cosim_chi2", "kind": "derived_scalar"}
+pass_if: {"high": 2.0, "low": 0.0, "op": "range", "provenance": {"kind": "theory", "note": "As above. The paper reports a relative L2 of 1.9% (i = 0) and 3.3% (i = 1)."}}</pre>
       </details>
       
       
@@ -1031,49 +1048,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Per-node sam
     
     
     
-    <li class="expected-behavior-item" id="bt-total-matches-continuum"
+    <li class="expected-behavior-item" id="bt-test5-cosim-matches-fokker-planck"
         data-test-kind="behavioral"
         
-        data-pytest-node="total-matches-continuum"
-        data-classification="secondary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #cbd5e1; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-secondary">secondary</span>
-        <strong style="font-size: 0.9em;">total-matches-continuum</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>continuum-limit</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Relative error of the ensemble-mean total A vs the continuum total at t = 1 s.</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_continuum_total_rel_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "160,000 total molecule samples give ~0.3% sampling error on the total."}, "value": 0.02}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-native-vcell-follows-local-field"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="native-vcell-follows-local-field"
+        data-pytest-node="test5-cosim-matches-fokker-planck"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -1082,136 +1060,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "160,000 tota
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">native-vcell-follows-local-field</strong>
+        <strong style="font-size: 0.9em;">test5-cosim-matches-fokker-planck</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>native-vcell-slab</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>single-channel</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Native VCell hybrid, static B (slab, 8 seeds); max |z| over x-columns of survivors vs N0·exp(-k·B·t).</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_native_static_field_max_abs_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Same exact expectation as the co-simulation test; validates the headless native reference path."}, "value": 4.0}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-cosim-matches-native-static"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="cosim-matches-native-static"
-        data-classification="primary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">cosim-matches-native-static</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>native-vcell-slab</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Two-sample max |z| over x-columns of per-run survival fractions, co-simulation vs native VCell (static B).</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_cosim_vs_native_static_survival_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Equal expected survival under both solvers; 8 runs each."}, "value": 4.0}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-cosim-matches-native-diffusing"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="cosim-matches-native-diffusing"
-        data-classification="primary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">cosim-matches-native-diffusing</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>native-vcell-slab</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Two-sample max |z| over x-columns of the final A profile, co-simulation vs native VCell (diffusing A and B).</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_cosim_vs_native_diffusing_profile_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Same model, mesh and coupling scheme in both solvers; differences only from sampling (8 runs each)."}, "value": 4.0}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-cosim-matches-native-total"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="cosim-matches-native-total"
-        data-classification="secondary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #cbd5e1; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-secondary">secondary</span>
-        <strong style="font-size: 0.9em;">cosim-matches-native-total</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>native-vcell-slab</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Relative difference of mean total survival, co-simulation vs native VCell (diffusing A and B).</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a2_cosim_vs_native_diffusing_survival_rel_diff", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "160,000 molecule samples per solver; sampling error ~0.5%."}, "value": 0.02}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "c3_test5_i0_cosim_chi2", "kind": "derived_scalar"}
+pass_if: {"high": 2.0, "low": 0.0, "op": "range", "provenance": {"kind": "theory", "note": "As above. The paper reports 1.3\u20131.5%."}}</pre>
       </details>
       
       
@@ -1331,23 +1192,32 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "160,000 mole
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>All checks pass (results/metrics.json, 2026-10-03; re-run after the record-time fix).</p>
-<p>Co-simulation:</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-05; relative L2 = RMS over bins / reference maximum):</p>
+<p>| test | solver, trials | rel. L2 | sampling noise | reduced χ² | paper |
+|---|---|---|---|---|---|
+| 3 (d = 10⁴), ρ̄ at τ = 30 | co-sim, 10,000 | 0.58% | 0.30% | 2.48 | abs. L2 0.0137 (ours 0.021) |
+| 3 | native VCell, 10,000 | 0.58% | 0.30% | 1.82 | |
+| 4 (d = 1), ρ(x₀) / ρ(x₁) at τ = 1 | co-sim, 12,500 | 1.0% / 1.6% | 1.5% / 1.7% | 0.54 / 0.80 | 1.9% / 3.3% |
+| 5 (d = 50), ρ(x₀) / ρ(x₁) / ρ(x₂) | co-sim, 12,500 | 0.9% / 1.2% / 1.4% | ≈ 1.4% | 0.80 / 0.89 / 0.86 | 1.3% / 1.3% / 1.5% |</p>
 <ul>
-<li>column survival vs exp(-k·B·t): max |z| = 1.56;</li>
-<li>decays where B = 0: none;</li>
-<li>ensemble-mean A vs continuum: 2.7% relative L2, at the sampling-noise level;</li>
-<li>total A vs continuum: 0.05%.</li>
+<li><strong>Finite diffusion (Tests 4–5):</strong> the co-simulation matches the functional Fokker–Planck solutions to within
+sampling noise in every cell (reduced χ² 0.54–0.89), with smaller differences than the paper reports.
+<ul>
+<li>Extrapolating the reference to Δρ → 0 matters: it shifts the Test 5 reference by about 4% of its maximum and
+Test 4's cell 1 by 1.7%. These are the size of the discrepancies the paper attributes to under-resolved
+Δρ.</li>
 </ul>
-<p>Co-simulation vs native VCell hybrid (quasi-2D slab 11×11×3, 8 seeds each, matched
-Poisson initial placement):</p>
+</li>
+<li><strong>Fast diffusion (Test 3):</strong> the reference itself is exact. Eq 4 at τ = 30 agrees with its closed-form steady
+state to 0.03%.
 <ul>
-<li>native column survival vs exp(-k·B·t): max |z| = 1.68;</li>
-<li>co-sim vs native static-field survival: max |z| = 1.37;</li>
-<li>B fields identical to 1e-16;</li>
-<li>diffusing case, final x-profiles: max |z| = 2.54;</li>
-<li>total survival differs by 0.04%.
-The two implementations are statistically indistinguishable on this model.</li>
+<li>Both hybrid solvers differ from it by the same 0.58%, about twice the sampling noise. Native VCell's
+reduced χ² (1.82) sits just under the threshold, and the co-sim's (2.48) just over it.</li>
+<li>Since the two solvers share the same small bias, it belongs to the spatial hybrid at Δτ = 0.002, not to the
+co-simulation. Candidates are the one-step coupling lag, and the channel reading ρ at its own node rather
+than ρ̄. The Δτ check follows.</li>
+</ul>
+</li>
 </ul>
 </div>
     </div>
@@ -1357,36 +1227,6 @@ The two implementations are statistically indistinguishable on this model.</li>
   </div>
 
   
-  
-  <div class="overview-section"><h2 class="overview-label">Plan &amp; assumptions</h2>
-
-    
-    <div class="overview-section">
-      <h3 class="overview-label">Pipeline gate</h3>
-      <p class="muted" style="margin: 0 0 8px 0;font-size:0.88em">
-        Each study is a model-building gate: it answers <em>"Can we safely build the next layer?"</em>
-      </p>
-      
-      <div style="margin-bottom:6px"><strong>Prerequisites:</strong>
-        <code>handoff-units-and-binning</code>
-      </div>
-      
-      
-      <div style="margin-bottom:6px"><strong>Enables:</strong>
-        <code>two-way-exchange</code>
-      </div>
-      
-      
-      <div><strong>Proceed when:</strong> <span class="muted">The particle side reads fields correctly and the coupled model converges to its continuum limit.</span></div>
-      
-    </div>
-    
-
-    
-
-    
-
-  </div>
   
 
   
@@ -1426,7 +1266,7 @@ The two implementations are statistically indistinguishable on this model.</li>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
-window._studyName = "field-modulated-decay";
+window._studyName = "single-channel-fokker-planck";
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
