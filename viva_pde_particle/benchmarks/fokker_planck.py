@@ -260,3 +260,30 @@ def channel_model(test: ChannelTest):
         Reaction("decay", {"rho": 1}, {}, k=1.0),
     ])
     return g, model, volumes
+
+
+def trial_rho(seed: int, test: str = "test3", dtau: float | None = None, tau: float | None = None,
+              sample_times=None) -> list[float]:
+    """One co-simulation trial of a test: ρ at the sample times (the channel node's cells in Tests 4–5, ρ̄ in
+    Test 3), flattened time-major. A trial function for :class:`viva_pde_particle.ensemble.EnsembleRunner`.
+
+    Defaults: the test's own Δτ and τ, sampled at τ only.
+    """
+    from viva_pde_particle.composites.hybrid import build_hybrid_document, run_document
+
+    base = {"test3": TEST3, "test4": TEST4, "test5": TEST5}[test]
+    t = ChannelTest(**{**base.__dict__, **({"dtau": dtau} if dtau else {}), **({"tau": tau} if tau else {})})
+    times = [float(x) for x in (sample_times or [t.tau])]
+    t = ChannelTest(**{**t.__dict__, "tau": max(times)})
+    g, model, volumes = channel_model(t)
+    every = float(np.gcd.reduce([int(round(x / t.dtau)) for x in times])) * t.dtau
+    tr = run_document(build_hybrid_document(model, t.dtau, 1, seed=int(seed), element_volumes=volumes),
+                      t.tau, t.dtau, every)
+    out = []
+    for target in times:
+        rho = np.asarray(tr.fields["rho"][int(np.argmin(np.abs(np.asarray(tr.times) - target)))], dtype=float)
+        if t.imax == 0:
+            out.append(float((rho * g.element_volumes).sum() / g.element_volumes.sum()))
+        else:
+            out.extend(float(v) for v in rho.ravel())
+    return out

@@ -1,0 +1,107 @@
+# Container image for running this workspace's documents on compose-api (compose.cam.uchc.edu: SLURM + Apptainer).
+# Not generated from viva-template (build-and-push.yml is; it builds ./Dockerfile multi-arch for the workbench).
+#
+# Builds docker/compose.Dockerfile (linux/amd64), then checks it before pushing:
+#   1. docker: `smoke` runs a small ensemble document (co-simulation trials) and checks its results;
+#   2. apptainer: the exact compose-api job contract, with a read-only image and a bound /experiment:
+#        apptainer run --compat --bind exp:/experiment image.sif run /experiment/experiment.omex -o /experiment/output -n 1
+# and pushes ghcr.io/<owner>/viva-pde-particle-compose:{sha-<short>,latest}.
+name: Compose image
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - docker/compose*
+      - .github/workflows/compose-image.yml
+      - viva_pde_particle/ensemble.py
+      - viva_pde_particle/compose_runner.py
+  push:
+    branches: [main]
+    paths:
+      - docker/compose*
+      - .github/workflows/compose-image.yml
+      - pixi.toml
+      - pixi.lock
+      - external/Smoldyn
+      - viva_pde_particle/**
+
+concurrency:
+  group: compose-image-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Free disk space (the image is several GB)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Image name
+        id: img
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/viva-pde-particle-compose" >> "$GITHUB_OUTPUT"
+          echo "sha=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build (linux/amd64)
+        run: docker build -f docker/compose.Dockerfile -t "${{ steps.img.outputs.name }}:${{ steps.img.outputs.sha }}" .
+
+      - name: Smoke test (docker)
+        run: docker run --rm "${{ steps.img.outputs.name }}:${{ steps.img.outputs.sha }}" smoke
+
+      - uses: eWaterCycle/setup-apptainer@v2
+        with:
+          apptainer-version: 1.3.6
+
+      - name: compose-api job contract (apptainer --compat)
+        run: |
+          set -euo pipefail
+          IMG="${{ steps.img.outputs.name }}:${{ steps.img.outputs.sha }}"
+          apptainer build image.sif "docker-daemon://$IMG"
+          mkdir -p exp
+          apptainer run --compat --bind "$PWD/exp:/experiment" image.sif example /experiment/experiment.omex
+          apptainer run --compat --bind "$PWD/exp:/experiment" image.sif run /experiment/experiment.omex -o /experiment/output -n 1
+          ls exp/output/results_*.pber
+          python3 -c "import glob, json; d = json.load(open(glob.glob('exp/output/results_*.pber')[0])); h = list(d.values())[0]; r = h[-1] if isinstance(h, list) else h; assert r['seeds'] == [1, 2, 3, 4], r; print('contract OK', r['seeds'])"
+          rm -f image.sif
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        if: github.ref == 'refs/heads/main'
+        run: |
+          IMG="${{ steps.img.outputs.name }}"
+          docker tag "$IMG:${{ steps.img.outputs.sha }}" "$IMG:latest"
+          docker push "$IMG:${{ steps.img.outputs.sha }}"
+          docker push "$IMG:latest"
+
+      - name: Make the package public (org-owned; best effort)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X PATCH "/orgs/${GITHUB_REPOSITORY_OWNER}/packages/container/viva-pde-particle-compose/visibility" \
+            -f visibility=public || echo "::warning::could not set package visibility; set it in the package settings"
