@@ -14,7 +14,8 @@
 ARG PIXI_VERSION=0.68.1
 
 FROM ghcr.io/prefix-dev/pixi:${PIXI_VERSION}-bookworm AS build
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+# binutils: CMake looks for `ar` on the system (the conda compilers do not put a plain `ar` on PATH)
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates binutils \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
