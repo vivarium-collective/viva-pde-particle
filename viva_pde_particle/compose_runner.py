@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import sys
 import tempfile
@@ -53,6 +54,19 @@ def load_document(path: Path, workdir: Path) -> dict:
 
 
 def run(path: Path, output: Path, interval: float) -> Path:
+    """Run the document and write its results; on compose-api, inside a ``task`` span that announces the results
+    file as a dataset (:func:`_announce`)."""
+    from process_bigraph import events
+
+    emitter = events.get_emitter()  # configured from PBG_* when compose-api's job passes them; silent otherwise
+    with emitter.span("task", document=path.name, interval=interval):
+        out = _run(path, output, interval)
+        _announce(emitter, out)
+    emitter.flush()
+    return out
+
+
+def _run(path: Path, output: Path, interval: float) -> Path:
     from process_bigraph import Composite, gather_emitter_results
 
     from viva_pde_particle.ensemble import build_runner_core
@@ -68,6 +82,25 @@ def run(path: Path, output: Path, interval: float) -> Path:
     out.write_text(json.dumps({"/".join(map(str, k)) if isinstance(k, tuple) else str(k): _jsonable(v)
                                for k, v in results.items()}))
     return out
+
+
+def _announce(emitter, out: Path) -> None:
+    """``artifact.written`` for the results file: compose-api registers it as a dataset of kind ``results`` with the
+    seeds it holds (compose-api docs/plan-observability.md O5). The job script also records the file, by size and
+    checksum alone; this event adds what it is."""
+    from viva_pde_particle.ensemble import collect
+
+    attributes: dict = {"format": "pber"}
+    try:
+        seeds, _ = collect([out])
+        if seeds:
+            attributes.update(seeds=len(seeds), first_seed=min(seeds), last_seed=max(seeds))
+    except Exception:  # not an ensemble's results: a plain document run
+        pass
+    data = out.read_bytes()
+    emitter.event("artifact.written", component="viva_pde_particle", uri=str(out.resolve()), kind="results",
+                  name=f"ensemble results ({attributes['seeds']} seeds)" if "seeds" in attributes else out.name,
+                  bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), attributes=attributes)
 
 
 EXAMPLE_TRIAL = "viva_pde_particle.benchmarks.fokker_planck:trial_rho"
