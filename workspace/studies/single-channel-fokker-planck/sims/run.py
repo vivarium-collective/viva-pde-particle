@@ -31,6 +31,7 @@ Stages (each saves to ``runs/``; ``all`` runs them in order):
 
     pixi run python sims/run.py reference
     pixi run python sims/run.py cosim
+    C3_BACKEND=compose pixi run python sims/run.py cosim   # the same trials on compose-api (SLURM on mantis)
     pixi run -e dev python sims/run.py native     # Test 3 on native VCell
     pixi run python sims/run.py report            # results/metrics.json + viz/fokker_planck.html
 """
@@ -60,6 +61,10 @@ MARGIN = 1.04
 WORKERS = int(os.environ.get("C3_WORKERS", os.cpu_count() or 1))
 TRIALS = {k: int(os.environ.get("C3_TRIALS", t.trials)) for k, t in TESTS.items()}
 NATIVE_TRIALS = int(os.environ.get("C3_NATIVE_TRIALS", TEST3.trials))
+BACKEND = os.environ.get("C3_BACKEND", "local")  # "compose": run the trials on compose-api
+# Seconds per trial on one core: measured on an M3 Max (8.5, 1.4, 1.5) and padded 2× for mantis.
+# compose_client.block_size turns them into blocks that fill half of a 30-minute, 2-CPU job.
+SECONDS_PER_TRIAL = {"test3": 17.0, "test4": 3.0, "test5": 3.0}
 
 
 def edges_for(name: str) -> list[np.ndarray]:
@@ -117,15 +122,33 @@ def _trial(args):
     return rho.ravel()
 
 
+def _compose(name: str) -> np.ndarray:
+    """The trials of one test on compose-api: ``trial_rho`` computes exactly what :func:`_trial` does.
+    Resumable: ``runs/compose/<test>/`` keeps the manifest and each block's results."""
+    from viva_pde_particle.compose_client import EnsembleRun, block_size
+
+    params = {"test": name, "dtau": TESTS[name].dtau}  # Test 5 runs at Δτ = 1e-4, not its paper value
+    run = EnsembleRun(RUNS / "compose" / name, "viva_pde_particle.benchmarks.fokker_planck:trial_rho", params,
+                      TRIALS[name], block_size(SECONDS_PER_TRIAL[name]),
+                      log=lambda m: print(f"[{STUDY_SLUG}] {name}: {m}", flush=True))
+    seeds, values = run.run()
+    assert seeds == list(range(1, TRIALS[name] + 1))
+    return np.array(values)
+
+
 def cosim() -> None:
     RUNS.mkdir(parents=True, exist_ok=True)
     only = os.environ.get("C3_TESTS")  # e.g. "test4,test5" to (re)run some tests only
     for name in TESTS if not only else only.split(","):
         t0 = time.time()
-        with ProcessPoolExecutor(max_workers=WORKERS, mp_context=mp.get_context("spawn")) as pool:
-            rho = np.stack(list(pool.map(_trial, [(name, s) for s in range(1, TRIALS[name] + 1)], chunksize=25)))
+        if BACKEND == "compose":
+            rho = _compose(name)
+        else:
+            with ProcessPoolExecutor(max_workers=WORKERS, mp_context=mp.get_context("spawn")) as pool:
+                rho = np.stack(list(pool.map(_trial, [(name, s) for s in range(1, TRIALS[name] + 1)],
+                                             chunksize=25)))
         np.save(RUNS / f"cosim_{name}.npy", rho)
-        print(f"[{STUDY_SLUG}] cosim {name}: {len(rho)} trials in {time.time() - t0:.0f}s", flush=True)
+        print(f"[{STUDY_SLUG}] cosim {name} ({BACKEND}): {len(rho)} trials in {time.time() - t0:.0f}s", flush=True)
 
 
 def native() -> None:
