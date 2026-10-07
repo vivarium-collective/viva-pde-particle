@@ -181,3 +181,26 @@ def test_http_client_against_a_stub_server(tmp_path):
         assert collect([tmp_path / "r.pber"]) == ([1], [[1.0]])
     finally:
         server.shutdown()
+
+
+def test_network_errors_are_retried_then_raised(tmp_path):
+    class Flaky(FakeCompose):
+        down = 2
+
+        def status(self, sim_id):
+            if self.down:
+                self.down -= 1
+                raise TimeoutError("timed out")
+            return super().status(sim_id)
+
+    seeds, _ = _run(tmp_path, Flaky(tmp_path)).run(poll_s=0, sleep=lambda s: None)
+    assert seeds == list(range(1, 11))
+
+    class Down(FakeCompose):
+        def status(self, sim_id):
+            raise OSError("unreachable")
+
+    now = iter(range(0, 10_000, 100))
+    run = _run(tmp_path / "down", Down(tmp_path), clock=lambda: next(now), max_outage_s=500)
+    with pytest.raises(OSError):
+        run.run(poll_s=0, sleep=lambda s: None)

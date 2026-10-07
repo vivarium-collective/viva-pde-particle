@@ -118,12 +118,13 @@ class EnsembleRun:
     def __init__(self, directory, trial: str | None = None, params: dict | None = None, seeds: int | None = None,
                  block: int | None = None, workers: int = 0, client: ComposeClient | None = None,
                  max_attempts: int = 3, max_in_flight: int = 40, submit_timeout_s: float = 1800.0, log=print,
-                 clock=time.time):
+                 clock=time.time, max_outage_s: float = 3600.0):
         self.dir = Path(directory)
         self.client = client or ComposeClient()
         self.max_attempts = max_attempts
         self.max_in_flight = max_in_flight
         self.submit_timeout_s = submit_timeout_s
+        self.max_outage_s = max_outage_s
         self.log = log
         self.clock = clock
         manifest = self.dir / "manifest.json"
@@ -243,10 +244,21 @@ class EnsembleRun:
 
     def run(self, poll_s: float = 30.0, sleep=time.sleep) -> tuple[list[int], list[list[float]]]:
         """Submit, poll and resubmit until every block finished; the seeds and values (see :meth:`collect`)."""
-        last = None
+        last, outage = None, None
         while True:
-            self.submit()
-            self.poll()
+            try:
+                self.submit()
+                self.poll()
+            except OSError as e:  # urllib's URLError and HTTPError, socket timeouts: the service or the network
+                outage = outage if outage is not None else self.clock()
+                if self.clock() - outage > self.max_outage_s:
+                    raise
+                self.log(f"compose-api unreachable ({e}); retrying in {poll_s:.0f} s")
+                sleep(poll_s)
+                continue
+            if outage is not None:
+                self.log(f"compose-api reachable again after {self.clock() - outage:.0f} s")
+                outage = None
             c = self.counts()
             if c != last:
                 self.log(f"blocks: {c}")
