@@ -1137,16 +1137,16 @@ pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "VCell\u0027s SBM
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-07; libvcell and pyvcell built from their PR branches):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-08; released stack: vcell-fvsolver 0.11.1, libvcell 0.0.19, pyvcell 0.4.2):</p>
 <ul>
 <li><strong>The model round-trips exactly</strong> through SBML Spatial, including the representations and
 all rate constants.</li>
 <li><strong>Each solver reproduces itself from the SBML, seed for seed:</strong> co-sim and native runs from
 the SBML are bit-identical to the runs from the original model.</li>
-<li><strong>Across solvers,</strong> the released vcell-fvsolver still over-creates at boundary nodes
-(virtualcell/vcell-fvsolver#24): native A ends at 2.3× the co-sim's (|z| 135). With the fixes
-of vcell-fvsolver#32 and #34 built locally, native and co-sim agree (max |z| 1.45 for A,
-1.14 for B) and native conserves A + B to +0.12%.</li>
+<li><strong>Across solvers (rerun 2026-10-08 on the released vcell-fvsolver 0.11.1, which carries
+#32-#34):</strong> native and co-sim agree (max |z| 1.45 for A, 1.14 for B; native A ends at 3827 vs
+3845) and native conserves A + B to +0.12%. On 0.10.7, native over-created at boundary nodes
+(virtualcell/vcell-fvsolver#24): A ended at 2.3× the co-sim's (|z| 135) and A + B grew 76%.</li>
 </ul>
 </div>
     </div>
@@ -1191,7 +1191,7 @@ of vcell-fvsolver#32 and #34 built locally, native and co-sim agree (max |z| 1.4
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "5d770d27f85758edfaa41cf79cc99c09a4a83d64", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/5d770d27f85758edfaa41cf79cc99c09a4a83d64", "branch": "main", "lockfile": "uv.lock@38cc458d77c3", "generated_at": "2026-10-08 05:04 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "3b609148e4ec3cf0a88fcfd510eccae4176bb929", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/3b609148e4ec3cf0a88fcfd510eccae4176bb929", "branch": "main", "lockfile": "uv.lock@4b4c6d56a286", "generated_at": "2026-10-08 06:39 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
