@@ -1123,7 +1123,13 @@ species are particles. No community convention exists:
 
 ## Phase 6 results (2026-10-07): the hybrid in SBML Spatial, both solvers
 
-**Upstream PRs:**
+**Upstream PRs (all merged and released 2026-10-08):**
+- **Released:**
+  - vcell#2175, merged as `340d6ee`;
+  - libvcell#26, merged with its submodule at that commit, released as **libvcell 0.0.19** (PyPI, all 7 platform wheels);
+  - pyvcell#63, merged and released as **pyvcell 0.4.2**, which requires `libvcell>=0.0.19`.
+- **Here:** the `reference` extra requires `libvcell>=0.0.19`, and `pixi.lock` pins the default environment to
+  pyvcell 0.4.2. `tests/test_sbml.py` now runs: 3 passed, none skipped.
 - **virtualcell/vcell#2175:**
   - SBML Spatial export and import of spatial stochastic applications, with each species' `vcell:representation`.
   - The import converts spatial stochastic models to VCell's default units.
@@ -1139,7 +1145,7 @@ species are particles. No community convention exists:
   geometry, region)`.
   - Mass action is recovered exactly from VCell's general-kinetics rate. Rates that aren't mass action are rejected.
 - `run_native(..., sbml=...)` runs the model VCell imports from the SBML. `tests/test_sbml.py` skips without SBML
-  hybrid support.
+  hybrid support (libvcell < 0.0.19 or pyvcell < 0.4.2).
 
 **Finding: VCell's spatial stochastic math assumes its default units.**
 - A hybrid imported in VCell's SBML units (dm, µmol, l) gave Smoldyn walls at 1e-4 (dm) and `difc 1e-10`.
@@ -1154,7 +1160,9 @@ species are particles. No community convention exists:
   to +0.12%.
 
 **Next:**
-- Release the three upstream PRs; then CI runs `test_sbml.py`.
+- ~~Release the three upstream PRs; then CI runs `test_sbml.py`.~~ Done 2026-10-08 (libvcell 0.0.19, pyvcell 0.4.2).
+- Rerun B6 against a vcell-fvsolver release that includes #32 and #34. The native and co-sim results should then
+  agree without a locally built solver.
 - Membrane species and several compartments in `from_sbml`.
 - SED-ML for the hybrid simulation settings.
 

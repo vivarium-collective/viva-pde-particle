@@ -28,8 +28,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
 # VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. pyvcell needs Python >=3.12;
-# the marker keeps the 3.11 resolution (workspace-ci, publish workflows) satisfiable.
-reference = ["pyvcell[solver,native]>=0.3.3; python_version >= '3.12'"]
+# the marker keeps the 3.11 resolution (workspace-ci, publish workflows) satisfiable. The SBML hybrid path needs
+# pyvcell 0.4.2 (load_sbml_str unit_system=) and libvcell 0.0.19 (vcell#2175). pyvcell's floor stays at 0.3.3
+# because its source tree carries that placeholder version (releases set it from the tag), and the `dev`
+# environment installs ../pyvcell editable; pixi.lock pins the default environment to 0.4.2.
+reference = ["pyvcell[solver,native]>=0.3.3; python_version >= '3.12'", "libvcell>=0.0.19; python_version >= '3.12'"]
 
 [build-system]
 requires = ["hatchling"]
