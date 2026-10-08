@@ -4,11 +4,13 @@ version = "0.0.0"
 description = "PDE/particle hybrid co-simulation (finite volume / FEniCSx + Smoldyn) with process-bigraph, benchmarked against vcell-fvsolver"
 requires-python = ">=3.11"
 dependencies = [
+    # Pinned to process-bigraph main (e5325c1, unreleased past 1.8.5): it carries #229 (per-process event files,
+    # which compose-api's job script reads) and #230 (groundness check). Return to a version floor at the next release.
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
     # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server
     # deps. Below this, composite type-registration and agent-embedded emits
     # break — the root cause behind the map[...] type errors seen in the field.
-    "process-bigraph>=1.8.5",
+    "process-bigraph @ git+https://github.com/vivarium-collective/process-bigraph.git@e5325c13185b6308b41cbf65eb6d61751e3219ee",
     "bigraph-schema",
     "bigraph-viz>=2.0.3",
     "pyyaml>=6.0",

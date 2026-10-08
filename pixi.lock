@@ -407,6 +407,7 @@ environments:
       - pypi: .
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
+      - pypi: git+https://github.com/vivarium-collective/process-bigraph.git?rev=e5325c13185b6308b41cbf65eb6d61751e3219ee#e5325c13185b6308b41cbf65eb6d61751e3219ee
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -418,6 +419,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0a/20/e022dbc6b4753a9bc9fc5fb28a27163430c1731b9913997f6544c1b2518c/lxml-6.1.3-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/ec/5386cd413066f6a5b1500a3599c9bd30c5e247b96a3f1f032b03325ae5a5/bigraph_schema-1.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/83/d2fbd2e4e3afb1167daa825187d196f313cbaa1a4768f311fb041bb0e3d2/regex-2026.9.29-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -474,9 +476,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ea/11/e8953226d658ae67e3e002abaa60a101c693f9c57d74974001729afab5ef/numexpr-2.14.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
@@ -828,6 +828,7 @@ environments:
       - pypi: .
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
+      - pypi: git+https://github.com/vivarium-collective/process-bigraph.git?rev=e5325c13185b6308b41cbf65eb6d61751e3219ee#e5325c13185b6308b41cbf65eb6d61751e3219ee
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -838,6 +839,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/ec/5386cd413066f6a5b1500a3599c9bd30c5e247b96a3f1f032b03325ae5a5/bigraph_schema-1.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/8f/48907c7c707b61a8e5018c32e1a3f70623209bfb59020a2f6196159d3aa7/pandas-3.0.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -895,9 +897,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ed/5c/9780d48c4d5effcf55fc7ab7c5651ed82b43250ac8410cce4ef1e97583ed/numexpr-2.14.2-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
@@ -1306,6 +1306,7 @@ environments:
       - pypi: ../pyvcell
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
+      - pypi: git+https://github.com/vivarium-collective/process-bigraph.git?rev=e5325c13185b6308b41cbf65eb6d61751e3219ee#e5325c13185b6308b41cbf65eb6d61751e3219ee
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -1317,6 +1318,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0a/20/e022dbc6b4753a9bc9fc5fb28a27163430c1731b9913997f6544c1b2518c/lxml-6.1.3-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/ec/5386cd413066f6a5b1500a3599c9bd30c5e247b96a3f1f032b03325ae5a5/bigraph_schema-1.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/83/d2fbd2e4e3afb1167daa825187d196f313cbaa1a4768f311fb041bb0e3d2/regex-2026.9.29-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -1372,9 +1374,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ea/11/e8953226d658ae67e3e002abaa60a101c693f9c57d74974001729afab5ef/numexpr-2.14.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
@@ -1727,6 +1727,7 @@ environments:
       - pypi: ../pyvcell
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
+      - pypi: git+https://github.com/vivarium-collective/process-bigraph.git?rev=e5325c13185b6308b41cbf65eb6d61751e3219ee#e5325c13185b6308b41cbf65eb6d61751e3219ee
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -1737,6 +1738,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/ec/5386cd413066f6a5b1500a3599c9bd30c5e247b96a3f1f032b03325ae5a5/bigraph_schema-1.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/8f/48907c7c707b61a8e5018c32e1a3f70623209bfb59020a2f6196159d3aa7/pandas-3.0.6-cp312-cp312-macosx_11_0_arm64.whl
@@ -1793,9 +1795,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ed/5c/9780d48c4d5effcf55fc7ab7c5651ed82b43250ac8410cce4ef1e97583ed/numexpr-2.14.2-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
@@ -12918,7 +12918,7 @@ packages:
 - pypi: .
   name: viva-pde-particle
   requires_dist:
-  - process-bigraph>=1.8.5
+  - process-bigraph @ git+https://github.com/vivarium-collective/process-bigraph.git@e5325c13185b6308b41cbf65eb6d61751e3219ee
   - bigraph-schema
   - bigraph-viz>=2.0.3
   - pyyaml>=6.0
@@ -12964,7 +12964,7 @@ packages:
   - antimony>=3.1.3 ; extra == 'convert'
   - python-libsbml>=5.20.4,<6 ; extra == 'convert'
   - sympy>=1.13.1,<2 ; extra == 'convert'
-  - libvcell>=0.0.17 ; extra == 'native'
+  - libvcell>=0.0.19 ; extra == 'native'
   - pyvcell-mbsolver>=1.0.3,<2 ; extra == 'mb'
   - pyvcell[native] ; extra == 'mb'
   - pyvcell[solver,viz,remote,io,convert,native,mb] ; extra == 'all'
@@ -12979,6 +12979,25 @@ packages:
   requires_dist:
   - bigraph-schema
   - pydantic>=2
+  requires_python: '>=3.11'
+- pypi: git+https://github.com/vivarium-collective/process-bigraph.git?rev=e5325c13185b6308b41cbf65eb6d61751e3219ee#e5325c13185b6308b41cbf65eb6d61751e3219ee
+  name: process-bigraph
+  version: 1.8.5
+  requires_dist:
+  - bigraph-schema>=1.7.0
+  - requests>=2.31
+  - matplotlib
+  - pint>=0.24.4
+  - scipy>=1.8
+  - pandas
+  - sympy
+  - ray>=2.10 ; extra == 'ray'
+  - fastapi>=0.116.1 ; extra == 'server-rest'
+  - fastapi-utils>=0.8.0 ; extra == 'server-rest'
+  - uvicorn>=0.35.0 ; extra == 'server-rest'
+  - fire ; extra == 'server-rest'
+  - typing-inspect>=0.9.0 ; extra == 'server-rest'
+  - boto3>=1.28 ; extra == 'ec2-ssm'
   requires_python: '>=3.11'
 - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
   name: viva-basic-processes
@@ -13121,6 +13140,17 @@ packages:
   - idna>=2.8
   - typing-extensions>=4.16.0 ; python_full_version < '3.15'
   - trio>=0.32.0 ; extra == 'trio'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/12/ec/5386cd413066f6a5b1500a3599c9bd30c5e247b96a3f1f032b03325ae5a5/bigraph_schema-1.7.0-py3-none-any.whl
+  name: bigraph-schema
+  version: 1.7.0
+  sha256: 406a87bdd5d4f259b1082c820a45930643cda72969cc89719408a404efbae40d
+  requires_dist:
+  - numpy
+  - pandas
+  - parsimonious
+  - pint
+  - plum-dispatch
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
   name: jmespath
@@ -14461,42 +14491,11 @@ packages:
   requires_dist:
   - regex>=2022.3.15
   - pytest ; extra == 'testing'
-- pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
-  name: process-bigraph
-  version: 1.8.5
-  sha256: 16802ed4b4930adbfb437cd1e7f78a316f5bd4e08fecc792de38032fc1688aa9
-  requires_dist:
-  - bigraph-schema>=1.6.0
-  - requests>=2.31
-  - matplotlib
-  - pint>=0.24.4
-  - scipy>=1.8
-  - pandas
-  - sympy
-  - ray>=2.10 ; extra == 'ray'
-  - fastapi>=0.116.1 ; extra == 'server-rest'
-  - fastapi-utils>=0.8.0 ; extra == 'server-rest'
-  - uvicorn>=0.35.0 ; extra == 'server-rest'
-  - fire ; extra == 'server-rest'
-  - typing-inspect>=0.9.0 ; extra == 'server-rest'
-  - boto3>=1.28 ; extra == 'ec2-ssm'
-  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
   name: tzdata
   version: '2026.4'
   sha256: c2169a8b0a7a5e9674da5a135ccdfb2b3e671b333ed9fed17b41f73c34476e81
   requires_python: '>=2'
-- pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
-  name: bigraph-schema
-  version: 1.6.0
-  sha256: c6c855d0bbf851f949b15ddb24b608f7e1b1ef1f93af62d7eaf364c8a8ef6938
-  requires_dist:
-  - numpy
-  - pandas
-  - parsimonious
-  - pint
-  - plum-dispatch
-  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
   name: flexparser
   version: '0.4'

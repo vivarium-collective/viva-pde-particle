@@ -59,7 +59,8 @@ imageio = ">=2.38.0,<3"
 
 [pypi-dependencies]
 viva-pde-particle = { path = ".", editable = true, extras = ["dev", "reference"] }
-process-bigraph = ">=1.8.5"
+# process-bigraph main (unreleased past 1.8.5); keep in step with pyproject.toml.
+process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", rev = "e5325c13185b6308b41cbf65eb6d61751e3219ee" }
 # 0.11.1: the hybrid fixes for zeroth-order creation, second solves and histogram binning (vcell-fvsolver#32-#34).
 # Python >=3.12 only, so it is pinned here rather than in pyproject (CI resolves that on 3.11).
 pyvcell-fvsolver = ">=0.11.1"
