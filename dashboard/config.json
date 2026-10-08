@@ -2,6 +2,6 @@
   "mode": "snapshot",
   "smsApiBase": "",
   "repo": "https://github.com/vivarium-collective/viva-pde-particle",
-  "commit": "81966d88e816b70e94b7b9a0768c9643f457134d",
+  "commit": "5d770d27f85758edfaa41cf79cc99c09a4a83d64",
   "generated_from_ref": "main"
 }

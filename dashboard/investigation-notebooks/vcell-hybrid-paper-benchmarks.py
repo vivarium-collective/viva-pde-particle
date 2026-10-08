@@ -385,6 +385,11 @@ print("No recorded runs for this study; nothing to reproduce.")
 # fokker-planck
 _save_viz('single-channel-fokker-planck', 'fokker-planck', _render_one('', {}, RUNS_DB, STUDY_YAML))
 
+# **dtau**
+
+# dtau
+_save_viz('single-channel-fokker-planck', 'dtau', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
 # ### Acceptance criteria
 #
 # _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
@@ -395,3 +400,4 @@ _save_viz('single-channel-fokker-planck', 'fokker-planck', _render_one('', {}, R
 # | test3-native-matches-fokker-planck | kind=derived_scalar field=c3_test3_native_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above.'} |
 # | test4-cosim-matches-fokker-planck | kind=derived_scalar field=c3_test4_i0_cosim_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above. The paper reports a relative L2 of 1.9% (i = 0) and 3.3% (i = 1).'} |
 # | test5-cosim-matches-fokker-planck | kind=derived_scalar field=c3_test5_i0_cosim_chi2 | op range low 0.0 high 2.0 provenance {'kind': 'theory', 'note': 'As above. The paper reports 1.3–1.5%.'} |
+# | test3-bias-is-first-order-in-dtau | kind=derived_scalar field=c3_dtau_mean_bias_offset | op range low -0.001 high 0.001 provenance {'kind': 'theory', 'note': 'A first-order scheme has no Δτ-independent bias. The bound is about 3.7 SE (SE ≈ 0.027%).'} |
