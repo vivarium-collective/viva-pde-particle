@@ -34,6 +34,12 @@ Stages (each saves to ``runs/``; ``all`` runs them in order):
     C3_BACKEND=compose pixi run python sims/run.py cosim   # the same trials on compose-api (SLURM on mantis)
     pixi run -e dev python sims/run.py native     # Test 3 on native VCell
     pixi run python sims/run.py report            # results/metrics.json + viz/fokker_planck.html
+    pixi run python sims/run.py dtau              # the Test 3 Δτ check (C3_DTAUS, C3_BACKEND as above)
+
+**Δτ check (Test 3):** the co-sim and native both differ from Eq 4's exact steady state by ~0.6%. The
+``dtau`` stage reruns the co-sim at several Δτ and samples ρ̄ at τ = 10, 15, …, 30. Those samples are
+stationary (relaxation times ~1) and nearly independent, giving five per trial. ``report`` then gives the
+signed bias of the mean and SD against the exact density at each Δτ.
 """
 from __future__ import annotations
 
@@ -65,6 +71,9 @@ BACKEND = os.environ.get("C3_BACKEND", "local")  # "compose": run the trials on 
 # Seconds per trial on one core: measured on an M3 Max (8.5, 1.4, 1.5) and padded 2× for mantis.
 # compose_client.block_size turns them into blocks that fill half of a 30-minute, 2-CPU job.
 SECONDS_PER_TRIAL = {"test3": 17.0, "test4": 3.0, "test5": 3.0}
+DTAUS = [float(x) for x in os.environ.get("C3_DTAUS", "0.008,0.004,0.002,0.001").split(",")]
+DTAU_TRIALS = int(os.environ.get("C3_DTAU_TRIALS", 4000))
+DTAU_TIMES = [10.0, 15.0, 20.0, 25.0, 30.0]
 
 
 def edges_for(name: str) -> list[np.ndarray]:
@@ -151,6 +160,35 @@ def cosim() -> None:
         print(f"[{STUDY_SLUG}] cosim {name} ({BACKEND}): {len(rho)} trials in {time.time() - t0:.0f}s", flush=True)
 
 
+def _dtau_trial(args):
+    from viva_pde_particle.benchmarks.fokker_planck import trial_rho
+
+    dtau, seed = args
+    return trial_rho(seed, "test3", dtau=dtau, sample_times=DTAU_TIMES)
+
+
+def dtau() -> None:
+    """Test 3 co-sim at each Δτ in ``C3_DTAUS``: ρ̄ at ``DTAU_TIMES``, one row per trial."""
+    RUNS.mkdir(parents=True, exist_ok=True)
+    for dt in DTAUS:
+        t0 = time.time()
+        if BACKEND == "compose":
+            from viva_pde_particle.compose_client import EnsembleRun, block_size
+
+            run = EnsembleRun(RUNS / "compose" / f"dtau_{dt:g}", "viva_pde_particle.benchmarks.fokker_planck:trial_rho",
+                              {"test": "test3", "dtau": dt, "sample_times": DTAU_TIMES}, DTAU_TRIALS,
+                              block_size(SECONDS_PER_TRIAL["test3"] * 0.002 / dt),
+                              log=lambda m: print(f"[{STUDY_SLUG}] dtau {dt:g}: {m}", flush=True))
+            seeds, values = run.run()
+            assert seeds == list(range(1, DTAU_TRIALS + 1))
+            rho = np.array(values)
+        else:
+            with ProcessPoolExecutor(max_workers=WORKERS, mp_context=mp.get_context("spawn")) as pool:
+                rho = np.array(list(pool.map(_dtau_trial, [(dt, s) for s in range(1, DTAU_TRIALS + 1)], chunksize=10)))
+        np.save(RUNS / f"dtau_test3_{dt:g}.npy", rho)
+        print(f"[{STUDY_SLUG}] dtau {dt:g} ({BACKEND}): {len(rho)} trials in {time.time() - t0:.0f}s", flush=True)
+
+
 def native() -> None:
     from viva_pde_particle.benchmarks.fokker_planck import channel_model
     from viva_pde_particle.reference.vcell_native import hybrid_support_available, run_native_ensemble
@@ -184,6 +222,53 @@ def compare(samples: np.ndarray, edges: np.ndarray, ref: np.ndarray) -> dict:
     return {"density": dens, "rel_l2": float(np.sqrt(np.mean((dens - ref) ** 2)) / ref.max()),
             "abs_l2": float(np.sqrt(((dens - ref) ** 2 * w).sum())), "chi2": chi2,
             "noise_rel_l2": float(np.sqrt(np.mean(var)) / ref.max())}
+
+
+def _dtau_metrics(edges: np.ndarray, steady: np.ndarray, metrics: dict[str, float]) -> list[dict]:
+    """Test 3 at each Δτ run by ``dtau``: the signed bias of ρ̄'s mean and SD against Eq 4's exact steady
+    state, and the histogram metrics against it.
+
+    - Standard errors are bootstrapped over trials. ρ̄'s density is skewed (∝ e^ρ for α = β = 1), so the
+      normal-theory SE of the SD would be 2–4× too small.
+    - The five samples of a trial are nearly independent (lag-5 correlation ≈ 0.01).
+    - The mean bias is fitted as offset + slope·Δτ (weighted least squares)."""
+    from viva_pde_particle.benchmarks.fokker_planck import fast_steady_state
+
+    t = TESTS["test3"]
+    fine = np.linspace(0.0, t.a, 400001)[1:-1]
+    p = fast_steady_state(fine, t.a, t.alpha, t.beta)
+    p /= np.trapezoid(p, fine)
+    mean = float(np.trapezoid(fine * p, fine))
+    sd = float(np.sqrt(np.trapezoid((fine - mean) ** 2 * p, fine)))
+    rng = np.random.default_rng(0)
+    rows = []
+    for path in sorted(RUNS.glob("dtau_test3_*.npy"), key=lambda f: float(f.stem.rsplit("_", 1)[1])):
+        dt = float(path.stem.rsplit("_", 1)[1])
+        trials = np.load(path)
+        x = trials.ravel()
+        boot = [trials[rng.integers(0, len(trials), len(trials))].ravel() for _ in range(1000)]
+        c = compare(x, edges, steady)
+        row = {"dtau": dt, "n": len(x), "density": c["density"],
+               "mean_bias": (x.mean() - mean) / mean, "mean_bias_se": float(np.std([b.mean() for b in boot])) / mean,
+               "sd_bias": (x.std() - sd) / sd, "sd_bias_se": float(np.std([b.std() for b in boot])) / sd,
+               "rel_l2": c["rel_l2"], "chi2": c["chi2"]}
+        rows.append(row)
+        tag = f"{dt:g}".replace(".", "p")
+        for k in ("mean_bias", "mean_bias_se", "sd_bias", "sd_bias_se", "rel_l2", "chi2"):
+            metrics[f"c3_dtau_{tag}_{k}"] = float(row[k])
+    if len(rows) >= 3:
+        d = np.array([r["dtau"] for r in rows])
+        b = np.array([r["mean_bias"] for r in rows])
+        w = 1 / np.array([r["mean_bias_se"] for r in rows]) ** 2
+        a = np.stack([np.ones_like(d), d], axis=1)
+        cov = np.linalg.inv(a.T @ (w[:, None] * a))
+        offset, slope = cov @ a.T @ (w * b)
+        metrics["c3_dtau_mean_bias_offset"] = float(offset)
+        metrics["c3_dtau_mean_bias_offset_se"] = float(np.sqrt(cov[0, 0]))
+        metrics["c3_dtau_mean_bias_slope"] = float(slope)
+        metrics["c3_dtau_mean_bias_slope_se"] = float(np.sqrt(cov[1, 1]))
+        metrics["c3_dtau_mean_bias_fit_chi2"] = float((w * (b - offset - slope * d) ** 2).sum() / (len(d) - 2))
+    return rows
 
 
 def report() -> None:
@@ -220,6 +305,7 @@ def report() -> None:
                     metrics[f"c3_{name}_i{i}_cosim_{k}"] = c[k]
                 metrics[f"c3_{name}_i{i}_extrapolation_shift"] = float(np.sqrt(np.mean((finest - r) ** 2)) / r.max())
                 panels.append((f"{name.title().replace('t', 'T', 1)}: ρ(x{i}) at τ = 1", e, r, {"cosim": c["density"]}))
+        dtau_rows = _dtau_metrics(e3, ref["test3_steady"], metrics)
         write_metrics(STUDY_DIR / "results" / "metrics.json", metrics)
 
         import plotly.graph_objects as go
@@ -240,6 +326,30 @@ def report() -> None:
         fig.update_layout(title="C3: single channel vs direct Fokker–Planck solutions (Schaff et al. 2016, Tests 3–5)",
                           height=720)
         (STUDY_DIR / "viz" / "fokker_planck.html").write_text(fig.to_html(include_plotlyjs="cdn", full_html=True))
+        if dtau_rows:
+            fig = make_subplots(rows=1, cols=2, subplot_titles=["Bias of ρ̄ against Eq 4's steady state",
+                                                                "Test 3 densities by Δτ"])
+            d = [r["dtau"] for r in dtau_rows]
+            for k, name, color in (("mean_bias", "mean", "#1f77b4"), ("sd_bias", "SD", "#ff7f0e")):
+                fig.add_trace(go.Scatter(x=d, y=[100 * r[k] for r in dtau_rows], name=f"{name} (co-sim)",
+                                         mode="markers+lines", marker=dict(color=color),
+                                         error_y=dict(array=[200 * r[f"{k}_se"] for r in dtau_rows])), row=1, col=1)
+            if "c3_dtau_mean_bias_slope" in metrics:
+                xs = np.array([0.0, max(d)])
+                ys = 100 * (metrics["c3_dtau_mean_bias_offset"] + metrics["c3_dtau_mean_bias_slope"] * xs)
+                fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(dash="dot", color="#1f77b4"),
+                                         name="mean: offset + slope·Δτ"), row=1, col=1)
+            fig.update_xaxes(title_text="Δτ", rangemode="tozero", row=1, col=1)
+            fig.update_yaxes(title_text="bias (%), ±2 SE", row=1, col=1)
+            mid = 0.5 * (e3[1:] + e3[:-1])
+            fig.add_trace(go.Scatter(x=mid, y=ref["test3_steady"], mode="lines", line=dict(color="black"),
+                                     name="Eq 4 steady state"), row=1, col=2)
+            for r in dtau_rows:
+                fig.add_trace(go.Scatter(x=mid, y=r["density"], mode="markers", marker=dict(size=5),
+                                         name=f"Δτ = {r['dtau']:g}"), row=1, col=2)
+            fig.update_xaxes(title_text="ρ̄", range=[18, 24], row=1, col=2)
+            fig.update_layout(title="C3 Test 3: the hybrid's steady state against Δτ", height=480)
+            (STUDY_DIR / "viz" / "dtau.html").write_text(fig.to_html(include_plotlyjs="cdn", full_html=True))
     for k, v in metrics.items():
         print(f"[{STUDY_SLUG}] {k} = {v:.4g}")
 
@@ -247,6 +357,6 @@ def report() -> None:
 if __name__ == "__main__":
     stage = sys.argv[1] if len(sys.argv) > 1 else "all"
     stages = {"reference": [reference], "cosim": [cosim], "native": [native], "report": [report],
-              "all": [reference, cosim, report]}[stage]
+              "dtau": [dtau], "all": [reference, cosim, report]}[stage]
     for f in stages:
         f()

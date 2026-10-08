@@ -122,16 +122,40 @@ behavior_tests:
       note: As above. The paper reports 1.3–1.5%.
   requires_simulation: single-channel
 
+- name: test3-bias-is-first-order-in-dtau
+  classification: secondary
+  description: |
+    Offset of the Test 3 mean-bias fit (offset + slope·Δτ over Δτ = 0.008, 0.004, 0.002, 0.001). Zero means the
+    gap from Eq 4's steady state is a time-discretization error that vanishes as Δτ → 0.
+  measure:
+    kind: derived_scalar
+    field: c3_dtau_mean_bias_offset
+  pass_if:
+    op: range
+    low: -0.001
+    high: 0.001
+    provenance:
+      kind: theory
+      note: A first-order scheme has no Δτ-independent bias. The bound is about 3.7 SE (SE ≈ 0.027%).
+  requires_simulation: single-channel
+
 canonical_runs:
 - name: default
   script: workspace/studies/single-channel-fokker-planck/sims/run.py
   args: []
   label: "Tests 3–5: references, co-sim ensembles (10,000 / 12,500 / 12,500), native Test 3 (dev env), report"
   default: true
+- name: dtau
+  script: workspace/studies/single-channel-fokker-planck/sims/run.py
+  args: [dtau]
+  label: "Test 3 Δτ check: 4,000 trials × 5 samples at Δτ = 0.008, 0.004, 0.002, 0.001 (C3_BACKEND=compose works)"
 
 visualizations:
 - name: fokker-planck
   chart: viz/fokker_planck.html
+  render: "python sims/run.py report"
+- name: dtau
+  chart: viz/dtau.html
   render: "python sims/run.py report"
 
 conclusion: |
@@ -154,5 +178,23 @@ conclusion: |
     - Both hybrid solvers differ from it by the same 0.58%, about twice the sampling noise. Native VCell's
       reduced χ² (1.82) sits just under the threshold, and the co-sim's (2.48) just over it.
     - Since the two solvers share the same small bias, it belongs to the spatial hybrid at Δτ = 0.002, not to the
-      co-simulation. Candidates are the one-step coupling lag, and the channel reading ρ at its own node rather
-      than ρ̄. The Δτ check follows.
+      co-simulation.
+  - **Δτ check (2026-10-08; `dtau` stage, viz/dtau.html):** the Test 3 gap is a first-order time-discretization
+    error.
+    - 4,000 co-sim trials per Δτ, each sampled at τ = 10, 15, …, 30 (stationary; lag-5 correlation ≈ 0.01).
+      SEs are bootstrapped over trials.
+
+      | Δτ | mean bias | SD bias | reduced χ² |
+      |---|---|---|---|
+      | 0.008 | −0.45% ± 0.03% | +4.4% ± 1.0% | 28.0 |
+      | 0.004 | −0.25% ± 0.03% | +2.1% ± 1.0% | 10.6 |
+      | 0.002 | −0.12% ± 0.03% | +1.9% ± 1.1% | 2.28 |
+      | 0.001 | −0.12% ± 0.03% | +3.6% ± 1.9% | 2.74 |
+
+    - **Mean:** the fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 (−0.10% at Δτ = 0.002) and an offset of
+      −0.04% ± 0.03%, consistent with zero (reduced χ² 0.71). Native VCell at Δτ = 0.002 (−0.10% ± 0.04%)
+      matches the slope's prediction.
+    - **SD:** only Δτ = 0.008 is clearly off. The others are within about 2σ. The skewed density (∝ e^ρ) makes
+      the SD's sampling error 2–4× the normal-theory value.
+    - The reduced χ² stays above 2 down to Δτ = 0.001. With 20,000 samples, the histogram resolves a 0.1% shift
+      of a density that is steep near ρ = a.
