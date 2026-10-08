@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Study: handoff-units-and-binning</title>
+<title>Study: sbml-spatial-hybrid</title>
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/style.css">
 <link rel="stylesheet" href="/viva-pde-particle/dashboard/assets/progress-track.css">
 <!-- Inherit the workbench light/dark theme (this page loads in an iframe;
@@ -17,7 +17,7 @@
 <header class="study-header">
   <div style="display:flex; align-items:baseline; gap:12px; justify-content:space-between;">
   <h1 class="study-title">
-    <span class="study-name" id="study-name" data-slug="handoff-units-and-binning" title="handoff-units-and-binning">Each side alone, and the particle-to-grid handoff</span>
+    <span class="study-name" id="study-name" data-slug="sbml-spatial-hybrid" title="sbml-spatial-hybrid">The hybrid model described in SBML Spatial, run on both solvers</span>
     
     <span class="study-kind-tag study-kind-computational" data-study-kind="computational" title="Study kind">computational</span>
     
@@ -39,7 +39,7 @@
     
 
     
-    <div id="readiness-panel" data-slug="handoff-units-and-binning"></div>
+    <div id="readiness-panel" data-slug="sbml-spatial-hybrid"></div>
 
     
     
@@ -151,9 +151,9 @@
 
 
 
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Before coupling anything: does each half of the co-simulation behave correctly on its own,
-and does the particle-to-grid handoff (nearest-node binning, boundary element volumes,
-counts to µM) follow vcell-fvsolver&#39;s conventions?
+<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> Can a PDE/particle hybrid be described in SBML Spatial, with each species&#39; representation
+(continuous or particle) as a VCell annotation, and run unchanged from that SBML on both
+the native VCell solver and the co-simulation?
 </p>
 
 <nav class="study-tabs" aria-label="Study sections">
@@ -616,29 +616,26 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">Before coupling anything: does each half of the co-simulation behave correctly on its own,
-and does the particle-to-grid handoff (nearest-node binning, boundary element volumes,
-counts to µM) follow vcell-fvsolver&#39;s conventions?
+      <p class="ctr-text">Can a PDE/particle hybrid be described in SBML Spatial, with each species&#39; representation
+(continuous or particle) as a VCell annotation, and run unchanged from that SBML on both
+the native VCell solver and the co-simulation?
 </p>
       
     </div>
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Test</h2>
-      <p class="ctr-text">Four checks, all on the shared CartesianGrid:
-(1) FV diffusion of cos(πx/L)cos(πy/L) (21×21, L = 10 µm, D = 1, dt = 0.01, t = 1 s)
-    against exp(-2π²Dt/L²);
-(2) 20,000 particles diffusing from the centre cell (D = 1, 4 seeds): the variance of the
-    binned positions, minus dx²/6 (the initial cell spread plus Sheppard&#39;s binning
-    correction), against 2Dt;
-(3) the histogram sum equals the molecule count at every record;
-(4) 100,000 uniform particles after 2 s of diffusion (11×11, 4 seeds): the counts per
-    node class (corner, edge, interior) match their element-volume shares.
+      <p class="ctr-text">The A3 two-way exchange (11×11×3 slab, 10×10×1 µm; A_p → B at 1 s⁻¹, B → A_p at
+0.5 s⁻¹·[B]; B₀ = 0.2 µM; dt = 0.01; 2 s; 8 seeds). `to_sbml` writes it to SBML Spatial
+(A particle, B continuous); it is then run four ways:
+- native from the original model (`to_biomodel` VCML) and native from the SBML (VCell&#39;s SBML
+  import → libvcell → vcell-fvsolver);
+- co-sim from the Python `HybridModel` and co-sim from `from_sbml`.
 </p>
       
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>particle-diffusion-baseline</code></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">Max relative error of the FV cosine mode vs the analytic decay at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Relative error of the binned per-axis variance (corrected by dx²/6) vs 2Dt at t = 1 s.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max |histogram total - molecule count| over all records.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">Max |z| over node classes of per-class counts vs element-volume share.</span></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Model</span> <code>two-way-exchange-from-sbml</code></div>
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Measures</span> <span class="ctr-meta-item">from_sbml(to_sbml(model)) equals the original HybridModel (grid, species, representations, reactions).</span><span class="ctr-dot">·</span><span class="ctr-meta-item">The co-simulation from the SBML reproduces the co-simulation from the original model seed for seed.</span><span class="ctr-dot">·</span><span class="ctr-meta-item">The native VCell run from the SBML reproduces the native run from the original VCML seed for seed.</span></div>
       </div>
       
     </div>
@@ -664,12 +661,12 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
     <h2 class="overview-label" style="margin:0">Model composition</h2>
     
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'handoff-units-and-binning', 'cosim-vs-embedded-hybrid')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'sbml-spatial-hybrid', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
   </div>
 
   
   
-  <div id="model-composite-cards" class="model-composite-cards" data-study="handoff-units-and-binning"
+  <div id="model-composite-cards" class="model-composite-cards" data-study="sbml-spatial-hybrid"
        data-study-config="">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading composite card(s)…</span></div>
   </div>
@@ -690,28 +687,28 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div class="overview-section" id="model-section">
     <h3>Runnable models <span class="muted" style="font-size:0.85em;font-weight:normal">— the composite(s) this study simulates</span></h3>
     
-    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.particle_diffusion" data-model-overrides='{"diffusion": 1.0, "dt": 0.01, "n_particles": 20000, "start": "center"}'>
+    <div class="cond-block" data-model-composite="viva_pde_particle.composites.examples.two_way_exchange" data-model-overrides='{"b0": 0.2, "dt": 0.01, "k1": 1.0, "k2": 0.5}'>
       <div class="cond-block-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <strong>particle-diffusion-baseline</strong>
+        <strong>two-way-exchange-from-sbml</strong>
         
-        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.particle_diffusion</code>
+        <code style="font-size:0.82em;color:#374151;background:#f1f5f9;padding:1px 6px;border-radius:3px">viva_pde_particle.composites.examples.two_way_exchange</code>
         <button type="button" class="action-btn" style="font-size:0.8em"
-                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.particle_diffusion')">🧬 explore &amp; run ↗</button>
+                onclick="_openCompositeLoom('viva_pde_particle.composites.examples.two_way_exchange')">🧬 explore &amp; run ↗</button>
         
       </div>
       
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
         
-        <select class="baseline-composite-input" data-baseline-name="particle-diffusion-baseline"
-                data-current="viva_pde_particle.composites.examples.particle_diffusion"
+        <select class="baseline-composite-input" data-baseline-name="two-way-exchange-from-sbml"
+                data-current="viva_pde_particle.composites.examples.two_way_exchange"
                 style="flex:1;min-width:200px;font-family:monospace;font-size:0.82em;padding:3px 6px">
-          <option value="viva_pde_particle.composites.examples.particle_diffusion" selected>viva_pde_particle.composites.examples.particle_diffusion</option>
+          <option value="viva_pde_particle.composites.examples.two_way_exchange" selected>viva_pde_particle.composites.examples.two_way_exchange</option>
           
         </select>
         <button type="button" class="action-btn baseline-composite-set" style="font-size:0.8em"
-                data-baseline-name="particle-diffusion-baseline">Set composite</button>
+                data-baseline-name="two-way-exchange-from-sbml">Set composite</button>
       </div>
-      <div class="baseline-composite-status muted" data-baseline-name="particle-diffusion-baseline" style="font-size:0.8em;margin-top:2px"></div>
+      <div class="baseline-composite-status muted" data-baseline-name="two-way-exchange-from-sbml" style="font-size:0.8em;margin-top:2px"></div>
       
       
       
@@ -760,7 +757,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
 
   <h4>Latest run preview</h4>
   <p class="muted" style="font-size:0.9em">Per-store sparkline + first/last/min/max from the most recent run's emitted trajectory. This is a downsampled PREVIEW, not the full data — use the per-store or Download-all links for the complete arrays. For a cross-engine comparison run, this shows how closely the simulators agree, model by model, instead.</p>
-  <div id="results-preview" data-study="handoff-units-and-binning">
+  <div id="results-preview" data-study="sbml-spatial-hybrid">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading results preview…</span></div>
   </div>
 
@@ -780,7 +777,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   
   <div class="overview-section" id="study-analyses-section">
     <h3>Analyses to run <span class="muted" style="font-size:0.85em;font-weight:normal">— which of the workspace's <code>ANALYSIS_REGISTRY</code> entries to compute on dispatch</span></h3>
-    <div id="study-analyses-list" data-study="handoff-units-and-binning">
+    <div id="study-analyses-list" data-study="sbml-spatial-hybrid">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading analyses…</span></div>
     </div>
     <div style="margin-top:8px">
@@ -796,9 +793,9 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
   <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
     <span class="muted" style="margin-right:auto;font-weight:600">Analysis result files</span>
     <a id="data-download-all" class="btn-mini" style="display:none"
-       href="/api/study-analysis-zip?study=handoff-units-and-binning">Download all (.zip)</a>
+       href="/api/study-analysis-zip?study=sbml-spatial-hybrid">Download all (.zip)</a>
   </div>
-  <div id="data-files" data-study="handoff-units-and-binning">
+  <div id="data-files" data-study="sbml-spatial-hybrid">
     <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading result files…</span></div>
   </div>
 </div>
@@ -819,7 +816,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     interval/buffer, output location, and emit scope — from
     <code>lib/emitters.py</code> and this study's (or the workspace's)
     <code>runtime.default_emitter</code>.</p>
-    <div id="readouts-emitter" data-study="handoff-units-and-binning">
+    <div id="readouts-emitter" data-study="sbml-spatial-hybrid">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading emitter configuration…</span></div>
     </div>
 
@@ -831,7 +828,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     <div id="readouts-download" style="margin:0 0 16px 0"></div>
 
-    <div id="readouts-table" data-study="handoff-units-and-binning">
+    <div id="readouts-table" data-study="sbml-spatial-hybrid">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readouts from the composite emit plan…</span></div>
     </div>
 
@@ -839,7 +836,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     <p class="muted" style="font-size:0.9em">Store path, dtype, shape
     <code>(n_steps, …)</code>, units, and a best-effort byte estimate for each emitted
     leaf.</p>
-    <div id="readouts-shapes" data-study="handoff-units-and-binning">
+    <div id="readouts-shapes" data-study="sbml-spatial-hybrid">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading output shapes…</span></div>
     </div>
 
@@ -854,7 +851,7 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     
     <div class="viz-actions-row" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'handoff-units-and-binning')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
+      <button type="button" class="btn-mini" onclick="window._vivStudyFiguresFromCard(event, 'sbml-spatial-hybrid')" title="Download this study's visualizations (figure panels + its composite) as a zip">↓ visualizations</button>
     </div>
     
 
@@ -918,10 +915,10 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
     
     
     
-    <li class="expected-behavior-item" id="bt-fv-matches-continuum-diffusion"
+    <li class="expected-behavior-item" id="bt-model-round-trips-exactly"
         data-test-kind="behavioral"
         
-        data-pytest-node="fv-matches-continuum-diffusion"
+        data-pytest-node="model-round-trips-exactly"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -930,19 +927,19 @@ counts to µM) follow vcell-fvsolver&#39;s conventions?
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">fv-matches-continuum-diffusion</strong>
+        <strong style="font-size: 0.9em;">model-round-trips-exactly</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>two-way-exchange-from-sbml</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max relative error of the FV cosine mode vs the analytic decay at t = 1 s.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">from_sbml(to_sbml(model)) equals the original HybridModel (grid, species, representations, reactions).</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_fv_cosine_rel_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order in space and first order in time; expected error ~1e-3 on this grid."}, "value": 0.01}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b6_model_round_trip_exact", "kind": "derived_scalar"}
+pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "The SBML carries every model quantity; rate constants are recovered exactly from VCell\u0027s mass-action rate."}, "value": 1}</pre>
       </details>
       
       
@@ -957,10 +954,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order
     
     
     
-    <li class="expected-behavior-item" id="bt-particle-variance-matches-2Dt"
+    <li class="expected-behavior-item" id="bt-cosim-from-sbml-is-identical"
         data-test-kind="behavioral"
         
-        data-pytest-node="particle-variance-matches-2Dt"
+        data-pytest-node="cosim-from-sbml-is-identical"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -969,19 +966,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Second order
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">particle-variance-matches-2Dt</strong>
+        <strong style="font-size: 0.9em;">cosim-from-sbml-is-identical</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>two-way-exchange-from-sbml</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Relative error of the binned per-axis variance (corrected by dx²/6) vs 2Dt at t = 1 s.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">The co-simulation from the SBML reproduces the co-simulation from the original model seed for seed.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_particle_variance_rel_err", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownian motion; 80,000 molecule samples give ~0.5% sampling error on the variance."}, "value": 0.03}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b6_cosim_vs_cosim_sbml_identical", "kind": "derived_scalar"}
+pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Same HybridModel, same seeds."}, "value": 1}</pre>
       </details>
       
       
@@ -996,10 +993,10 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownia
     
     
     
-    <li class="expected-behavior-item" id="bt-histogram-conserves-molecules"
+    <li class="expected-behavior-item" id="bt-native-from-sbml-is-identical"
         data-test-kind="behavioral"
         
-        data-pytest-node="histogram-conserves-molecules"
+        data-pytest-node="native-from-sbml-is-identical"
         data-classification="primary"
         data-result="pending"
         style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
@@ -1008,58 +1005,19 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Free Brownia
       <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
         <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
         <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">histogram-conserves-molecules</strong>
+        <strong style="font-size: 0.9em;">native-from-sbml-is-identical</strong>
         
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
+        <span class="muted" style="font-size:0.78em">requires: <code>two-way-exchange-from-sbml</code></span>
         
       </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max |histogram total - molecule count| over all records.</div>
+      <div style="margin-top: 6px; font-size: 0.95em;">The native VCell run from the SBML reproduces the native run from the original VCML seed for seed.</div>
       
       
       <details style="margin-top: 6px; font-size: 0.82em;">
         <summary class="muted" style="cursor: pointer;">Assertion</summary>
         
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_histogram_count_mismatch", "kind": "derived_scalar"}
-pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "Every molecule maps to exactly one node (clamped nearest-node index)."}, "value": 0}</pre>
-      </details>
-      
-      
-      
-      
-    </li>
-    
-    
-    
-    
-    
-    
-    
-    
-    <li class="expected-behavior-item" id="bt-boundary-volumes-give-uniform-concentration"
-        data-test-kind="behavioral"
-        
-        data-pytest-node="boundary-volumes-give-uniform-concentration"
-        data-classification="primary"
-        data-result="pending"
-        style="margin: 0 0 10px 0; padding: 10px 12px; border-left: 4px solid #10b981; background: #f8fafc; border-radius: 4px;">
-      
-        
-      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-        <span class="bt-result" style="font-size: 0.75em; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569">⏳ pending</span>
-        <span class="classification-pill classification-primary">primary</span>
-        <strong style="font-size: 0.9em;">boundary-volumes-give-uniform-concentration</strong>
-        
-        <span class="muted" style="font-size:0.78em">requires: <code>particle-diffusion-baseline</code></span>
-        
-      </div>
-      <div style="margin-top: 6px; font-size: 0.95em;">Max |z| over node classes of per-class counts vs element-volume share.</div>
-      
-      
-      <details style="margin-top: 6px; font-size: 0.82em;">
-        <summary class="muted" style="cursor: pointer;">Assertion</summary>
-        
-        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "a1_boundary_class_max_abs_z", "kind": "derived_scalar"}
-pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Binomial sampling; |z| \u003c 4 for a correct volume convention (corner 1/4, edge 1/2)."}, "value": 4.0}</pre>
+        <pre style="background:#fff; padding:8px; margin:4px 0 0 0; border:1px solid #e2e8f0; border-radius:3px; overflow-x:auto;">measure: {"field": "b6_native_vs_native_sbml_identical", "kind": "derived_scalar"}
+pass_if: {"op": "==", "provenance": {"kind": "theory", "note": "VCell\u0027s SBML import yields math equivalent to the original\u0027s (SBMLSpatialHybridTest), so the solver input is the same."}, "value": 1}</pre>
       </details>
       
       
@@ -1179,14 +1137,16 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Binomial sam
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>All four checks pass (results/metrics.json, 2026-10-03; re-run after the record-time fix):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-07; libvcell and pyvcell built from their PR branches):</p>
 <ul>
-<li>FV vs analytic: 6.0e-4 relative error;</li>
-<li>binned particle variance vs 2Dt: 0.13% (0.96% before the fix, which was the one-step record lag);</li>
-<li>histogram mismatch: 0 molecules;</li>
-<li>node classes vs volume shares: max |z| = 0.48. Corner and edge concentrations are
-within 0.4% of interior.
-Both halves and the handoff behave as specified.</li>
+<li><strong>The model round-trips exactly</strong> through SBML Spatial, including the representations and
+all rate constants.</li>
+<li><strong>Each solver reproduces itself from the SBML, seed for seed:</strong> co-sim and native runs from
+the SBML are bit-identical to the runs from the original model.</li>
+<li><strong>Across solvers,</strong> the released vcell-fvsolver still over-creates at boundary nodes
+(virtualcell/vcell-fvsolver#24): native A ends at 2.3× the co-sim's (|z| 135). With the fixes
+of vcell-fvsolver#32 and #34 built locally, native and co-sim agree (max |z| 1.45 for A,
+1.14 for B) and native conserves A + B to +0.12%.</li>
 </ul>
 </div>
     </div>
@@ -1196,34 +1156,6 @@ Both halves and the handoff behave as specified.</li>
   </div>
 
   
-  
-  <div class="overview-section"><h2 class="overview-label">Plan &amp; assumptions</h2>
-
-    
-    <div class="overview-section">
-      <h3 class="overview-label">Pipeline gate</h3>
-      <p class="muted" style="margin: 0 0 8px 0;font-size:0.88em">
-        Each study is a model-building gate: it answers <em>"Can we safely build the next layer?"</em>
-      </p>
-      
-      <div style="margin-bottom:6px"><strong>Prerequisites:</strong> <em class="muted">none (root study)</em></div>
-      
-      
-      <div style="margin-bottom:6px"><strong>Enables:</strong>
-        <code>field-modulated-decay</code>
-      </div>
-      
-      
-      <div><strong>Proceed when:</strong> <span class="muted">All four handoff checks pass.</span></div>
-      
-    </div>
-    
-
-    
-
-    
-
-  </div>
   
 
   
@@ -1263,7 +1195,7 @@ Both halves and the handoff behave as specified.</li>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
-window._studyName = "handoff-units-and-binning";
+window._studyName = "sbml-spatial-hybrid";
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.

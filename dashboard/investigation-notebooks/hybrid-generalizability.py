@@ -738,3 +738,65 @@ _save_viz('splitting-schemes', 'splitting-schemes', _render_one('', {}, RUNS_DB,
 # | jacobi-first-order | kind=derived_scalar field=b3_jacobi_order | op range low 0.7 high 1.5 provenance {'kind': 'theory', 'note': 'Explicit lagged splitting is first order.'} |
 # | gauss-seidel-first-order | kind=derived_scalar field=b3_gs_particles_first_order | op range low 0.7 high 1.5 provenance {'kind': 'theory', 'note': 'Sequential (Lie) splitting is first order.'} |
 # | strang-much-more-accurate | kind=derived_scalar field=b3_strang_over_jacobi_err_k32 | op < value 0.25 provenance {'kind': 'theory', 'note': 'Symmetric splitting cancels the leading splitting error.'} |
+
+# ## Study: The hybrid model described in SBML Spatial, run on both solvers (`sbml-spatial-hybrid`)
+#
+# **Question.** Can a PDE/particle hybrid be described in SBML Spatial, with each species' representation
+# (continuous or particle) as a VCell annotation, and run unchanged from that SBML on both
+# the native VCell solver and the co-simulation?
+#
+# **Objective.** The A3 two-way exchange (11×11×3 slab, 10×10×1 µm; A_p → B at 1 s⁻¹, B → A_p at
+# 0.5 s⁻¹·[B]; B₀ = 0.2 µM; dt = 0.01; 2 s; 8 seeds). `to_sbml` writes it to SBML Spatial
+# (A particle, B continuous); it is then run four ways:
+# - native from the original model (`to_biomodel` VCML) and native from the SBML (VCell's SBML
+#   import → libvcell → vcell-fvsolver);
+# - co-sim from the Python `HybridModel` and co-sim from `from_sbml`.
+#
+# **Hypothesis.** The SBML carries everything the model needs (geometry, species, diffusion, initial
+# conditions, mass-action reactions, representations), so a run from the SBML reproduces the
+# run from the original model exactly, seed for seed, on each solver.
+
+# ### Parameters
+#
+# | simulation | composite | steps | params |
+# | --- | --- | --- | --- |
+# | `two-way-exchange-from-sbml` | `viva_pde_particle.composites.examples.two_way_exchange` | 0 | k1=1.0, k2=0.5, b0=0.2, dt=0.01 |
+
+# ### Specification (process-bigraph) — load, inspect, edit
+#
+# Each composite is a process-bigraph *document*: named processes (`_type: process`) bound to an `address`, wired by `inputs`/`outputs` ports over shared stores. For every composite below the first cell loads the spec into a plain **editable Python dict** and prints its structure; the second cell is a **control panel** listing every configuration value and per-process `interval` so you can tweak any of them. Your edits are read when the composite is built and run, in the **Run** section.
+
+# **Composite `viva_pde_particle.composites.examples.two_way_exchange`** — `spec_viva_pde_particle_composites_examples_two_way_exchange` (a plain, editable dict)
+
+# _composite spec file for `viva_pde_particle.composites.examples.two_way_exchange` not found under `viva_pde_particle/composites/` — skipped._
+
+# ### Run
+#
+# _Set the runtime (`STEPS`) and step size (`INTERVAL`), then run. Each simulation builds the (edited) spec above and writes `runs.db`; the figures below read it. Set `RERUN = False` to skip re-simulating._
+
+# === Study: sbml-spatial-hybrid ===
+STUDY = 'sbml-spatial-hybrid'
+STUDY_DIR = REPO / 'workspace/studies' / STUDY
+STUDY_YAML = str(STUDY_DIR / "study.yaml")
+RUNS_DB = str(STUDY_DIR / "runs.db")
+
+print("No recorded runs for this study; nothing to reproduce.")
+
+# ### Visualizations
+#
+# _Results are shown by the figures below, produced by the run above._
+
+# **sbml-spatial-hybrid**
+
+# sbml-spatial-hybrid
+_save_viz('sbml-spatial-hybrid', 'sbml-spatial-hybrid', _render_one('', {}, RUNS_DB, STUDY_YAML))
+
+# ### Acceptance criteria
+#
+# _Pre-registered checks (criteria/thresholds only — run the cells above to evaluate them)._
+#
+# | test | measures | passes if |
+# | --- | --- | --- |
+# | model-round-trips-exactly | kind=derived_scalar field=b6_model_round_trip_exact | op == value 1 provenance {'kind': 'theory', 'note': "The SBML carries every model quantity; rate constants are recovered exactly from VCell's mass-action rate."} |
+# | cosim-from-sbml-is-identical | kind=derived_scalar field=b6_cosim_vs_cosim_sbml_identical | op == value 1 provenance {'kind': 'theory', 'note': 'Same HybridModel, same seeds.'} |
+# | native-from-sbml-is-identical | kind=derived_scalar field=b6_native_vs_native_sbml_identical | op == value 1 provenance {'kind': 'theory', 'note': "VCell's SBML import yields math equivalent to the original's (SBMLSpatialHybridTest), so the solver input is the same."} |
