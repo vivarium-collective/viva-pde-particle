@@ -60,6 +60,9 @@ imageio = ">=2.38.0,<3"
 [pypi-dependencies]
 viva-pde-particle = { path = ".", editable = true, extras = ["dev", "reference"] }
 process-bigraph = ">=1.8.5"
+# 0.11.1: the hybrid fixes for zeroth-order creation, second solves and histogram binning (vcell-fvsolver#32-#34).
+# Python >=3.12 only, so it is pinned here rather than in pyproject (CI resolves that on 3.11).
+pyvcell-fvsolver = ">=0.11.1"
 bigraph-schema = "*"
 # Ecosystem packages tracked from git main, mirroring vivarium-workbench main's own
 # [tool.uv.sources] (pixi does not read transitive uv sources, so they are listed here).

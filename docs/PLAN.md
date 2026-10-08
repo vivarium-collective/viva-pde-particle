@@ -1142,12 +1142,14 @@ species are particles. No community convention exists:
 **Study B6 `sbml-spatial-hybrid`** (A3 two-way exchange, 8 seeds, 2 s):
 - **Round trip:** the model is exact.
 - **Each solver reproduces itself from the SBML, bit for bit:** co-sim and native.
-- **Across solvers:** the released vcell-fvsolver still over-creates at boundary nodes (#24), so native A ends 2.3×
-  higher. With vcell-fvsolver#32 and #34 built locally, the solvers agree (max |z| 1.45) and native conserves A + B
-  to +0.12%.
+- **Across solvers:** on vcell-fvsolver 0.10.7 native over-created at boundary nodes (#24), so native A ended 2.3×
+  higher (|z| 135). **vcell-fvsolver 0.11.1 (released 2026-10-08 with #32-#34; pinned in `pixi.toml`):** the solvers
+  agree (max |z| 1.45 for A, 1.14 for B) and native conserves A + B to +0.12%.
 
 **Next:**
-- Release the three upstream PRs; then CI runs `test_sbml.py`.
+- Release vcell#2175 → libvcell#26 → pyvcell#63; then CI runs `test_sbml.py`.
+- vcell-fvsolver 0.11.1 fixes the second-solve crash (#23). `run_native`'s process per solve could become optional,
+  but it also isolates solver crashes, so it stays for now.
 - Membrane species and several compartments in `from_sbml`.
 - SED-ML for the hybrid simulation settings.
 
