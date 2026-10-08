@@ -97,12 +97,12 @@ visualizations:
   chart: viz/sbml_spatial_hybrid.html
   render: "python sims/run.py"
 conclusion: |
-  Results (results/metrics.json, 2026-10-07; libvcell and pyvcell built from their PR branches):
+  Results (results/metrics.json, 2026-10-08; released stack: vcell-fvsolver 0.11.1, libvcell 0.0.19, pyvcell 0.4.2):
   - **The model round-trips exactly** through SBML Spatial, including the representations and
     all rate constants.
   - **Each solver reproduces itself from the SBML, seed for seed:** co-sim and native runs from
     the SBML are bit-identical to the runs from the original model.
-  - **Across solvers,** the released vcell-fvsolver still over-creates at boundary nodes
-    (virtualcell/vcell-fvsolver#24): native A ends at 2.3× the co-sim's (|z| 135). With the fixes
-    of vcell-fvsolver#32 and #34 built locally, native and co-sim agree (max |z| 1.45 for A,
-    1.14 for B) and native conserves A + B to +0.12%.
+  - **Across solvers (rerun 2026-10-08 on the released vcell-fvsolver 0.11.1, which carries
+    #32-#34):** native and co-sim agree (max |z| 1.45 for A, 1.14 for B; native A ends at 3827 vs
+    3845) and native conserves A + B to +0.12%. On 0.10.7, native over-created at boundary nodes
+    (virtualcell/vcell-fvsolver#24): A ended at 2.3× the co-sim's (|z| 135) and A + B grew 76%.
