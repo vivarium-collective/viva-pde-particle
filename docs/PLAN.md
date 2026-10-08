@@ -1071,7 +1071,14 @@ metrics and 1D/2D plotly pages.
 - **Tests 4–5:** the co-sim matches to within sampling noise (reduced χ² 0.54–0.89; relative L2 0.9–1.6%, against the
   paper's 1.3–3.3%).
 - **Test 3:** both solvers differ from the exact steady state by the same 0.58% (twice the sampling noise; χ² 1.82
-  native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation. A Δτ check follows.
+  native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation.
+- **Δτ check (2026-10-08):** the Test 3 gap is first order in Δτ. With 4,000 co-sim trials × 5 stationary samples
+  at each Δτ ∈ {0.008, 0.004, 0.002, 0.001}:
+  - The mean bias is −0.45%, −0.25%, −0.12% and −0.12% (± 0.03%).
+  - Fitting offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.04% ± 0.03%, consistent with zero
+    (χ² 0.71). Native VCell's −0.10% at Δτ = 0.002 is on the same line.
+  - The SD excess is significant only at Δτ = 0.008 (+4.4% ± 1.0%). Bootstrap SEs are needed: the density is skewed.
+  - Δτ = 0.001 ran on compose-api (77 jobs, 16 min) after fixing its image-fetch race (compose-api#226, 0.7.2).
 
 ## Phase 6 plan (2026-10-07): hybrid models in SBML Spatial
 
@@ -1116,7 +1123,13 @@ species are particles. No community convention exists:
 
 ## Phase 6 results (2026-10-07): the hybrid in SBML Spatial, both solvers
 
-**Upstream PRs:**
+**Upstream PRs (all merged and released 2026-10-08):**
+- **Released:**
+  - vcell#2175, merged as `340d6ee`;
+  - libvcell#26, merged with its submodule at that commit, released as **libvcell 0.0.19** (PyPI, all 7 platform wheels);
+  - pyvcell#63, merged and released as **pyvcell 0.4.2**, which requires `libvcell>=0.0.19`.
+- **Here:** the `reference` extra requires `libvcell>=0.0.19`, and `pixi.lock` pins the default environment to
+  pyvcell 0.4.2. `tests/test_sbml.py` now runs: 3 passed, none skipped.
 - **virtualcell/vcell#2175:**
   - SBML Spatial export and import of spatial stochastic applications, with each species' `vcell:representation`.
   - The import converts spatial stochastic models to VCell's default units.
@@ -1132,7 +1145,7 @@ species are particles. No community convention exists:
   geometry, region)`.
   - Mass action is recovered exactly from VCell's general-kinetics rate. Rates that aren't mass action are rejected.
 - `run_native(..., sbml=...)` runs the model VCell imports from the SBML. `tests/test_sbml.py` skips without SBML
-  hybrid support.
+  hybrid support (libvcell < 0.0.19 or pyvcell < 0.4.2).
 
 **Finding: VCell's spatial stochastic math assumes its default units.**
 - A hybrid imported in VCell's SBML units (dm, µmol, l) gave Smoldyn walls at 1e-4 (dm) and `difc 1e-10`.
@@ -1147,7 +1160,8 @@ species are particles. No community convention exists:
   agree (max |z| 1.45 for A, 1.14 for B) and native conserves A + B to +0.12%.
 
 **Next:**
-- Release vcell#2175 → libvcell#26 → pyvcell#63; then CI runs `test_sbml.py`.
+- ~~Release the three upstream PRs; then CI runs `test_sbml.py`.~~ Done 2026-10-08 (libvcell 0.0.19, pyvcell 0.4.2).
+- ~~Rerun B6 against a vcell-fvsolver release that includes #32 and #34.~~ Done 2026-10-08 on 0.11.1 (above).
 - vcell-fvsolver 0.11.1 fixes the second-solve crash (#23). `run_native`'s process per solve could become optional,
   but it also isolates solver crashes, so it stays for now.
 - Membrane species and several compartments in `from_sbml`.

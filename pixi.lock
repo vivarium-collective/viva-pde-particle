@@ -436,6 +436,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/4f/a7/aeedb5140afa41fc74c225e9184ab96723a6e873b6ee1c9fede7283456d8/markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/51/6d/3014112c7f717d1253223faa13b6db3ac3a64ed00ab2a3bc1b942bc9cdd4/polars-1.44.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5c/cf/3fab2953f1818d038d50ff76920acec569849a22010161090c0034bc4f38/pyvcell-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/60/c9/711ca85d79f1ec98f29a5eae2b051e25b4ecec5de3e3c0e2d5c5dcb15664/pyarrow-25.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/69/90/f63fb5873511e014207a475e2bb4e8b2e570d655b00ac19a9a0ca0a385ee/jsonschema-4.26.0-py3-none-any.whl
@@ -458,6 +459,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a0/b6/78aaf9141fb46742928c113f3cf6ef2259d538cb02b604b7656c1dc9883c/fastapi-0.142.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/af/0b/324ad794141ed819fa0a498e5dd1ac706c1dcd71881f860deaf8165857b0/libvcell-0.0.19-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b5/d4/e7bbea08f4c0f0bab819d38c1a613da5f194fba7b19aae3e2b3a27e78886/bottleneck-1.6.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/c3/d8793642ce7d29ea15cc39c10185ef126a27fcb8ea230154978221deb4b2/plum_dispatch-2.10.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -465,7 +467,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c5/fa/471e2511b0c77419ac2228ce72770e94e994ab99c6b9275cb3de1dcead2d/zarrs-0.2.3-cp311-abi3-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/67/0c0f18e38d7f2d2af8c24b3315bc4046e73bbdd4a5540405506671ad0c0d/pandas-3.0.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cc/5a/9b55539d08a46418b2389e18fe01229584e0f0b1139d10c783e9491ace9c/bigraph_viz-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d0/22/9095fbc2dbbde2c8c1e94824750cc6c50d608078ee670646e9e5b609c07c/libvcell-0.0.18-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/cc/e097523dd85c9cf5d354f78310927f1656c422bd7b2613b2db3e3f9a0f2c/webcolors-25.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e7/00/3fca040d7cf8a32776d3d81a00c8ee7457e00f80c649f1e4a863c8321ae9/uri_template-1.3.0-py3-none-any.whl
@@ -473,7 +474,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ea/11/e8953226d658ae67e3e002abaa60a101c693f9c57d74974001729afab5ef/numexpr-2.14.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f1/d0/d9c65fce06863ff8c1598efd9fea95425030c191bc27b1a919956cd17f07/pyvcell-0.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
@@ -836,6 +836,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/4f/83454fafd628e1e7e1726d74e44fb2332be5969d04c6182ca1fecb6c580e/filelock-4.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
@@ -855,6 +856,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/4e/d6/1ec1b290f9e0fb067899b61e1d37a30c923068bad260b216dbe37a7d2967/starlette-1.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/6d/3014112c7f717d1253223faa13b6db3ac3a64ed00ab2a3bc1b942bc9cdd4/polars-1.44.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5c/cf/3fab2953f1818d038d50ff76920acec569849a22010161090c0034bc4f38/pyvcell-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/69/90/f63fb5873511e014207a475e2bb4e8b2e570d655b00ac19a9a0ca0a385ee/jsonschema-4.26.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl
@@ -893,9 +895,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ed/5c/9780d48c4d5effcf55fc7ab7c5651ed82b43250ac8410cce4ef1e97583ed/numexpr-2.14.2-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f1/d0/d9c65fce06863ff8c1598efd9fea95425030c191bc27b1a919956cd17f07/pyvcell-0.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f4/12/0744c0743d6168e36e473ca143c32d412792b9d22621b3c69e90aa46e73b/libvcell-0.0.18-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
@@ -1357,6 +1357,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a0/b6/78aaf9141fb46742928c113f3cf6ef2259d538cb02b604b7656c1dc9883c/fastapi-0.142.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/af/0b/324ad794141ed819fa0a498e5dd1ac706c1dcd71881f860deaf8165857b0/libvcell-0.0.19-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b5/d4/e7bbea08f4c0f0bab819d38c1a613da5f194fba7b19aae3e2b3a27e78886/bottleneck-1.6.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/c3/d8793642ce7d29ea15cc39c10185ef126a27fcb8ea230154978221deb4b2/plum_dispatch-2.10.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -1364,7 +1365,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c5/fa/471e2511b0c77419ac2228ce72770e94e994ab99c6b9275cb3de1dcead2d/zarrs-0.2.3-cp311-abi3-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/67/0c0f18e38d7f2d2af8c24b3315bc4046e73bbdd4a5540405506671ad0c0d/pandas-3.0.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cc/5a/9b55539d08a46418b2389e18fe01229584e0f0b1139d10c783e9491ace9c/bigraph_viz-2.0.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d0/22/9095fbc2dbbde2c8c1e94824750cc6c50d608078ee670646e9e5b609c07c/libvcell-0.0.18-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/cc/e097523dd85c9cf5d354f78310927f1656c422bd7b2613b2db3e3f9a0f2c/webcolors-25.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e7/00/3fca040d7cf8a32776d3d81a00c8ee7457e00f80c649f1e4a863c8321ae9/uri_template-1.3.0-py3-none-any.whl
@@ -1735,6 +1735,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/4f/83454fafd628e1e7e1726d74e44fb2332be5969d04c6182ca1fecb6c580e/filelock-4.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
@@ -1793,7 +1794,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/a9/a10a10f12e50993b5a3568a1a90fd70b85f83edc451875d312bf60cd39b8/parsimonious-0.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f4/12/0744c0743d6168e36e473ca143c32d412792b9d22621b3c69e90aa46e73b/libvcell-0.0.18-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/bb/b48c015d2c4b26754b0d3ad793af43c0c9a96c1f1dabab8d4f06dc9ea236/bigraph_schema-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
@@ -12932,6 +12932,7 @@ packages:
   - vivarium-workbench @ git+https://github.com/vivarium-collective/vivarium-workbench.git@main
   - pytest>=7.4 ; extra == 'dev'
   - pyvcell[solver,native]>=0.3.3 ; python_full_version >= '3.12' and extra == 'reference'
+  - libvcell>=0.0.19 ; python_full_version >= '3.12' and extra == 'reference'
   requires_python: '>=3.11'
 - pypi: ../pyvcell
   name: pyvcell
@@ -13104,6 +13105,13 @@ packages:
   - pytest ; extra == 'test'
   - cloudpickle ; extra == 'test'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
+  name: libvcell
+  version: 0.0.19
+  sha256: 60ea5ded3822ec4c7648d134e3dd0e7d495fc0ea811fb8401b8be4d8637fa5d9
+  requires_dist:
+  - pydantic>=2.10.6,<3.0.0
+  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
   name: anyio
   version: 4.15.1
@@ -13477,6 +13485,43 @@ packages:
   version: 8.5.0
   sha256: 255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/5c/cf/3fab2953f1818d038d50ff76920acec569849a22010161090c0034bc4f38/pyvcell-0.4.2-py3-none-any.whl
+  name: pyvcell
+  version: 0.4.2
+  sha256: 878a79d07a43141e4921bcf476526b896ad50a232188f1bdd435e38b4dd8f475
+  requires_dist:
+  - lxml>=6.1.0,<7
+  - numexpr>=2.10,<3
+  - numpy>=1.26.4,<3.0
+  - pydantic>=2.10.5,<3
+  - typing-extensions>=4.12.2,<5
+  - pyvcell[solver,viz,remote,io,convert,native,mb] ; extra == 'all'
+  - antimony>=3.1.3 ; extra == 'convert'
+  - python-libsbml>=5.20.4,<6 ; extra == 'convert'
+  - sympy>=1.13.1,<2 ; extra == 'convert'
+  - h5py>=3.11.0,<4 ; extra == 'io'
+  - orjson>=3.10.3,<4 ; extra == 'io'
+  - tensorstore>=0.1.72,<1 ; extra == 'io'
+  - typer>=0.12.3,<1.0.0 ; extra == 'io'
+  - zarr>=2.17.2,<3 ; extra == 'io'
+  - pyvcell-mbsolver>=1.0.3,<2 ; extra == 'mb'
+  - pyvcell[native] ; extra == 'mb'
+  - libvcell>=0.0.19 ; extra == 'native'
+  - overrides>=7.7.0,<8 ; extra == 'remote'
+  - python-dateutil>=2.8.2,<3 ; extra == 'remote'
+  - requests>=2.32.3,<3 ; extra == 'remote'
+  - requests-oauth2client>=1.6.0,<2 ; extra == 'remote'
+  - urllib3>=2.3.0,<3 ; extra == 'remote'
+  - pyvcell-fvsolver>=0.2.1 ; extra == 'solver'
+  - imageio>=2.37.0,<3 ; extra == 'viz'
+  - matplotlib>=3.10.0,<4 ; extra == 'viz'
+  - pyvista>=0.44.2,<1 ; extra == 'viz'
+  - trame>=3.8.1,<4 ; extra == 'viz'
+  - trame-server>=3.4.0,<4 ; extra == 'viz'
+  - trame-vtk>=2.8.15,<3 ; extra == 'viz'
+  - trame-vuetify>=3.2.2,<4 ; extra == 'viz'
+  - vtk>=9.3.1,<10 ; extra == 'viz'
+  requires_python: '>=3.12,<4.0'
 - pypi: https://files.pythonhosted.org/packages/60/c9/711ca85d79f1ec98f29a5eae2b051e25b4ecec5de3e3c0e2d5c5dcb15664/pyarrow-25.0.1-cp312-cp312-manylinux_2_28_x86_64.whl
   name: pyarrow
   version: 25.0.1
@@ -14086,6 +14131,13 @@ packages:
   - envwrap ; extra == 'telegram'
   - ipywidgets>=6 ; extra == 'notebook'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/af/0b/324ad794141ed819fa0a498e5dd1ac706c1dcd71881f860deaf8165857b0/libvcell-0.0.19-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: libvcell
+  version: 0.0.19
+  sha256: c25c0f3519078c85b837ff08a1c942d3f03625be3a8a6f7df6033ad4ad5fd43e
+  requires_dist:
+  - pydantic>=2.10.6,<3.0.0
+  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/b5/d4/e7bbea08f4c0f0bab819d38c1a613da5f194fba7b19aae3e2b3a27e78886/bottleneck-1.6.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
   name: bottleneck
   version: 1.6.0
@@ -14237,13 +14289,6 @@ packages:
   - process-bigraph>=1.2.2
   - graphviz
   requires_python: '>=3.11'
-- pypi: https://files.pythonhosted.org/packages/d0/22/9095fbc2dbbde2c8c1e94824750cc6c50d608078ee670646e9e5b609c07c/libvcell-0.0.18-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-  name: libvcell
-  version: 0.0.18
-  sha256: 89405f49f60aa6d3a76f8f3c48674e9db619b6e1b58d357d5b305f693e06ce58
-  requires_dist:
-  - pydantic>=2.10.6,<3.0.0
-  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/dd/1f/a180b57d9eeabaab77f9d5aa30356898ea749c4795596a8f66d1eb6bef2e/lxml-6.1.3-cp312-cp312-macosx_10_13_universal2.whl
   name: lxml
   version: 6.1.3
@@ -14416,43 +14461,6 @@ packages:
   requires_dist:
   - regex>=2022.3.15
   - pytest ; extra == 'testing'
-- pypi: https://files.pythonhosted.org/packages/f1/d0/d9c65fce06863ff8c1598efd9fea95425030c191bc27b1a919956cd17f07/pyvcell-0.4.1-py3-none-any.whl
-  name: pyvcell
-  version: 0.4.1
-  sha256: 8fa46ae37871c135c3cf7c3f80d227c4d445f9272f03d5b456f6d6efd6bd971e
-  requires_dist:
-  - lxml>=6.1.0,<7
-  - numexpr>=2.10,<3
-  - numpy>=1.26.4,<3.0
-  - pydantic>=2.10.5,<3
-  - typing-extensions>=4.12.2,<5
-  - pyvcell[solver,viz,remote,io,convert,native,mb] ; extra == 'all'
-  - antimony>=3.1.3 ; extra == 'convert'
-  - python-libsbml>=5.20.4,<6 ; extra == 'convert'
-  - sympy>=1.13.1,<2 ; extra == 'convert'
-  - h5py>=3.11.0,<4 ; extra == 'io'
-  - orjson>=3.10.3,<4 ; extra == 'io'
-  - tensorstore>=0.1.72,<1 ; extra == 'io'
-  - typer>=0.12.3,<1.0.0 ; extra == 'io'
-  - zarr>=2.17.2,<3 ; extra == 'io'
-  - pyvcell-mbsolver>=1.0.3,<2 ; extra == 'mb'
-  - pyvcell[native] ; extra == 'mb'
-  - libvcell>=0.0.17 ; extra == 'native'
-  - overrides>=7.7.0,<8 ; extra == 'remote'
-  - python-dateutil>=2.8.2,<3 ; extra == 'remote'
-  - requests>=2.32.3,<3 ; extra == 'remote'
-  - requests-oauth2client>=1.6.0,<2 ; extra == 'remote'
-  - urllib3>=2.3.0,<3 ; extra == 'remote'
-  - pyvcell-fvsolver>=0.2.1 ; extra == 'solver'
-  - imageio>=2.37.0,<3 ; extra == 'viz'
-  - matplotlib>=3.10.0,<4 ; extra == 'viz'
-  - pyvista>=0.44.2,<1 ; extra == 'viz'
-  - trame>=3.8.1,<4 ; extra == 'viz'
-  - trame-server>=3.4.0,<4 ; extra == 'viz'
-  - trame-vtk>=2.8.15,<3 ; extra == 'viz'
-  - trame-vuetify>=3.2.2,<4 ; extra == 'viz'
-  - vtk>=9.3.1,<10 ; extra == 'viz'
-  requires_python: '>=3.12,<4.0'
 - pypi: https://files.pythonhosted.org/packages/f2/9d/65d95bf42ba8e926006e754ec5627ad39ef70e622f05d281a0b8fe2c62ea/process_bigraph-1.8.5-py3-none-any.whl
   name: process-bigraph
   version: 1.8.5
@@ -14473,13 +14481,6 @@ packages:
   - typing-inspect>=0.9.0 ; extra == 'server-rest'
   - boto3>=1.28 ; extra == 'ec2-ssm'
   requires_python: '>=3.11'
-- pypi: https://files.pythonhosted.org/packages/f4/12/0744c0743d6168e36e473ca143c32d412792b9d22621b3c69e90aa46e73b/libvcell-0.0.18-py3-none-macosx_13_0_arm64.whl
-  name: libvcell
-  version: 0.0.18
-  sha256: 2456ffca5ebd05cea3563f62e6272a99d9c71eacb7f624d74a85c931302c8c41
-  requires_dist:
-  - pydantic>=2.10.6,<3.0.0
-  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
   name: tzdata
   version: '2026.4'

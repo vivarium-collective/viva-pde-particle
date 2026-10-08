@@ -97,7 +97,7 @@ visualizations:
   chart: viz/sbml_spatial_hybrid.html
   render: "python sims/run.py"
 conclusion: |
-  Results (results/metrics.json, 2026-10-08; vcell-fvsolver 0.11.1, libvcell and pyvcell built from their PR branches):
+  Results (results/metrics.json, 2026-10-08; released stack: vcell-fvsolver 0.11.1, libvcell 0.0.19, pyvcell 0.4.2):
   - **The model round-trips exactly** through SBML Spatial, including the representations and
     all rate constants.
   - **Each solver reproduces itself from the SBML, seed for seed:** co-sim and native runs from
