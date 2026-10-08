@@ -16,7 +16,7 @@ Both directions go through VCell, which owns the SBML Spatial mapping:
   ``GeometryDescription`` when the geometry is not the plain box.
 
 SBML carries its own units (VCell writes dm, µmol, l); :func:`from_sbml` converts to VCell's µm, µM and s with
-``pyvcell.vcml.convert_units``. Simulation settings (mesh, Δt, Smoldyn step multiplier, seed) are not part of the
+``pyvcell.vcml.load_sbml_str(..., unit_system="vcell")``. Simulation settings (mesh, Δt, Smoldyn step multiplier, seed) are not part of the
 model, so :func:`from_sbml` takes the mesh size, and located initial particles (per-node counts) cannot be written.
 """
 from __future__ import annotations
@@ -79,10 +79,10 @@ def from_sbml(sbml: str, *, num: tuple[int, int, int], domain_volume: float | No
     ``initial concentration × region volume`` molecules, placed uniformly; ``domain_volume`` (µm³) is that region
     volume, needed only when particles start non-empty in a geometry other than the plain box.
     """
-    from pyvcell.vcml.utils import convert_units, load_sbml_str
+    from pyvcell.vcml.utils import load_sbml_str
 
-    # VCell imports SBML in the SBML's own units; convert to VCell's (µm, µM, s), which the model here uses
-    bm = convert_units(load_sbml_str(sbml), "vcell")
+    # VCell imports SBML in the SBML's own units; load it in VCell's (µm, µM, s), which the model here uses
+    bm = load_sbml_str(sbml, unit_system="vcell")
     if len(bm.applications) != 1:
         raise ValueError(f"expected one application, found {len(bm.applications)}")
     app = bm.applications[0]

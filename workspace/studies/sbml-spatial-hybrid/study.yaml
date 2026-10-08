@@ -26,7 +26,7 @@ objective: |
 description: |
   Phase 6 (docs/PLAN.md). The representation annotation and its import/export are in VCell
   (virtualcell/vcell#2175); libvcell adds `vcml_convert_units` (virtualcell/libvcell#26) and
-  pyvcell `convert_units` (virtualcell/pyvcell#63; VCell imports SBML in the SBML's own units). Needs those builds:
+  pyvcell `load_sbml_str(..., unit_system="vcell")` (virtualcell/pyvcell#63; VCell imports SBML in the SBML's own units). Needs those builds:
   `run.py` uses `run_native(..., sbml=...)` and `from_sbml`.
 
   Found on the way: VCell's spatial stochastic math is only consistent in VCell's default

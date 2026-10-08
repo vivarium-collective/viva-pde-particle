@@ -1123,8 +1123,9 @@ species are particles. No community convention exists:
   - `SBMLSpatialHybridTest` round-trips a hybrid with math equivalent to the original VCML's.
 - **virtualcell/libvcell#26:** the submodule bump, plus `vcml_convert_units(vcml, "vcell"|"sbml", path)`, which is
   VCell's `ModelUnitConverter` (the user's suggestion: VCell converts units internally anyway).
-- **virtualcell/pyvcell#63:** `pyvcell.vcml.convert_units(bio_model, unit_system)`. pyvcell's VCML
-  reader and writer now keep `<ModelUnitSystem>`; before, a model imported from SBML lost its units when written back.
+- **virtualcell/pyvcell#63:** `load_sbml_str(sbml, unit_system="vcell")` and `convert_vcml_units(vcml, ...)`. pyvcell's
+  `Model` does not keep `<ModelUnitSystem>` (models from unit-less Antimony rely on that), so the conversion acts on the
+  VCML text at load time.
 
 **This repo:**
 - `viva_pde_particle.model.sbml`: `to_sbml` / `write_sbml`, and `from_sbml` / `read_sbml` → `SbmlHybrid(model,
