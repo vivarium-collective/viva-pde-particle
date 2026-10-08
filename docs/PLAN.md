@@ -1071,7 +1071,14 @@ metrics and 1D/2D plotly pages.
 - **Tests 4–5:** the co-sim matches to within sampling noise (reduced χ² 0.54–0.89; relative L2 0.9–1.6%, against the
   paper's 1.3–3.3%).
 - **Test 3:** both solvers differ from the exact steady state by the same 0.58% (twice the sampling noise; χ² 1.82
-  native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation. A Δτ check follows.
+  native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation.
+- **Δτ check (2026-10-08):** the Test 3 gap is first order in Δτ. With 4,000 co-sim trials × 5 stationary samples
+  at each Δτ ∈ {0.008, 0.004, 0.002, 0.001}:
+  - The mean bias is −0.45%, −0.25%, −0.12% and −0.12% (± 0.03%).
+  - Fitting offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.04% ± 0.03%, consistent with zero
+    (χ² 0.71). Native VCell's −0.10% at Δτ = 0.002 is on the same line.
+  - The SD excess is significant only at Δτ = 0.008 (+4.4% ± 1.0%). Bootstrap SEs are needed: the density is skewed.
+  - Δτ = 0.001 ran on compose-api (77 jobs, 16 min) after fixing its image-fetch race (compose-api#226, 0.7.2).
 
 ## Phase 6 plan (2026-10-07): hybrid models in SBML Spatial
 
