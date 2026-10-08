@@ -1,0 +1,21 @@
+{
+  "b6_cosim_a_final_mean": 3845.0,
+  "b6_cosim_mass_balance_final_rel": 0.004216191384773582,
+  "b6_cosim_sbml_a_final_mean": 3845.0,
+  "b6_cosim_sbml_mass_balance_final_rel": 0.004216191384773582,
+  "b6_cosim_sbml_vs_native_sbml_a_max_z": 134.81309503939065,
+  "b6_cosim_sbml_vs_native_sbml_b_max_z": 124.58626360015454,
+  "b6_cosim_sbml_vs_native_sbml_identical": 0.0,
+  "b6_cosim_vs_cosim_sbml_a_max_z": 0.0,
+  "b6_cosim_vs_cosim_sbml_b_max_z": 0.0,
+  "b6_cosim_vs_cosim_sbml_identical": 1.0,
+  "b6_model_round_trip_exact": 1.0,
+  "b6_native_a_final_mean": 8914.375,
+  "b6_native_mass_balance_final_rel": 0.7600591606579186,
+  "b6_native_sbml_a_final_mean": 8914.375,
+  "b6_native_sbml_mass_balance_final_rel": 0.7600591606579186,
+  "b6_native_vs_native_sbml_a_max_z": 0.0,
+  "b6_native_vs_native_sbml_b_max_z": 0.0,
+  "b6_native_vs_native_sbml_identical": 1.0,
+  "b6_wall_time_s": 7.219576120376587
+}

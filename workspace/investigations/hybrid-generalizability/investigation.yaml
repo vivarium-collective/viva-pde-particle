@@ -39,6 +39,8 @@ at_a_glance:
   role: One non-convex GeometryDescription through native VCell, the co-sim on VCell's geometry and the Netgen co-sim; the correction removes VCell's −18–26% exchange loss.
 - study: splitting-schemes
   role: Lagged Jacobi vs Gauss-Seidel vs Strang splitting; accuracy vs cost.
+- study: sbml-spatial-hybrid
+  role: Phase 6; the A3 hybrid written to SBML Spatial with species representations and run from it on both solvers, seed-for-seed identical to the original runs.
 - study: engine-swap
   role: The same composite with the PDE engine (and optionally the particle engine) swapped.
 - study: membrane-particles
@@ -58,5 +60,6 @@ studies:
 - vcell-geometry-cosim
 - dumbbell-three-ways
 - splitting-schemes
+- sbml-spatial-hybrid
 expert_docs: []
 acceptance_criteria: []
