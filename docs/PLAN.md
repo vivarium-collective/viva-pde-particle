@@ -309,20 +309,12 @@ paper's Methods and S1 text; they are to be transcribed into each `study.yaml` w
    - **Then** Studies A3–A6.
 4. **FEniCSx process and mesh binning:** Studies B1–B2.
 5. **Orchestration variants:** Studies B3–B5. Write-up.
-6. **Standards-based model description (follow-on; options to be discussed when we get there).**
+6. **Standards-based model description: first round done 2026-10-07; see "Phase 6 plan" and "Phase 6 results".**
    - **Goal:** describe the hybrid model with SBML plus the Spatial package instead of VCML.
-   - **How VCell does it today:** a single model is augmented with the choice of which species are particles.
-     VCell's math generation (`ParticleMathMapping.combineHybrid()`, see the notes) then produces both the
-     fvsolver input and the Smoldyn input and combines them.
-   - **Open design question:** how to express the particle/continuous partition in a standards-based way.
-     Candidates to evaluate:
-     - a sidecar list of particle species (with per-species particle properties) next to an SBML Spatial document;
-     - SBML annotations on species;
-     - a SED-ML or simulation-level setting;
-     - reusing VCell's own SBML Spatial import/export (`libvcell`/`pyvcell` converters) to reach the existing math
-       generation.
-   - **Prerequisite:** the `HybridModel` + `partition()` layer from Phase 2, which is the target this format
-     would load into.
+   - **Decision (user, 2026-10-07):** each species carries an explicit **representation**, `continuous` or
+     `particle`, defaulting to `continuous`. It is a VCell-namespace species annotation, so plain SBML Spatial stays
+     a deterministic PDE model.
+   - **Scope (user):** the viva side and VCell together.
 7. **Componentization: reusable components with general engines (started 2026-10-03; design in
    [DESIGN.md §13](DESIGN.md#13-steps-and-the-component-architecture-phase-7)).**
    - **Goal:** a set of process-bigraph components (Processes and Steps) that assemble into an accurate hybrid
@@ -1080,6 +1072,83 @@ metrics and 1D/2D plotly pages.
   paper's 1.3–3.3%).
 - **Test 3:** both solvers differ from the exact steady state by the same 0.58% (twice the sampling noise; χ² 1.82
   native, 2.48 co-sim). That is a property of the hybrid at Δτ = 0.002, not of the co-simulation. A Δτ check follows.
+
+## Phase 6 plan (2026-10-07): hybrid models in SBML Spatial
+
+**Why:** a hybrid model exists today only as VCML (through `to_biomodel`) or as a Python `HybridModel`. SBML Spatial
+carries compartments, geometry, species, diffusion, initial conditions and reactions, but has nothing to say which
+species are particles. No community convention exists:
+- SBML Spatial's species attributes are `isSpatial`, diffusion and boundary conditions only.
+- KiSAO has generic hybrid terms (KISAO_0000352) and copy-number partition thresholds (0000203/0000204), but no
+  spatial PDE/particle method and no species-list parameter.
+- VCell stores `forceContinuous` only in VCML, and its SBML export refused spatial stochastic applications.
+
+**Encoding (decided):** one attribute on VCell's existing species annotation, next to `wellmixed`:
+
+```xml
+<species id="A" ...>
+  <annotation>
+    <vcell:SpeciesContextSpecSettings vcell:representation="particle"/>
+  </annotation>
+</species>
+```
+
+- Values are `continuous` and `particle`. An absent attribute means `continuous`.
+- **Mapping to VCell:** any `particle` species in a spatial model makes the application spatial stochastic; every
+  other species is `forceContinuous`; clamped species are always continuous.
+- **The reverse, on export:** every species of a spatial stochastic application is written with its representation.
+- **Not in the SBML:** simulation settings (mesh, Δt, Smoldyn step multiplier, seed) and located initial particles
+  (per-node counts). Those stay with the simulation: VCML today, SED-ML later.
+
+**Steps:**
+1. **6a, VCell** (virtualcell/vcell#2175): `SBMLExporter` accepts spatial stochastic applications and writes the
+   representation; `SBMLImporter` reads it, creating the application stochastic up front so the symbol mapping stays
+   valid. `SBMLSpatialHybridTest` round-trips a hybrid with equivalent math.
+2. **6b, libvcell:** bump the VCell submodule; a vcell-native test of `vcml_to_sbml` → `sbml_to_vcml` on a hybrid.
+   pyvcell's existing `to_sbml_str` / `load_sbml_str` need no change.
+3. **6c, this repo:** `viva_pde_particle.model.sbml`: `to_sbml(model, geometry=...)` (via `to_biomodel`) and
+   `from_sbml(sbml, num=...)` → `HybridModel` plus a `GeometryDescription` (via `from_vcml_geometry`), with
+   round-trip tests.
+4. **6d, a study:** one hybrid model loaded from SBML Spatial and run on both solvers: native VCell (SBML → VCML →
+   libvcell → vcell-fvsolver) and the co-simulation (SBML → `HybridModel`), compared like Investigation A.
+5. **Later:** SED-ML for hybrid simulation settings (VCell's SED-ML export still skips spatial stochastic
+   applications), and proposing a KiSAO term for spatial PDE/particle methods.
+
+## Phase 6 results (2026-10-07): the hybrid in SBML Spatial, both solvers
+
+**Upstream PRs:**
+- **virtualcell/vcell#2175:**
+  - SBML Spatial export and import of spatial stochastic applications, with each species' `vcell:representation`.
+  - The import converts spatial stochastic models to VCell's default units.
+  - `SBMLSpatialHybridTest` round-trips a hybrid with math equivalent to the original VCML's.
+- **virtualcell/libvcell#26:** the submodule bump, plus `vcml_convert_units(vcml, "vcell"|"sbml", path)`, which is
+  VCell's `ModelUnitConverter` (the user's suggestion: VCell converts units internally anyway).
+- **virtualcell/pyvcell#63:** `pyvcell.vcml.convert_units(bio_model, unit_system)`. pyvcell's VCML
+  reader and writer now keep `<ModelUnitSystem>`; before, a model imported from SBML lost its units when written back.
+
+**This repo:**
+- `viva_pde_particle.model.sbml`: `to_sbml` / `write_sbml`, and `from_sbml` / `read_sbml` → `SbmlHybrid(model,
+  geometry, region)`.
+  - Mass action is recovered exactly from VCell's general-kinetics rate. Rates that aren't mass action are rejected.
+- `run_native(..., sbml=...)` runs the model VCell imports from the SBML. `tests/test_sbml.py` skips without SBML
+  hybrid support.
+
+**Finding: VCell's spatial stochastic math assumes its default units.**
+- A hybrid imported in VCell's SBML units (dm, µmol, l) gave Smoldyn walls at 1e-4 (dm) and `difc 1e-10`.
+- Field-driven creation stayed per µm³ (`0 -> A (301.107 * B)`), so it created about 1e-15 of the molecules.
+- VCell's SBML import now converts such models.
+
+**Study B6 `sbml-spatial-hybrid`** (A3 two-way exchange, 8 seeds, 2 s):
+- **Round trip:** the model is exact.
+- **Each solver reproduces itself from the SBML, bit for bit:** co-sim and native.
+- **Across solvers:** the released vcell-fvsolver still over-creates at boundary nodes (#24), so native A ends 2.3×
+  higher. With vcell-fvsolver#32 and #34 built locally, the solvers agree (max |z| 1.45) and native conserves A + B
+  to +0.12%.
+
+**Next:**
+- Release the three upstream PRs; then CI runs `test_sbml.py`.
+- Membrane species and several compartments in `from_sbml`.
+- SED-ML for the hybrid simulation settings.
 
 ## Risks / open items
 - ~~**`OPTION_VCELL` in upstream Smoldyn** may not build cleanly through the python path.~~ Resolved in

@@ -1,0 +1,297 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" spatial:required="true" version="1" xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1">
+  <notes>
+    <body xmlns="http://www.w3.org/1999/xhtml">
+     <p>Exported by VCell unknown VCell version</p>
+  </body>
+  </notes>
+  <model areaUnits="Unit_dm2" extentUnits="Unit_umol" id="hybrid_hybrid" lengthUnits="Unit_dm" name="hybrid_hybrid" substanceUnits="Unit_umol" timeUnits="Unit_s" volumeUnits="Unit_l">
+    <spatial:geometry xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateSystem="cartesian" spatial:id="vcell">
+      <spatial:listOfCoordinateComponents>
+        <spatial:coordinateComponent spatial:id="x" spatial:type="cartesianX" spatial:unit="Unit_dm">
+          <spatial:boundaryMin spatial:id="Xmin" spatial:value="0.0"/>
+          <spatial:boundaryMax spatial:id="Xmax" spatial:value="1.0E-4"/>
+        </spatial:coordinateComponent>
+        <spatial:coordinateComponent spatial:id="y" spatial:type="cartesianY" spatial:unit="Unit_dm">
+          <spatial:boundaryMin spatial:id="Ymin" spatial:value="0.0"/>
+          <spatial:boundaryMax spatial:id="Ymax" spatial:value="1.0E-4"/>
+        </spatial:coordinateComponent>
+        <spatial:coordinateComponent spatial:id="z" spatial:type="cartesianZ" spatial:unit="Unit_dm">
+          <spatial:boundaryMin spatial:id="Zmin" spatial:value="0.0"/>
+          <spatial:boundaryMax spatial:id="Zmax" spatial:value="1.0E-5"/>
+        </spatial:coordinateComponent>
+      </spatial:listOfCoordinateComponents>
+      <spatial:listOfDomains>
+        <spatial:domain spatial:domainType="cell" spatial:id="cell0">
+          <spatial:listOfInteriorPoints>
+            <spatial:interiorPoint spatial:coord1="0.0" spatial:coord2="0.0" spatial:coord3="0.0"/>
+          </spatial:listOfInteriorPoints>
+        </spatial:domain>
+      </spatial:listOfDomains>
+      <spatial:listOfDomainTypes>
+        <spatial:domainType spatial:id="cell" spatial:spatialDimensions="3">
+          <annotation>
+            <vcell:SubVolumeAttributes xmlns:vcell="http://sourceforge.net/projects/vcell" vcell:handle="0" vcell:defaultBCtypeXmin="Flux" vcell:defaultBCtypeXmax="Flux" vcell:defaultBCtypeYmin="Flux" vcell:defaultBCtypeYmax="Flux" vcell:defaultBCtypeZmin="Flux" vcell:defaultBCtypeZmax="Flux"/>
+          </annotation>
+        </spatial:domainType>
+      </spatial:listOfDomainTypes>
+      <spatial:listOfGeometryDefinitions>
+        <spatial:analyticGeometry spatial:id="Analytic_hybrid_box" spatial:isActive="true">
+          <annotation>
+            <vcell:GeometrySampling xmlns:vcell="http://sourceforge.net/projects/vcell" vcell:numX="101" vcell:numY="101" vcell:numZ="101" vcell:cutoffFrequency="0.3"/>
+          </annotation>
+                  <spatial:listOfAnalyticVolumes>
+            <spatial:analyticVolume spatial:domainType="cell" spatial:functionType="layered" spatial:id="AnalyticVol_cell" spatial:ordinal="0">
+              <math xmlns="http://www.w3.org/1998/Math/MathML">              
+                <cn> 1 </cn>
+              </math>
+                        </spatial:analyticVolume>
+          </spatial:listOfAnalyticVolumes>
+        </spatial:analyticGeometry>
+      </spatial:listOfGeometryDefinitions>
+    </spatial:geometry>
+    <listOfUnitDefinitions>
+      <unitDefinition id="Unit_umol">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-6"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_l">
+        <listOfUnits>
+          <unit exponent="1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_dm2">
+        <listOfUnits>
+          <unit exponent="2" kind="metre" multiplier="1" scale="-1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_dm">
+        <listOfUnits>
+          <unit exponent="1" kind="metre" multiplier="1" scale="-1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_s">
+        <listOfUnits>
+          <unit exponent="1" kind="second" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_dm2_s_1">
+        <listOfUnits>
+          <unit exponent="2" kind="metre" multiplier="1" scale="-1"/>
+          <unit exponent="-1" kind="second" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_umol_dm_l_1_s_1">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-6"/>
+          <unit exponent="1" kind="metre" multiplier="1" scale="-1"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="second" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_K">
+        <listOfUnits>
+          <unit exponent="1" kind="kelvin" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit__1">
+        <listOfUnits>
+          <unit exponent="1" kind="dimensionless" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_C_mol_1">
+        <listOfUnits>
+          <unit exponent="1" kind="coulomb" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="mole" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_C_nmol_1">
+        <listOfUnits>
+          <unit exponent="1" kind="coulomb" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="mole" multiplier="1" scale="-9"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_molecules_pmol_1">
+        <listOfUnits>
+          <unit exponent="1" kind="item" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="mole" multiplier="1" scale="-12"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit__1000000000">
+        <listOfUnits>
+          <unit exponent="1" kind="dimensionless" multiplier="1000000000" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_mV_C_K_1_mol_1">
+        <listOfUnits>
+          <unit exponent="1" kind="volt" multiplier="1" scale="-3"/>
+          <unit exponent="1" kind="coulomb" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="kelvin" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="mole" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_mV_V_1">
+        <listOfUnits>
+          <unit exponent="1" kind="dimensionless" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_uM_um3_molecules_1">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-6"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+          <unit exponent="3" kind="metre" multiplier="1" scale="-6"/>
+          <unit exponent="-1" kind="item" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="Unit_s_1">
+        <listOfUnits>
+          <unit exponent="-1" kind="second" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment constant="true" id="cell" name="cell" size="1.0000000000000002E-13" spatialDimensions="3" units="Unit_l">
+        <spatial:compartmentMapping xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:domainType="cell" spatial:id="cellcell" spatial:unitSize="1.0"/>
+      </compartment>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species boundaryCondition="false" compartment="cell" constant="false" hasOnlySubstanceUnits="false" id="A" initialConcentration="0" name="A" substanceUnits="Unit_umol">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+     <p>A</p>
+  </body>
+        </notes>
+        <annotation>
+          <vcell:SpeciesContextSpecSettings xmlns:vcell="http://sourceforge.net/projects/vcell" vcell:representation="particle"/>
+        </annotation>
+            </species>
+      <species boundaryCondition="false" compartment="cell" constant="false" hasOnlySubstanceUnits="false" id="B" initialConcentration="0.2" name="B" substanceUnits="Unit_umol">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+     <p>B</p>
+  </body>
+        </notes>
+        <annotation>
+          <vcell:SpeciesContextSpecSettings xmlns:vcell="http://sourceforge.net/projects/vcell" vcell:representation="continuous"/>
+        </annotation>
+            </species>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter constant="false" id="x" units="Unit_dm" value="0">
+        <spatial:spatialSymbolReference xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:spatialRef="x"/>
+      </parameter>
+      <parameter constant="false" id="y" units="Unit_dm" value="0">
+        <spatial:spatialSymbolReference xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:spatialRef="y"/>
+      </parameter>
+      <parameter constant="false" id="z" units="Unit_dm" value="0">
+        <spatial:spatialSymbolReference xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:spatialRef="z"/>
+      </parameter>
+      <parameter constant="true" id="A_diff" units="Unit_dm2_s_1" value="1E-10">
+        <spatial:diffusionCoefficient xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:type="isotropic" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Xm" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Xmin" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Xp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Xmax" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Ym" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Ymin" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Yp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Ymax" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Zm" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Zmin" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="A_BC_Zp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Zmax" spatial:type="Neumann" spatial:variable="A"/>
+      </parameter>
+      <parameter constant="true" id="B_diff" units="Unit_dm2_s_1" value="1E-10">
+        <spatial:diffusionCoefficient xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:type="isotropic" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Xm" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Xmin" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Xp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Xmax" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Ym" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Ymin" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Yp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Ymax" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Zm" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Zmin" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="B_BC_Zp" units="Unit_umol_dm_l_1_s_1" value="0">
+        <spatial:boundaryCondition xmlns:spatial="http://www.sbml.org/sbml/level3/version1/spatial/version1" spatial:coordinateBoundary="Zmax" spatial:type="Neumann" spatial:variable="B"/>
+      </parameter>
+      <parameter constant="true" id="_F_" units="Unit_C_mol_1" value="9.64853321E4"/>
+      <parameter constant="true" id="Kf_a_to_b" units="Unit_s_1" value="1"/>
+      <parameter constant="true" id="Kr_a_to_b" units="Unit_s_1" value="0"/>
+      <parameter constant="true" id="Kf_b_to_a" units="Unit_s_1" value="0.5"/>
+      <parameter constant="true" id="Kr_b_to_a" units="Unit_s_1" value="0"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction compartment="cell" id="a_to_b" name="a_to_b" reversible="true" spatial:isLocal="true">
+        <listOfReactants>
+          <speciesReference constant="true" id="a_to_b_Ar" species="A" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference constant="true" id="a_to_b_Bp" species="B" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">          
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_a_to_b </ci>
+                <ci> A </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_a_to_b </ci>
+                  <ci> B </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+                </kineticLaw>
+      </reaction>
+      <reaction compartment="cell" id="b_to_a" name="b_to_a" reversible="true" spatial:isLocal="true">
+        <listOfReactants>
+          <speciesReference constant="true" id="b_to_a_Br" species="B" stoichiometry="1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference constant="true" id="b_to_a_Ap" species="A" stoichiometry="1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">          
+            <apply>
+              <plus/>
+              <apply>
+                <times/>
+                <ci> Kf_b_to_a </ci>
+                <ci> B </ci>
+              </apply>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> Kr_b_to_a </ci>
+                  <ci> A </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+                </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
