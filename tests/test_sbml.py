@@ -1,6 +1,6 @@
 """Phase 6: hybrid models through SBML Spatial (viva_pde_particle.model.sbml).
 
-Needs libvcell built with VCell's SBML hybrid support (virtualcell/vcell#2175) and pyvcell's convert_units;
+Needs libvcell built with VCell's SBML hybrid support (virtualcell/vcell#2175) and pyvcell's unit conversion (virtualcell/pyvcell#63);
 skipped otherwise.
 """
 import re
@@ -22,8 +22,8 @@ def hybrid():
     """The two-way exchange slab with a starting particle count, a bimolecular and a zero-order reaction."""
     from pyvcell.vcml import utils
 
-    if not hasattr(utils, "convert_units"):
-        pytest.skip("pyvcell without convert_units")
+    if not hasattr(utils, "convert_vcml_units"):
+        pytest.skip("pyvcell without unit conversion (load_sbml_str unit_system=)")
     m = two_way_exchange_model(1.0, 0.5, 0.2)
     m.species_by_name("A").initial = 2000
     m.reactions.append(Reaction("bind", {"A": 1, "B": 1}, {"B": 1}, k=0.3))
