@@ -21,14 +21,16 @@ dependencies = [
     "plotly",
     "numpy",
     "scipy",
-    # Web-based workspace dashboard (server + templates + assets + lib helpers).
-    # Extracted from viva-template as of v0.4.16; provides the `vivarium-workbench
-    # serve` CLI invoked by scripts/serve.sh.
-    "vivarium-workbench",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4"]
+# Web-based workspace dashboard (server + templates + assets + lib helpers). Extracted from viva-template as of
+# v0.4.16; provides the `vivarium-workbench serve` CLI invoked by scripts/serve.sh. An extra rather than a dependency
+# so the compose-api image (docker/compose.Dockerfile, pixi `compose` env) does not carry a web app: process-bigraph's
+# discovery imports every package that depends on bigraph-schema, workbench's optional AI-chat modules included.
+# `dev` pulls it in, so the generated workflows' `.[dev]` / `--extra dev` installs keep the dashboard.
+workbench = ["vivarium-workbench"]
+dev = ["pytest>=7.4", "viva-pde-particle[workbench]"]
 # VCell reference solver (embedded fvsolver hybrid) + VCML/SBML tooling. pyvcell needs Python >=3.12;
 # the marker keeps the 3.11 resolution (workspace-ci, publish workflows) satisfiable. The SBML hybrid path needs
 # pyvcell 0.4.2 (load_sbml_str unit_system=) and libvcell 0.0.19 (vcell#2175). pyvcell's floor stays at 0.3.3

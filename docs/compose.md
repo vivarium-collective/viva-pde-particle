@@ -14,7 +14,8 @@ The service zips the output directory for download.
 `docker/compose.Dockerfile` builds `ghcr.io/vivarium-collective/viva-pde-particle-compose`.
 
 **Contents:**
-- the locked pixi `default` environment;
+- the locked pixi `compose` environment: `default` without the vivarium-workbench dashboard (the `workbench`
+  feature), so process-bigraph's package discovery does not import a web app on every job;
 - the patched Smoldyn (OPTION_VCELL), built from `external/Smoldyn`;
 - this package.
 
