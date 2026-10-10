@@ -27,6 +27,9 @@ vcell-fvsolver.
   spatial-hybrid support, virtualcell/pyvcell#62). The native VCell reference
   (`viva_pde_particle.reference.vcell_native`) and Study A2 part 3 need it. Build Smoldyn there
   too with `pixi run -e dev build-smoldyn`. CI uses `default`, where native tests skip.
+- **`compose` environment:** `default` minus the `workbench` feature (vivarium-workbench). The compose-api image
+  (`docker/compose.Dockerfile`) is built from it. Nothing under `viva_pde_particle/` may import `vivarium_workbench`
+  at module level; `pyproject.toml` has it only as the `workbench` extra, which `dev` includes.
 - **Native solves:** vcell-fvsolver segfaults on a second hybrid solve in one process. Always go
   through `run_native` / `run_native_ensemble`, which spawn a process per solve.
 

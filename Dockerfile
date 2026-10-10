@@ -31,7 +31,8 @@ RUN mkdir -p /app/.results_cache
 # paths inside the workspace (a vendored sibling, a local sub-checkout)
 # resolve. Loses some layer cache on source-only edits — acceptable
 # trade-off for robustness across source types.
-RUN uv sync --no-install-project || uv sync
+# `--extra workbench`: the dashboard this image serves is an optional extra (pyproject.toml).
+RUN uv sync --extra workbench --no-install-project || uv sync --extra workbench
 
 EXPOSE 9863
 

@@ -3,7 +3,10 @@
 #   pixi install            # conda-forge engines + pypi ecosystem + this package (editable)
 #   pixi run build-smoldyn  # build the (patched) Smoldyn python module from external/Smoldyn
 #   pixi run test
-#   pixi run serve          # vivarium-workbench dashboard
+#   pixi run serve          # vivarium-workbench dashboard (the `workbench` feature, in `default` and `dev`)
+#
+# Environments: `default` and `dev` carry the vivarium-workbench dashboard; `compose` is `default` without it, for the
+# compose-api image (docker/compose.Dockerfile). Same solve group, so `compose` has exactly `default`'s versions.
 #
 # Conda-forge supplies the compiled engines (FEniCSx/dolfinx + MPI/PETSc) and the
 # Smoldyn build toolchain. PyPI supplies the process-bigraph / viva ecosystem and the
@@ -58,7 +61,8 @@ pyvista = ">=0.49.0,<0.50"
 imageio = ">=2.38.0,<3"
 
 [pypi-dependencies]
-viva-pde-particle = { path = ".", editable = true, extras = ["dev", "reference"] }
+# Not the `dev` extra: it pulls in vivarium-workbench, which only the `workbench` feature below should add.
+viva-pde-particle = { path = ".", editable = true, extras = ["reference"] }
 # process-bigraph main (unreleased past 1.8.5); keep in step with pyproject.toml.
 process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", rev = "e5325c13185b6308b41cbf65eb6d61751e3219ee" }
 # 0.11.1: the hybrid fixes for zeroth-order creation, second solves and histogram binning (vcell-fvsolver#32-#34).
@@ -67,7 +71,6 @@ pyvcell-fvsolver = ">=0.11.1"
 bigraph-schema = "*"
 # Ecosystem packages tracked from git main, mirroring vivarium-workbench main's own
 # [tool.uv.sources] (pixi does not read transitive uv sources, so they are listed here).
-vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-workbench.git", branch = "main" }
 viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpowers.git", branch = "main" }
 viva-workspace = { git = "https://github.com/vivarium-collective/viva-workspace.git", branch = "main" }
 viva-catalog = { git = "https://github.com/vivarium-collective/viva-marketplace.git", branch = "main" }
@@ -82,7 +85,6 @@ vcell-fenics = { git = "https://github.com/virtualcell/vcell-fenics.git", rev = 
 build-smoldyn = { cmd = "bash scripts/build_smoldyn.sh", description = "Build + install the Smoldyn python module (OPTION_VCELL) from external/Smoldyn" }
 test = { cmd = "pytest tests -v", description = "Run the test suite" }
 lint = { cmd = "python scripts/lint-workspace.py", description = "Validate workspace.yaml / studies / investigations" }
-serve = { cmd = "vivarium-workbench serve --workspace .", description = "Start the vivarium-workbench dashboard" }
 check-engines = { cmd = "python scripts/check_engines.py", description = "Report versions of every engine importable in this env" }
 # VCell's vtk.wasm field viewer over recorded bundles: pixi run view3d path/to/run.fenics [...]
 # (needs ../vcell/webapp-viewer with `npm run fetch:vtk-wasm` run once, or --viewer / VCELL_WEBAPP_VIEWER).
@@ -96,5 +98,14 @@ dev-link = { cmd = "pip install --no-deps -e ../pyvcell -e ../vivarium-workbench
 [feature.dev.pypi-dependencies]
 pyvcell = { path = "../pyvcell", editable = true, extras = ["solver", "native"] }
 
+# The vivarium-workbench dashboard. Kept out of the `compose` environment (the compose-api simulation image).
+[feature.workbench.pypi-dependencies]
+vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-workbench.git", branch = "main" }
+
+[feature.workbench.tasks]
+serve = { cmd = "vivarium-workbench serve --workspace .", description = "Start the vivarium-workbench dashboard" }
+
 [environments]
-dev = { features = ["dev"], solve-group = "dev" }
+default = { features = ["workbench"], solve-group = "default" }
+compose = { features = [], solve-group = "default" }
+dev = { features = ["dev", "workbench"], solve-group = "dev" }

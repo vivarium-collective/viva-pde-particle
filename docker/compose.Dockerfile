@@ -4,8 +4,9 @@
 # so the entrypoint is viva_pde_particle.compose_runner (see that module): it runs a process-bigraph document with this
 # workspace's core and writes results_*.pber like pbest does.
 #
-# Contents: the pixi `default` environment (exactly as locked: --frozen, since the `dev` env's path deps are not in the
-# build context; conda-forge dolfinx, netgen, ... + the pypi deps), the patched
+# Contents: the pixi `compose` environment, which is `default` without the vivarium-workbench dashboard (exactly as
+# locked: --frozen, since the `dev` env's path deps are not in the build context; conda-forge dolfinx, netgen, ... +
+# the pypi deps), the patched
 # Smoldyn (OPTION_VCELL) built from external/Smoldyn, and this package. linux/amd64 only (the cluster's architecture
 # and pixi.lock's linux platform).
 #
@@ -19,9 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
-RUN pixi install --frozen -e default \
-    && pixi run --frozen -e default build-smoldyn \
-    && pixi shell-hook --frozen -e default > /app/docker/shell-hook.sh \
+RUN pixi install --frozen -e compose \
+    && pixi run --frozen -e compose build-smoldyn \
+    && pixi shell-hook --frozen -e compose > /app/docker/shell-hook.sh \
     && rm -rf build ~/.cache/rattler ~/.cache/pip
 
 FROM debian:bookworm-slim AS runtime
