@@ -33,8 +33,6 @@ simulation only sees complete rows.
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -324,14 +322,9 @@ class SpatialBundleWriter:
         if self.particle_species:
             attrs[EXTENSION_KEY] = {"schema": 1, "species": {
                 s: {"xyz": f"particles/{s}/xyz", "count": f"particles/{s}/count"} for s in self.particle_species}}
-        handle, temp = tempfile.mkstemp(dir=self.path, prefix=".zattrs.", suffix=".tmp")
-        try:
-            with os.fdopen(handle, "w") as stream:
-                stream.write(json.dumps(attrs, indent=1, sort_keys=True))
-            os.replace(temp, self.path / ".zattrs")
-        except BaseException:
-            Path(temp).unlink(missing_ok=True)
-            raise
+        from viva_pde_particle.viz3d.web import write_attrs_atomically
+
+        write_attrs_atomically(self.path, attrs)
 
 
 def read_particles(path, species: str, row: int) -> np.ndarray:
