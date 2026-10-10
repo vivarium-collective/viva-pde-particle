@@ -60,6 +60,19 @@ def test_the_writer_adds_the_web_extension_from_the_start(tmp_path):
     assert tris.dtype == np.uint32 and len(tris) == 48 and tris.max() < len(points)
 
 
+def test_the_manifest_is_as_readable_as_the_rest_of_the_bundle(tmp_path):
+    import os
+    import stat
+
+    path = tmp_path / "b.fenics"
+    _bundle(path)
+    umask = os.umask(0)
+    os.umask(umask)
+    mode = stat.S_IMODE((path / ".zattrs").stat().st_mode)
+    assert mode == 0o666 & ~umask  # not mkstemp's 0600: a server reading as another user must see it
+    assert mode == stat.S_IMODE((path / "cell" / "u" / ".zarray").stat().st_mode)
+
+
 def test_export_adds_the_extension_to_a_bundle_without_one(tmp_path):
     from viva_pde_particle.steps.spatial_export import export
 

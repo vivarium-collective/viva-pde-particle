@@ -69,19 +69,32 @@ def write_surfaces(path, surfaces: dict[str, tuple[np.ndarray, np.ndarray]]) -> 
     return entry
 
 
-def publish_web_attrs(path, entry: dict) -> None:
-    """Merge ``entry`` into the root ``.zattrs`` atomically (a reader may be polling it)."""
-    root = Path(path)
-    attrs = json.loads((root / ".zattrs").read_text())
-    attrs[WEB_KEY] = entry
+def write_attrs_atomically(root, attrs: dict) -> None:
+    """Replace ``root/.zattrs`` atomically (a reader may be polling it), readable like every other file in the bundle.
+
+    ``mkstemp`` creates its file 0600 and ``os.replace`` keeps that mode, which left ``.zattrs`` unreadable to anyone
+    but the writer: compose-api, serving the bundle as another user, could not read it (compose-api simulation 4570).
+    """
+    root = Path(root)
     handle, temp = tempfile.mkstemp(dir=root, prefix=".zattrs.", suffix=".tmp")
     try:
         with os.fdopen(handle, "w") as stream:
             stream.write(json.dumps(attrs, indent=1, sort_keys=True))
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(temp, 0o666 & ~umask)
         os.replace(temp, root / ".zattrs")
     except BaseException:
         Path(temp).unlink(missing_ok=True)
         raise
+
+
+def publish_web_attrs(path, entry: dict) -> None:
+    """Merge ``entry`` into the root ``.zattrs``."""
+    root = Path(path)
+    attrs = json.loads((root / ".zattrs").read_text())
+    attrs[WEB_KEY] = entry
+    write_attrs_atomically(root, attrs)
 
 
 def add_web_extension(path) -> dict:
