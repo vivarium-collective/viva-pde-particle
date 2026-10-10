@@ -183,6 +183,7 @@ class SpatialBundleWriter:
         self._manifest = None
         self._arrays: dict = {}
         self._rows = 0
+        self._web: dict | None = None  # the web extension's .zattrs entry (viz3d/web.py)
 
     def add_domain(self, domain: Domain, variables) -> None:
         from vcell_fenics.results.writer import _check_name
@@ -226,6 +227,12 @@ class SpatialBundleWriter:
             self._arrays[("xyz", s)] = self._create(group, f"particles/{s}/xyz", (rows, 1024, 3), ("time", "molecule", "xyz"))
             self._arrays[("count", s)] = self._create(group, f"particles/{s}/count", (rows, 1), ("time", "one"))
         self._group = group
+        # The web extension (viz3d/web.py) from the start, so a browser can draw a live run.
+        from viva_pde_particle.viz3d.web import surface_of, write_surfaces
+
+        surfaces = {name: s for name, (dom, _, _) in self.domains.items()
+                    if (s := surface_of(dom.points, dom.cells, dom.vtk_type)) is not None}
+        self._web = write_surfaces(self.path, surfaces) if surfaces else None
         try:
             from importlib.metadata import version
 
@@ -310,6 +317,10 @@ class SpatialBundleWriter:
         from vcell_fenics.results.schema import manifest_to_attrs
 
         attrs = manifest_to_attrs(self._manifest)
+        if self._web:
+            from viva_pde_particle.viz3d.web import WEB_KEY
+
+            attrs[WEB_KEY] = self._web
         if self.particle_species:
             attrs[EXTENSION_KEY] = {"schema": 1, "species": {
                 s: {"xyz": f"particles/{s}/xyz", "count": f"particles/{s}/count"} for s in self.particle_species}}

@@ -69,6 +69,9 @@ process-bigraph = { git = "https://github.com/vivarium-collective/process-bigrap
 # Python >=3.12 only, so it is pinned here rather than in pyproject (CI resolves that on 3.11).
 pyvcell-fvsolver = ">=0.11.1"
 bigraph-schema = "*"
+# Results bundles (viz3d/bundle.py, viz3d/web.py) are zarr v2 groups. Listed directly: it used to arrive only through
+# vivarium-workbench, which the `compose` environment (the compose-api image) leaves out.
+zarr = ">=3.1,<4"
 # Ecosystem packages tracked from git main, mirroring vivarium-workbench main's own
 # [tool.uv.sources] (pixi does not read transitive uv sources, so they are listed here).
 viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpowers.git", branch = "main" }

@@ -8,7 +8,11 @@ build_runner_core`):
 
 - reads the first ``.pbg`` in the archive, or the ``.pbg`` given directly;
 - builds a ``Composite`` and runs it for the interval;
-- writes ``results_<date>.pber``: ``gather_emitter_results`` as JSON, as pbest does.
+- writes ``results_<date>.pber``: ``gather_emitter_results`` as JSON, as pbest does;
+- a document with a ``SpatialRecorder`` (:func:`viva_pde_particle.viz3d.record.attach_recorder`) records into
+  ``<output>/<name>.fenics``: the runner finalizes it after the run (its tick at the end time is never executed),
+  makes it web-viewable (:mod:`viva_pde_particle.steps.spatial_export`) and announces it as a ``results-bundle``
+  dataset, which compose-api's web UI views (compose-api docs/plan-viewers.md).
 
     python -m viva_pde_particle.compose_runner run experiment.omex -o output -n 1
     python -m viva_pde_particle.compose_runner example experiment.omex   # a small real ensemble document
@@ -60,28 +64,57 @@ def run(path: Path, output: Path, interval: float) -> Path:
 
     emitter = events.get_emitter()  # configured from PBG_* when compose-api's job passes them; silent otherwise
     with emitter.span("task", document=path.name, interval=interval):
-        out = _run(path, output, interval)
+        out, bundles = _run(path, output, interval)
         _announce(emitter, out)
+        for record in bundles:
+            _announce_bundle(emitter, record)
     emitter.flush()
     return out
 
 
-def _run(path: Path, output: Path, interval: float) -> Path:
+RECORDER = "local:SpatialRecorder"
+
+
+def _recorders(state: dict) -> list[str]:
+    """Keys of the top-level SpatialRecorder nodes."""
+    return [k for k, v in state.items() if isinstance(v, dict) and v.get("address") == RECORDER]
+
+
+def _bundle_path(out_dir: str, output: Path) -> Path:
+    """Where a recorder writes on this run: under ``output`` (the directory compose-api keeps), as ``<name>.fenics``,
+    whatever machine-specific ``out_dir`` the document was written with."""
+    name = Path(out_dir).name or "spatial"
+    return output / (name if name.endswith(".fenics") else f"{name}.fenics")
+
+
+def _run(path: Path, output: Path, interval: float) -> tuple[Path, list[dict]]:
     from process_bigraph import Composite, gather_emitter_results
 
     from viva_pde_particle.ensemble import build_runner_core
+    from viva_pde_particle.steps.spatial_export import export
 
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         doc = load_document(path, Path(tmp))
+        bundles = []
+        for key in _recorders(doc["state"]):
+            config = doc["state"][key]["config"]
+            config["out_dir"] = str(_bundle_path(config["out_dir"], output))
+            bundles.append(Path(config["out_dir"]))
         sim = Composite(doc, core=build_runner_core())
         sim.run(interval)
+        from viva_pde_particle.processes.recorder import SpatialRecorder
+
+        for node in sim.state.values():  # a recorder's tick at the end time is never executed: record it here
+            if isinstance(node, dict) and isinstance(node.get("instance"), SpatialRecorder):
+                node["instance"].close(sim.state, float(interval))
         results = gather_emitter_results(sim)
+        exported = export(bundles)
     stamp = datetime.datetime.now().strftime("%Y-%m-%d#%H-%M-%S")
     out = output / f"results_{stamp}.pber"
     out.write_text(json.dumps({"/".join(map(str, k)) if isinstance(k, tuple) else str(k): _jsonable(v)
                                for k, v in results.items()}))
-    return out
+    return out, exported
 
 
 def _announce(emitter, out: Path) -> None:
@@ -101,6 +134,17 @@ def _announce(emitter, out: Path) -> None:
     emitter.event("artifact.written", component="viva_pde_particle", uri=str(out.resolve()), kind="results",
                   name=f"ensemble results ({attributes['seeds']} seeds)" if "seeds" in attributes else out.name,
                   bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), attributes=attributes)
+
+
+def _announce_bundle(emitter, record: dict) -> None:
+    """``artifact.written`` for a results bundle: one directory dataset of kind ``results-bundle``, which
+    compose-api serves file by file and its web UI views (docs/plan-viewers.md). No checksum: it is a directory."""
+    path = Path(record["path"])
+    size = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+    attributes = {"format": "vcell-fenics-bundle", **{k: v for k, v in record.items() if k != "path"}}
+    emitter.event("artifact.written", component="viva_pde_particle", uri=str(path.resolve()), kind="results-bundle",
+                  media_type="application/vnd.vcell.results-bundle+zarr",
+                  name=f"spatial results ({', '.join(record['variables'])})", bytes=size, attributes=attributes)
 
 
 EXAMPLE_TRIAL = "viva_pde_particle.benchmarks.fokker_planck:trial_rho"
