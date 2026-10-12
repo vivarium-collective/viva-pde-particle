@@ -32,7 +32,7 @@ Additive, like the particle extension: readers that do not know it ignore it.
   vcell-fenics wrote). It is the ad hoc translation step for this project's output. A general converter between two
   standard formats, or a figure/view step, belongs in its own published component once a second producer needs one.
 - **`compose_runner`:**
-  - points every `SpatialRecorder`'s `out_dir` at `<output>/<name>.fenics`
+  - points every recorder's `out_dir` at `<output>/<name>.fenics`
   - calls the recorder's `close()` after the run (its tick at the end time never executes)
   - runs `export()`
   - announces each bundle:

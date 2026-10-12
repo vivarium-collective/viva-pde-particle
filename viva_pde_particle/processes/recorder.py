@@ -1,12 +1,17 @@
-"""SpatialRecorder: a Process that writes the run into a spatial results bundle (Phase 8).
+"""Recorders: Processes that write the run into a spatial results bundle (Phase 8).
 
-It ticks on the composite's shortest process interval (``base_dt``), so its clock is the PDE's
+:class:`GridRecorder` records fields on a Cartesian grid (port ``fields``); :class:`MeshRecorder`
+records P1 DOF fields on a mesh (port ``field_dofs``). Both read ``particle_positions`` when it is
+wired. The interface of each is fixed by its class, not by its config, so a composite can be checked
+against the declared ports without instantiating anything.
+
+A recorder ticks on the composite's shortest process interval (``base_dt``), so its clock is the PDE's
 float for float, and reads state at the start of each tick, after every update ending at that time
 has been applied. Every ``every``-th tick it writes a bundle row for ``t = n·base_dt``. It has no
 outputs, so the simulation is unchanged.
 
 The tick starting at the run's end time is not executed by the composite, so callers record the
-final state with :meth:`close` (``run_document`` does). Configure it with
+final state with :meth:`GridRecorder.close` (``run_document`` does). Configure one with
 :func:`viva_pde_particle.viz3d.record.attach_recorder`.
 """
 from __future__ import annotations
@@ -14,7 +19,12 @@ from __future__ import annotations
 from process_bigraph import Process
 
 
-class SpatialRecorder(Process):
+class _RecorderBase(Process):
+    """Base of the recorders; ``FIELD_PORT`` and ``LAYOUT`` are fixed by the subclass."""
+
+    FIELD_PORT: str | None = None
+    LAYOUT: str | None = None
+
     config_schema = {
         "out_dir": "string",
         "base_dt": "float",
@@ -30,7 +40,11 @@ class SpatialRecorder(Process):
     def initialize(self, config):
         from viva_pde_particle.viz3d.record import BundleRecorder
 
-        self.port = "field_dofs" if config["layout"]["kind"] == "mesh" else "fields"
+        if self.FIELD_PORT is None:
+            raise TypeError("use GridRecorder or MeshRecorder")
+        kind = config["layout"].get("kind")
+        if kind != self.LAYOUT:
+            raise ValueError(f"{type(self).__name__} records a {self.LAYOUT!r} layout, got {kind!r}")
         self.recorder = BundleRecorder(config["out_dir"], config["layout"], config["species"],
                                        config["particle_species"], config["membranes"], config["region"],
                                        config["source"])
@@ -38,16 +52,15 @@ class SpatialRecorder(Process):
         self.closed = False
 
     def inputs(self):
-        ports = {self.port: "map[array[float]]"}
-        if self.config["particle_species"]:
-            ports["particle_positions"] = "map[array[float]]"
-        return ports
+        if self.FIELD_PORT is None:
+            return {}
+        return {self.FIELD_PORT: "map[array[float]]", "particle_positions": "map[array[float]]"}
 
     def outputs(self):
         return {}
 
     def _record(self, t, state):
-        self.recorder.record(t, state[self.port], state.get("particle_positions"))
+        self.recorder.record(t, state[self.FIELD_PORT], state.get("particle_positions"))
 
     def update(self, state, interval):
         if self.tick % self.config["every"] == 0 and not self.closed:
@@ -64,3 +77,17 @@ class SpatialRecorder(Process):
             self._record(t, state)
         self.recorder.close(status)
         self.closed = True
+
+
+class GridRecorder(_RecorderBase):
+    """Records ``fields`` on a Cartesian grid (``layout.kind == "grid"``)."""
+
+    FIELD_PORT = "fields"
+    LAYOUT = "grid"
+
+
+class MeshRecorder(_RecorderBase):
+    """Records ``field_dofs`` on a P1 mesh (``layout.kind == "mesh"``)."""
+
+    FIELD_PORT = "field_dofs"
+    LAYOUT = "mesh"
