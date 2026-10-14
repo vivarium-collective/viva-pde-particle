@@ -63,8 +63,9 @@ imageio = ">=2.38.0,<3"
 [pypi-dependencies]
 # Not the `dev` extra: it pulls in vivarium-workbench, which only the `workbench` feature below should add.
 viva-pde-particle = { path = ".", editable = true, extras = ["reference"] }
-# process-bigraph main (unreleased past 1.8.5); keep in step with pyproject.toml.
-process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", rev = "e5325c13185b6308b41cbf65eb6d61751e3219ee" }
+# A release, never a commit: 1.9.1 carries #229 (per-process event files) and #230 (groundness check), which the
+# e5325c1 pin was for. Keep in step with pyproject.toml.
+process-bigraph = ">=1.9.1"
 # 0.11.1: the hybrid fixes for zeroth-order creation, second solves and histogram binning (vcell-fvsolver#32-#34).
 # Python >=3.12 only, so it is pinned here rather than in pyproject (CI resolves that on 3.11).
 pyvcell-fvsolver = ">=0.11.1"
