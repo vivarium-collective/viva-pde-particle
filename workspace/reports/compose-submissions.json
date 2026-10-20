@@ -1,0 +1,567 @@
+{
+ "url": "https://compose.cam.uchc.edu",
+ "simulator": "viva-pde-particle",
+ "submissions": [
+  {
+   "study": "handoff-units-and-binning",
+   "name": "particle-diffusion",
+   "simulation_id": 4663,
+   "tags": [
+    "pde-particle",
+    "handoff-units-and-binning",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.1,
+   "description": "Study A1 baseline: 20,000 free particles from the centre cell, D = 1, binned onto the 11\u00d711 grid.",
+   "status": "completed",
+   "slurm_job": 4286193
+  },
+  {
+   "study": "field-modulated-decay",
+   "name": "field-modulated-decay",
+   "simulation_id": 4664,
+   "tags": [
+    "pde-particle",
+    "field-modulated-decay",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.1,
+   "description": "Study A2 baseline: static particles decaying at k\u00b7B(x) with a linear B field.",
+   "status": "completed",
+   "slurm_job": 4286191
+  },
+  {
+   "study": "field-modulated-decay",
+   "name": "field-modulated-decay-continuum",
+   "simulation_id": 4665,
+   "tags": [
+    "pde-particle",
+    "field-modulated-decay",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.1,
+   "description": "Study A2 continuum-limit variant: 20,000 diffusing particles, Gaussian B, D_B = 0.5.",
+   "status": "completed",
+   "slurm_job": 4286204
+  },
+  {
+   "study": "two-way-exchange",
+   "name": "two-way-exchange",
+   "simulation_id": 4666,
+   "tags": [
+    "pde-particle",
+    "two-way-exchange",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study A3 baseline: A_particle \u21cc B_field (k1 = 1, k2 = 0.5, B\u2080 = 0.2 \u00b5M) on the 11\u00d711\u00d73 slab.",
+   "status": "completed",
+   "slurm_job": 4286202
+  },
+  {
+   "study": "bimolecular-hybrid",
+   "name": "bimolecular-slab",
+   "simulation_id": 4667,
+   "tags": [
+    "pde-particle",
+    "bimolecular-hybrid",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 3.0,
+   "output_dt": 0.25,
+   "description": "Study A4 baseline: A_particle + B_field \u2192 C_field, k = 1/(\u00b5M\u00b7s), B\u2080 = 0.5 \u00b5M.",
+   "status": "completed",
+   "slurm_job": 4286196
+  },
+  {
+   "study": "coupling-interval-convergence",
+   "name": "bimolecular-k2-step1",
+   "simulation_id": 4668,
+   "tags": [
+    "pde-particle",
+    "coupling-interval-convergence",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.6,
+   "output_dt": 0.16,
+   "description": "Study A5 baseline: bimolecular slab at k = 2 with the Smoldyn step equal to the PDE step.",
+   "status": "completed",
+   "slurm_job": 4286195
+  },
+  {
+   "study": "coupling-interval-convergence",
+   "name": "bimolecular-k2-step16",
+   "simulation_id": 4669,
+   "tags": [
+    "pde-particle",
+    "coupling-interval-convergence",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.6,
+   "output_dt": 0.16,
+   "description": "Study A5 variant: the same with Smoldyn stepping once per 16 PDE steps (coupling interval 0.08 s).",
+   "status": "completed",
+   "slurm_job": 4286203
+  },
+  {
+   "study": "performance-scaling",
+   "name": "bimolecular-perf",
+   "simulation_id": 4670,
+   "tags": [
+    "pde-particle",
+    "performance-scaling",
+    "cosim-vs-embedded-hybrid"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.1,
+   "description": "Study A6 baseline: the bimolecular slab timed to t = 1 s.",
+   "status": "completed",
+   "slurm_job": 4286192
+  },
+  {
+   "study": "separable-calcium-sparks",
+   "name": "calcium-sparks-test1",
+   "simulation_id": 4671,
+   "tags": [
+    "pde-particle",
+    "separable-calcium-sparks",
+    "vcell-hybrid-paper-benchmarks"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study C1 baseline: Schaff 2016 Test 1, 24 channels on the 4\u00d76 lattice, separable kinetics, dt = 5 ms.",
+   "status": "completed",
+   "slurm_job": 4286200
+  },
+  {
+   "study": "coupled-sparks-fast-diffusion",
+   "name": "calcium-sparks-test2",
+   "simulation_id": 4672,
+   "tags": [
+    "pde-particle",
+    "coupled-sparks-fast-diffusion",
+    "vcell-hybrid-paper-benchmarks"
+   ],
+   "interval": 3.0,
+   "output_dt": 0.05,
+   "description": "Study C2 baseline: Schaff 2016 Test 2, opening rate k_on\u00b7U/U0 coupled to the field, fast diffusion, dt = 0.2 ms.",
+   "status": "completed",
+   "slurm_job": 4286199
+  },
+  {
+   "study": "single-channel-fokker-planck",
+   "name": "fokker-planck-test3",
+   "simulation_id": 4673,
+   "tags": [
+    "pde-particle",
+    "single-channel-fokker-planck",
+    "vcell-hybrid-paper-benchmarks"
+   ],
+   "interval": 30.0,
+   "output_dt": 1.0,
+   "description": "Study C3: one trial of Test 3 (fast diffusion, \u03b1 = \u03b2 = 1, a = 24, \u03c4 = 30, \u0394\u03c4 = 0.002); the ensembles ran as blocks earlier (runs/compose/).",
+   "status": "completed",
+   "slurm_job": 4286206
+  },
+  {
+   "study": "sbml-spatial-hybrid",
+   "name": "two-way-exchange-from-sbml",
+   "simulation_id": 4674,
+   "tags": [
+    "pde-particle",
+    "sbml-spatial-hybrid",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B1 baseline: the two-way exchange model as its SBML round trip defines it, t = 2 s.",
+   "status": "completed",
+   "slurm_job": 4286198
+  },
+  {
+   "study": "fenicsx-same-problem",
+   "name": "bimolecular-fenicsx-lumped",
+   "simulation_id": 4675,
+   "tags": [
+    "pde-particle",
+    "fenicsx-same-problem",
+    "hybrid-generalizability"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.25,
+   "description": "Study B2 baseline: the bimolecular slab with the FEniCSx Q1 engine (lumped mass) in place of FV.",
+   "status": "completed",
+   "slurm_job": 4286194
+  },
+  {
+   "study": "fenicsx-same-problem",
+   "name": "bimolecular-fenicsx-consistent",
+   "simulation_id": 4676,
+   "tags": [
+    "pde-particle",
+    "fenicsx-same-problem",
+    "hybrid-generalizability"
+   ],
+   "interval": 1.0,
+   "output_dt": 0.25,
+   "description": "Study B2 variant: FEniCSx Q1 with the consistent mass matrix.",
+   "status": "completed",
+   "slurm_job": 4286197
+  },
+  {
+   "study": "unstructured-geometry",
+   "name": "ball-conversion",
+   "simulation_id": 4696,
+   "tags": [
+    "pde-particle",
+    "unstructured-geometry",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2a baseline: A_p \u2192 B_f in a gmsh ball (R = 4 \u00b5m, h = 0.8), FEniCSx P1 + Smoldyn confined by the mesh.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4677,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286242
+  },
+  {
+   "study": "unstructured-geometry",
+   "name": "ball-exchange",
+   "simulation_id": 4697,
+   "tags": [
+    "pde-particle",
+    "unstructured-geometry",
+    "hybrid-generalizability"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study B2a variant: A_p \u21cc B_f in the same ball.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4678,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286244
+  },
+  {
+   "study": "sphere-cosim-vs-native",
+   "name": "ball-conversion",
+   "simulation_id": 4698,
+   "tags": [
+    "pde-particle",
+    "sphere-cosim-vs-native",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2b co-simulation: A_p \u2192 B_f in the ball (centre 4.5, R = 4, h = 0.8) that native VCell also ran.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4679,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286246
+  },
+  {
+   "study": "sphere-cosim-vs-native",
+   "name": "ball-exchange",
+   "simulation_id": 4699,
+   "tags": [
+    "pde-particle",
+    "sphere-cosim-vs-native",
+    "hybrid-generalizability"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study B2b co-simulation: A_p \u21cc B_f in the same ball.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4680,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286245
+  },
+  {
+   "study": "near-membrane-fields",
+   "name": "ball-conversion",
+   "simulation_id": 4700,
+   "tags": [
+    "pde-particle",
+    "near-membrane-fields",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2c: the B2b ball conversion, whose near-membrane B profile the study measures.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4681,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286243
+  },
+  {
+   "study": "cosim-boundary-transfer",
+   "name": "ball-conversion-grid-sphere",
+   "simulation_id": 4701,
+   "tags": [
+    "pde-particle",
+    "cosim-boundary-transfer",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2d variant grid_sphere: P\u1d40 grid transfer, particles confined by the analytic sphere.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4682,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286247
+  },
+  {
+   "study": "cosim-boundary-transfer",
+   "name": "ball-conversion-positions-sphere",
+   "simulation_id": 4702,
+   "tags": [
+    "pde-particle",
+    "cosim-boundary-transfer",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2d variant positions_sphere: exact P1 load from positions, analytic sphere.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4683,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286248
+  },
+  {
+   "study": "cosim-boundary-transfer",
+   "name": "ball-conversion-grid-mesh",
+   "simulation_id": 4703,
+   "tags": [
+    "pde-particle",
+    "cosim-boundary-transfer",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2d variant grid_mesh: P\u1d40 grid transfer, particles confined by the mesh boundary.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4684,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286249
+  },
+  {
+   "study": "cosim-boundary-transfer",
+   "name": "ball-conversion-positions-mesh",
+   "simulation_id": 4704,
+   "tags": [
+    "pde-particle",
+    "cosim-boundary-transfer",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2d variant positions_mesh: exact P1 load from positions, mesh boundary.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4685,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286250
+  },
+  {
+   "study": "vcell-geometry-cosim",
+   "name": "ball-conversion-corrected",
+   "simulation_id": 4686,
+   "tags": [
+    "pde-particle",
+    "vcell-geometry-cosim",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2e: A_p \u2192 B_f on VCell's own realization of the ball, adapters + accessible volumes.",
+   "status": "completed",
+   "slurm_job": 4286214
+  },
+  {
+   "study": "vcell-geometry-cosim",
+   "name": "ball-conversion-none",
+   "simulation_id": 4687,
+   "tags": [
+    "pde-particle",
+    "vcell-geometry-cosim",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2e: the same with no correction (VCell's full voxel volumes).",
+   "status": "completed",
+   "slurm_job": 4286215
+  },
+  {
+   "study": "vcell-geometry-cosim",
+   "name": "ball-exchange-corrected",
+   "simulation_id": 4688,
+   "tags": [
+    "pde-particle",
+    "vcell-geometry-cosim",
+    "hybrid-generalizability"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study B2e: A_p \u21cc B_f on VCell's realization, adapters + accessible volumes.",
+   "status": "completed",
+   "slurm_job": 4286217
+  },
+  {
+   "study": "splitting-schemes",
+   "name": "exchange-strang-k2",
+   "simulation_id": 4689,
+   "tags": [
+    "pde-particle",
+    "splitting-schemes",
+    "hybrid-generalizability"
+   ],
+   "interval": 1.6,
+   "output_dt": 0.16,
+   "description": "Study B2g: the k = 2 bimolecular slab under the SplittingCoordinator, Strang splitting, coupling 2\u00b7dt.",
+   "status": "completed",
+   "slurm_job": 4286218
+  },
+  {
+   "study": "splitting-schemes",
+   "name": "exchange-jacobi-k2",
+   "simulation_id": 4690,
+   "tags": [
+    "pde-particle",
+    "splitting-schemes",
+    "hybrid-generalizability"
+   ],
+   "interval": 1.6,
+   "output_dt": 0.16,
+   "description": "Study B2g: the same under Jacobi splitting.",
+   "status": "completed",
+   "slurm_job": 4286216
+  },
+  {
+   "study": "dumbbell-three-ways",
+   "name": "dumbbell-mesh-conversion",
+   "simulation_id": 4705,
+   "tags": [
+    "pde-particle",
+    "dumbbell-three-ways",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2f mesh path: A_p \u2192 B_f in the dumbbell (two balls and a neck), Netgen h = 0.3.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4691,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286251
+  },
+  {
+   "study": "dumbbell-three-ways",
+   "name": "dumbbell-mesh-exchange",
+   "simulation_id": 4706,
+   "tags": [
+    "pde-particle",
+    "dumbbell-three-ways",
+    "hybrid-generalizability"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study B2f mesh path: A_p \u21cc B_f in the dumbbell.",
+   "status": "completed",
+   "previous": [
+    {
+     "simulation_id": 4692,
+     "status": "failed"
+    }
+   ],
+   "slurm_job": 4286252
+  },
+  {
+   "study": "dumbbell-three-ways",
+   "name": "dumbbell-vcell-corrected-conversion",
+   "simulation_id": 4693,
+   "tags": [
+    "pde-particle",
+    "dumbbell-three-ways",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2f VCell-realization path: A_p \u2192 B_f, adapters + accessible volumes.",
+   "status": "completed",
+   "slurm_job": 4286221
+  },
+  {
+   "study": "dumbbell-three-ways",
+   "name": "dumbbell-vcell-none-conversion",
+   "simulation_id": 4694,
+   "tags": [
+    "pde-particle",
+    "dumbbell-three-ways",
+    "hybrid-generalizability"
+   ],
+   "interval": 2.0,
+   "output_dt": 0.25,
+   "description": "Study B2f VCell-realization path: A_p \u2192 B_f, no correction.",
+   "status": "completed",
+   "slurm_job": 4286222
+  },
+  {
+   "study": "dumbbell-three-ways",
+   "name": "dumbbell-vcell-corrected-exchange",
+   "simulation_id": 4695,
+   "tags": [
+    "pde-particle",
+    "dumbbell-three-ways",
+    "hybrid-generalizability"
+   ],
+   "interval": 5.0,
+   "output_dt": 0.25,
+   "description": "Study B2f VCell-realization path: A_p \u21cc B_f, adapters + accessible volumes.",
+   "status": "completed",
+   "slurm_job": 4286223
+  }
+ ]
+}

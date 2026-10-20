@@ -58,18 +58,24 @@ class ComposeClient:
         self.simulator = simulator
         self.timeout = timeout
 
-    def _request(self, path: str, query: dict, data: bytes | None = None, headers: dict | None = None):
+    def _request(self, path: str, query, data: bytes | None = None, headers: dict | None = None):
         req = urllib.request.Request(f"{self.url}{path}?{urllib.parse.urlencode(query)}", data=data,
                                      headers=headers or {}, method="POST" if data is not None else "GET")
         return urllib.request.urlopen(req, timeout=self.timeout)
 
-    def submit(self, omex: Path, interval: float = 1.0) -> int:
-        """Submit one document; its simulation id."""
+    def submit(self, omex: Path, interval: float = 1.0, tags: list[str] | None = None,
+               description: str | None = None) -> int:
+        """Submit one document; its simulation id. ``tags`` and ``description`` are stored with the run and filter
+        ``GET /simulations`` (``compose-api simulations list --tag ...``); they cannot be changed afterwards."""
         boundary = uuid.uuid4().hex
         body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"uploaded_file\"; "
                 f"filename=\"{Path(omex).name}\"\r\nContent-Type: application/zip\r\n\r\n").encode()
         body += Path(omex).read_bytes() + f"\r\n--{boundary}--\r\n".encode()
-        with self._request("/simulation/run", {"simulator": self.simulator, "interval_time": interval}, body,
+        query: list[tuple[str, object]] = [("simulator", self.simulator), ("interval_time", interval)]
+        query += [("tags", t) for t in tags or []]
+        if description:
+            query.append(("description", description))
+        with self._request("/simulation/run", query, body,
                            {"Content-Type": f"multipart/form-data; boundary={boundary}"}) as r:
             return int(json.load(r)["simulation_database_id"])
 

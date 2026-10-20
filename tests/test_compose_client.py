@@ -174,6 +174,9 @@ def test_http_client_against_a_stub_server(tmp_path):
         assert path == "/simulation/run?simulator=viva-pde-particle&interval_time=1.0"
         assert ctype.startswith("multipart/form-data; boundary=")
         assert b'name="uploaded_file"; filename="experiment.omex"' in body and b"PK-archive-bytes" in body
+        assert client.submit(omex, interval=3.0, tags=["pde-particle", "bimolecular-hybrid"], description="A4") == 4192
+        assert seen["post"][0] == ("/simulation/run?simulator=viva-pde-particle&interval_time=3.0"
+                                   "&tags=pde-particle&tags=bimolecular-hybrid&description=A4")
         assert client.status(4192)["status"] == "completed"
         assert client.status(1) == {"status": "submitting"}
         files = client.results(4192)
