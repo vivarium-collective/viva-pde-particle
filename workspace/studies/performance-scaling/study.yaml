@@ -5,6 +5,25 @@ investigation: cosim-vs-embedded-hybrid
 created: '2026-10-03'
 status: ran
 phase: Evaluate
+# Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
+design_status: designed
+implementation_status: implemented
+simulation_status: ran
+evaluation_status: evaluated
+gate_status: passed
+expert_review_status: not_reviewed
+confidence: Accepted
+
+# What the study measures (anchors for the test rows / report).
+readouts:
+  - a6_cosim_framework_ms_per_step_max — largest co-sim framework overhead per step (ms) over all configs
+  - a6_grid_n81_cosim_over_native_solve — co-sim total ÷ native solve time on the largest grid (81×81×3)
+  - a6_grid_n{11,21,41,81}_cosim_s — co-sim wall time across the grid sweep (20k particles)
+  - a6_grid_n{11,21,41,81}_cosim_{framework,particle,pde}_frac — co-sim time split per grid size
+  - a6_particles_p{2000,20000,200000}_cosim_s — co-sim wall time across the particle-count sweep
+  - a6_particles_p{…}_cosim_over_native_solve — co-sim total ÷ native solve across the particle sweep
+  - a6_wall_time_s — wall-clock time of the full sweep
+
 parent_studies:
 - bimolecular-hybrid
 
@@ -33,6 +52,27 @@ baseline:
 
 variants: []
 
+# v4 Build-tab view (conditions.baseline + the two sweeps as variants).
+conditions:
+  baseline:
+    composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+    params: {n_particles: 20000, dt: 0.01}
+  variants:
+    - name: grid-sweep
+      diff_from_baseline: "N ∈ {11, 21, 41, 81} on N×N×3 slabs at 20,000 particles; wall time + co-sim breakdown vs native."
+    - name: particle-sweep
+      diff_from_baseline: "particles ∈ {2·10³, 2·10⁴, 2·10⁵} on 21×21×3; wall time + co-sim breakdown vs native."
+
+simulation_set:
+  - name: default
+    kind: baseline
+    status: ran
+    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+    seeds: [0]
+    metrics: [a6_cosim_framework_ms_per_step_max, a6_grid_n81_cosim_over_native_solve, a6_grid_n81_cosim_s, a6_particles_p200000_cosim_s]
+    pass_fail_tests: [framework-overhead-bounded, cosim-not-slower-than-native-at-scale]
+    description: "Grid sweep (4 sizes) + particle sweep (3 counts), median of 3 runs; results/metrics.json."
+
 behavior_tests:
 - name: framework-overhead-bounded
   classification: primary
@@ -49,6 +89,8 @@ behavior_tests:
         A two-process composite should cost no more than a few milliseconds per step to
         schedule and marshal.
   requires_simulation: bimolecular-perf
+  status: pass
+  gate_class: acceptance_criterion
 - name: cosim-not-slower-than-native-at-scale
   classification: secondary
   description: Co-sim total time / native solve time on the largest grid (81×81×3).
@@ -62,6 +104,8 @@ behavior_tests:
       kind: theory
       note: The modular decomposition should not cost more than 2× the embedded solver at scale.
   requires_simulation: bimolecular-perf
+  status: pass
+  gate_class: acceptance_criterion
 
 canonical_runs:
 - name: default
@@ -72,6 +116,7 @@ canonical_runs:
 
 visualizations:
 - name: performance
+  address: html:viz/performance.html
   chart: viz/performance.html
   render: "python sims/run.py"
 
@@ -91,3 +136,99 @@ conclusion: |
   The modular co-simulation costs nothing in performance on these problems, and is in
   fact faster. The overhead to watch is process-bigraph's per-step scheduling, for very
   small, many-step problems.
+
+runs:
+  - name: default
+    emitter: json
+    outcomes:
+      framework-overhead-bounded: pass
+      cosim-not-slower-than-native-at-scale: pass
+
+findings:
+  - id: F-01
+    tier: observation
+    statement: >
+      The process-bigraph framework overhead is bounded and small: at most 2.97
+      milliseconds per step across all configurations (the bound is 10 milliseconds),
+      ranging from 3.5% of co-sim time on the heaviest problem (200k particles) up to
+      41.7% on the smallest (2k particles on 21×21×3), where there is little real work to
+      amortize it against.
+    claim_scope: behavioral
+    generality: {axes_tested: [discretization, parameter_regime], level: instance_specific}
+    provenance: {run_ids: [default]}
+    evidence: {from_test: framework-overhead-bounded}
+    next_action: None — overhead confirmed bounded; watch it only for very small, many-step problems.
+    next_action_type: replicate
+  - id: F-02
+    tier: observation
+    statement: >
+      The modular co-simulation is faster than the native embedded solve in every
+      configuration: co-sim/native-solve ranges from 0.25× (2k particles) to 0.93× on the
+      largest grid (81×81×3), and 0.69× at 200k particles (co-sim 2.64 s vs native solve
+      3.82 s). The decomposition costs nothing at scale — well under the 2× bound.
+    claim_scope: behavioral
+    generality: {axes_tested: [discretization, parameter_regime], level: instance_specific}
+    provenance: {run_ids: [default]}
+    evidence: {from_test: cosim-not-slower-than-native-at-scale}
+    next_action: None — likely from Smoldyn 2.7x vs 2.38, direct sparse LU vs PCG, and VCell's per-output writes.
+    next_action_type: replicate
+  - id: F-03
+    tier: interpretation
+    statement: >
+      Co-sim time shifts cleanly with the workload: particles dominate at high particle
+      counts (95.9% of co-sim time at 200k particles, PDE only 0.8%), while the PDE
+      dominates on the largest grid (49.7% at 81×81×3). Framework overhead is largest
+      precisely where total work is smallest (41.7% at 2k particles), as expected for a
+      fixed per-step scheduling cost.
+    claim_scope: behavioral
+    generality: {axes_tested: [discretization, parameter_regime], level: instance_specific}
+    provenance: {run_ids: [default]}
+    evidence: {from_test: framework-overhead-bounded}
+    next_action: None.
+    next_action_type: replicate
+
+conclusion_verdicts:
+  regression_compatibility:
+    basis: >
+      results/metrics.json is committed and regenerated by sims/run.py; both behavior
+      tests pass (framework overhead max 2.97 ms/step < 10; largest-grid co-sim/native
+      0.93× < 2.0).
+  biological_validation:
+    basis: >
+      N/A — performance study; see regression_compatibility. No biological claim is made;
+      the measurements are wall-time and throughput.
+  explanatory_gain:
+    basis: >
+      Attributes co-sim cost to its parts: particles dominate at high particle counts
+      (95.9% at 200k), the PDE on the largest grid (49.7% at 81×81×3), and fixed
+      per-step framework overhead (≤ 2.97 ms) matters only for the smallest problems.
+
+conclusion_logic:
+  if_primary_tests_pass: >
+    Framework overhead stays under 2.97 ms/step and the co-simulation is faster than the
+    native embedded solve in every configuration (0.25–0.93× of native solve time), so the
+    modular process-bigraph decomposition is free at scale on these problems. The only cost
+    to watch is per-step scheduling for very small, many-step problems.
+  if_primary_tests_fail: >
+    A per-step overhead at or above the 10-millisecond bound, or a largest-grid co-sim/native ratio ≥ 2.0, would mean
+    the decomposition imposes a real performance penalty — profile the PDE/particle/
+    framework split (the a6_*_frac keys) to find whether scheduling, state marshaling, or
+    an engine regression is responsible before accepting the modular architecture.
+
+report:
+  confidence: high
+  evidence_quality: regression-only
+  caveat: >
+    Single-machine timings (Apple Silicon, single process, median of 3); absolute numbers
+    are hardware- and engine-version-specific (Smoldyn 2.7x, direct sparse LU).
+
+reproducibility:
+  level: L3   # scripted, committed inputs + metrics; timings are hardware-specific
+  rerun:
+    - cmd: "pixi run -e dev python workspace/studies/performance-scaling/sims/run.py"
+      produces: [results/metrics.json, viz/performance.html]
+      note: >
+        Grid sweep (N ∈ {11,21,41,81}) + particle sweep ({2e3,2e4,2e5}), median of 3 runs.
+        The native arm needs the dev pixi env; absolute wall times depend on the machine.
+  inputs_committed: [results/metrics.json]
+  wall_time_s: 51.100072145462036
