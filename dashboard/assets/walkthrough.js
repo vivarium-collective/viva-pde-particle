@@ -198,36 +198,68 @@
 
   // -------------------------------------------------------------------------
   // Investigation DAG orientation (LR = left-to-right, TB = top-to-bottom).
-  // Auto-picked per investigation shape (see chooseGraphOrientation in
-  // aig-graph.js) unless the user has manually toggled it, in which case the
-  // choice is persisted per-investigation in localStorage and wins over auto.
   // -------------------------------------------------------------------------
-  function _graphOrientationKey(name) {
-    return 'aig-orientation:' + (name || 'default');
-  }
-  function _getStoredGraphOrientation(name) {
-    try {
-      var v = window.localStorage.getItem(_graphOrientationKey(name));
-      if (v === 'LR' || v === 'TB') return v;
-    } catch (e) { /* private mode / no localStorage */ }
-    return null;
-  }
+  // MODEL: AUTO by default. The orientation is derived from the container's
+  // ASPECT — a wide area reads best LEFT-RIGHT, a tall/narrow area TOP-BOTTOM:
+  //   • docked left/right  (tall, narrow column) → TB
+  //   • docked top/bottom  (wide, short band)    → LR
+  //   • inline / un-docked (wide main area)       → LR (tall window → TB)
+  // Auto is (re)applied on the INITIAL render AND on EVERY dock-position switch —
+  // the dock switch itself IS the "reset to auto", so there is no separate auto
+  // button. The ⇄/⇅ LAYOUT buttons are a TRANSIENT manual override that holds only
+  // within the current dock state (it survives zoom/band re-renders); the next
+  // dock switch clears it and re-autos. The manual choice is in-memory, not
+  // persisted — a reload re-autos too.
+  var _aigManualOrient = null;   // 'LR' | 'TB' manual override for the current dock, else null
+  var _aigUserLayout = false;    // true while a manual override is in effect (drives the toggle UI)
   function _setGraphOrientation(o) {
     if (o !== 'LR' && o !== 'TB') return;
-    try { window.localStorage.setItem(_graphOrientationKey(window._currentIset), o); } catch (e) { /* ignore */ }
+    _aigManualOrient = o;        // transient manual override — holds until the next dock switch
+    _aigUserLayout = true;
     if (_lastDagArgs) _renderInvestigationDag(_lastDagArgs[0], _lastDagArgs[1], _lastDagArgs[2]);
   }
   window._setGraphOrientation = _setGraphOrientation;
+  // Clear the manual override → back to the aspect-derived auto. Called on dock
+  // close (return to inline) and reused by the dock-switch re-auto below.
   function _resetGraphOrientation() {
-    try { window.localStorage.removeItem(_graphOrientationKey(window._currentIset)); } catch (e) { /* ignore */ }
+    _aigManualOrient = null;
+    _aigUserLayout = false;
     if (_lastDagArgs) _renderInvestigationDag(_lastDagArgs[0], _lastDagArgs[1], _lastDagArgs[2]);
   }
   window._resetGraphOrientation = _resetGraphOrientation;
-  // Reflect the active/override state on the toggle control, if present.
+  // A dock-position switch RE-AUTOS the orientation: clear any transient manual
+  // override so the aspect-derived default (computed in the render from the new
+  // dock side) applies. The `o` arg is advisory — the render recomputes from the
+  // live dock aspect — so a stale value can't fight the measured layout.
+  function _setGraphOrientationForDock(o) {
+    _aigManualOrient = null;
+    _aigUserLayout = false;
+    if (_lastDagArgs) _renderInvestigationDag(_lastDagArgs[0], _lastDagArgs[1], _lastDagArgs[2]);
+  }
+  window._setGraphOrientationForDock = _setGraphOrientationForDock;
+  // The aspect-derived AUTO direction for the current placement (dock side when the
+  // graph is hosted in the side panel, else the inline container aspect). Returns
+  // null when nothing can be measured (caller falls back to the shape heuristic).
+  function _aigAutoOrient() {
+    var fsEl = document.getElementById('investigation-dag-fs');
+    if (!fsEl) return null;
+    if (fsEl.closest && fsEl.closest('#viv-graph-panel')) {
+      var gp = document.getElementById('viv-graph-panel');
+      var dock = gp && gp.dataset ? gp.dataset.dock : '';
+      if (dock === 'left' || dock === 'right') return 'TB';
+      if (dock === 'top' || dock === 'bottom') return 'LR';
+      return null;
+    }
+    var r = fsEl.getBoundingClientRect();
+    var availW = r.width || fsEl.clientWidth || 0;
+    var availH = Math.max(0, (window.innerHeight || 900) - r.top);
+    if (availW > 1 && availH > 1) return availW >= availH ? 'LR' : 'TB';
+    return null;
+  }
+  // Reflect the active (LR/TB) state on the toggle control, if present.
   function _syncGraphOrientToggleUI(orient, isOverride) {
     var lrBtn = document.getElementById('aig-orient-lr');
     var tbBtn = document.getElementById('aig-orient-tb');
-    var autoBtn = document.getElementById('aig-orient-auto');
     function _mark(btn, active) {
       if (!btn) return;
       btn.style.background = active ? '#e0e7ff' : 'transparent';
@@ -237,7 +269,6 @@
     }
     _mark(lrBtn, orient === 'LR');
     _mark(tbBtn, orient === 'TB');
-    if (autoBtn) autoBtn.style.visibility = isOverride ? 'visible' : 'hidden';
   }
 
   // -------------------------------------------------------------------------
@@ -1005,7 +1036,9 @@
         var validPages = _snap
           ? ['workspace-inputs', 'modules', 'market', 'simulation-setup', 'investigations', 'simulations', 'visualizations', 'resources', 'audit', 'composite-explore', 'github', 'about']
           : ['workspace-inputs', 'modules', 'market', 'simulation-setup', 'visualizations', 'resources', 'investigations', 'studies', 'simulations', 'audit', 'composite-explore', 'github', 'about'];
-        _switchPage(validPages.indexOf(h) >= 0 ? h : 'resources');
+        // Default landing view is Studies (the #investigations page) when there's
+        // no (or an unknown) hash.
+        _switchPage(validPages.indexOf(h) >= 0 ? h : 'investigations');
       }
       window.addEventListener('hashchange', fromHash);
       fromHash();
@@ -1122,13 +1155,13 @@
         'onclick="if(window._openStudyEmbeddedNewTab){_openStudyEmbeddedNewTab(\'' +
         _esc(slug) + '\');return false;}" ' +
         'title="Open study in workbench: ' + _esc(label) + '" ' +
-        'style="display:inline-block;font-size:0.72em;line-height:1.5;padding:1px 9px;' +
-        'margin:0 4px 2px 0;border:1px solid #c7d2fe;background:#eef2ff;color:#4338ca;' +
-        'border-radius:10px;text-decoration:none">' + _esc(label) + '</a>';
+        'style="display:inline-block;font-size:0.68em;line-height:1.4;padding:0 7px;' +
+        'margin:0 3px 2px 0;border:1px solid #c7d2fe;background:#eef2ff;color:#4338ca;' +
+        'border-radius:9px;text-decoration:none">' + _esc(label) + '</a>';
     }).join('');
     if (!chips) return '';
-    return '<div style="margin-top:7px;display:flex;flex-wrap:wrap;align-items:baseline">' +
-      '<span class="muted" style="font-size:0.72em;margin-right:5px;letter-spacing:0.02em;' +
+    return '<div style="margin-top:3px;display:flex;flex-wrap:wrap;align-items:baseline">' +
+      '<span class="muted" style="font-size:0.65em;margin-right:5px;letter-spacing:0.02em;' +
       'text-transform:uppercase">Cited by</span>' + chips + '</div>';
   }
 
@@ -1177,7 +1210,10 @@
   // references. Unmatched bare keys render as a labeled stub.
   function _inputsRefsHtml(refs) {
     if (!refs || !refs.length) return _inputsNone();
-    return '<div style="display:flex;flex-direction:column;gap:10px">' +
+    // Dense scannable list: thin dividers between rows instead of tall bordered
+    // cards with gaps, so many more references fit per screen.
+    return '<div class="res-reflist" style="display:flex;flex-direction:column;' +
+      'border-top:1px solid #e2e8f0">' +
       refs.map(_inputsRefCardHtml).join('') + '</div>';
   }
 
@@ -1187,7 +1223,7 @@
     var key = ref.key || ref.bib_key || '';
 
     if (ref._unmatched) {
-      return '<div class="res-item" style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px">' +
+      return '<div class="res-item" style="border-bottom:1px solid #e2e8f0;padding:5px 2px">' +
         '<code>' + _esc(key || _inputsRefLabel(ref)) + '</code> ' +
         '<small class="muted">(no bib entry)</small></div>';
     }
@@ -1202,16 +1238,16 @@
 
     var titleHtml = link
       ? '<a href="' + _esc(link) + '" target="_blank" rel="noopener" ' +
-        'style="font-weight:600">' + _esc(title) + '</a> ' +
+        'style="font-weight:600;font-size:0.9em">' + _esc(title) + '</a> ' +
         '<small class="muted">↗</small>'
-      : '<strong>' + _esc(title) + '</strong>';
+      : '<strong style="font-size:0.9em">' + _esc(title) + '</strong>';
 
     var metaParts = [];
     if (ref.author) metaParts.push(_esc(ref.author));
     if (ref.year) metaParts.push(_esc(ref.year));
     if (ref.journal) metaParts.push(_esc(ref.journal));
     var meta = metaParts.length
-      ? '<div class="muted" style="font-size:0.85em;margin-top:2px">' +
+      ? '<div class="muted" style="font-size:0.8em;margin-top:1px">' +
         metaParts.join(' · ') + '</div>'
       : '';
 
@@ -1222,8 +1258,8 @@
     var bibBlock = '';
     if (bibtex) {
       var bibId = 'bibtex-' + (key || Math.random().toString(36).slice(2));
-      bibBlock = '<details style="margin-top:6px">' +
-        '<summary style="cursor:pointer;font-size:0.82em;color:#475569">BibTeX</summary>' +
+      bibBlock = '<details style="margin-top:3px">' +
+        '<summary style="cursor:pointer;font-size:0.75em;color:#475569">BibTeX</summary>' +
         // Wrap instead of scroll: a BibTeX entry's `title = {…}` line runs
         // 200-400px past the panel, and overflow:auto turned every reference
         // into its own horizontal scrollbar. Wrapping costs a line and removes
@@ -1239,7 +1275,9 @@
 
     // Show the note as a sub-line only when it isn't already the headline.
     var noteHtml = (ref.note && ref.note !== title)
-      ? '<div class="muted" style="font-size:0.85em;margin-top:2px;font-style:italic">' + _esc(ref.note) + '</div>'
+      ? '<div class="muted" title="' + _esc(ref.note) + '" ' +
+        'style="font-size:0.8em;margin-top:1px;font-style:italic;' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(ref.note) + '</div>'
       : '';
 
     var citedHtml = _inputsCitedByHtml(ref.cited_by);
@@ -1255,8 +1293,9 @@
     // resolve to this References entry.
     var anchor = key ? ' id="res-ref-' + _esc(String(key)) + '" class="res-item res-ref-anchor"' : ' class="res-item"';
 
-    return '<div' + anchor + ' style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px">' +
-      '<div>' + titleHtml + foldFlag + actions + '</div>' + meta + noteHtml + bibBlock + citedHtml + '</div>';
+    return '<div' + anchor + ' style="border-bottom:1px solid #e2e8f0;padding:6px 2px">' +
+      '<div style="line-height:1.3">' + titleHtml + foldFlag + actions + '</div>' +
+      meta + noteHtml + bibBlock + citedHtml + '</div>';
   }
 
   // Adapt a structured-resources paper-reference entry to the inputs reference
@@ -2339,17 +2378,23 @@
 
   // lipid-structure → identity, chain/headgroup/charge, and the Martini CG mapping.
   function _resLipidCard(r, refsById) {
+    // Lead with the identity: formula (monospace) + chemical name, so the reader
+    // sees WHAT the molecule is before the detail grid. (class/type is the badge
+    // in the head.) Formula/chemical name are hoisted here, not repeated below.
+    var ident = [];
+    if (r.formula) ident.push('<span class="res-formula">' + _esc(_resV(r.formula)) + '</span>');
+    if (r.chemical_name) ident.push('<span class="res-chemname">' + _esc(_resV(r.chemical_name)) + '</span>');
+    var identLine = ident.length ? '<div class="res-identity">' + ident.join('') + '</div>' : '';
     var kv = [
-      _resKV('Chemical name', r.chemical_name),
-      _resKV('Class', r.lipid_class),
       _resKV('Chains', r.n_chains),
       _resKV('Chain length', r.chain_length),
       _resKV('Headgroup', r.headgroup),
       _resKV('Charge', r.charge_state),
       _resKV('Role', r.role),
-      _resKV('Formula', r.formula),
       _resKV('SMILES', r.smiles)
     ].join('');
+    // Martini CG mapping: a compact collapsed <details> so its grid + bead list
+    // don't dominate the card; one click reveals the full mapping.
     var martini = '';
     var m = r.martini;
     if (m && typeof m === 'object') {
@@ -2357,16 +2402,16 @@
         ? '<ol class="res-beads">' + m.bead_mapping.map(function (b) {
             return '<li>' + _esc(_resV(b)) + '</li>'; }).join('') + '</ol>'
         : '';
-      martini = '<div class="res-martini"><div class="res-sub">Martini coarse-grained mapping</div>' +
+      martini = '<details class="res-martini">' +
+        '<summary class="res-sub">Martini coarse-grained mapping</summary>' +
         '<div class="res-kv-grid">' +
           _resKV('Version', m.version) + _resKV('Model', m.model) +
           _resKV('Beads/chain', m.n_beads_per_chain) + _resKV('Source ITP', m.source_itp) +
-        '</div>' + beads + '</div>';
+        '</div>' + beads + '</details>';
     }
-    return '<div class="res-card res-lipid">' + _resCardHead(r) +
+    return '<div class="res-card res-lipid">' + _resCardHead(r) + identLine +
       '<div class="res-kv-grid">' + kv + '</div>' + martini +
-      (r.notes ? '<p class="res-notes">' + _esc(r.notes) + '</p>' : '') +
-      _resRefChips(r.references, refsById) + '</div>';
+      (r.notes ? '<p class="res-notes">' + _esc(r.notes) + '</p>' : '') + '</div>';
   }
 
   // reaction-pathway → network_summary from a generated universe + keystone rules
@@ -2392,9 +2437,16 @@
       if (ns.n_reactions != null) headline.push(_resV(ns.n_reactions) + ' reactions');
       if (ns.n_species != null) headline.push(_resV(ns.n_species) + ' species');
       if (ns.max_carbons != null) headline.push('C≤' + _resV(ns.max_carbons));
-      var families = (ns.rule_families && ns.rule_families.length)
+      // Only render the Rule-family table when there are actual rows — never an
+      // empty table-with-headers shell. Drop rows that carry no family name AND
+      // no count so a populated-but-empty list can't produce a headers-only table.
+      var ruleRows = (ns.rule_families && ns.rule_families.length)
+        ? ns.rule_families.filter(function (f) {
+            return f && (_resV(f.name || f.rule) || _resV(f.n_reactions)); })
+        : [];
+      var families = ruleRows.length
         ? '<table class="res-table"><thead><tr><th>Rule family</th><th>#rxns</th></tr></thead><tbody>' +
-          ns.rule_families.map(function (f) {
+          ruleRows.map(function (f) {
             return '<tr><td>' + _esc(_resV(f.name || f.rule)) + '</td><td>' +
               _esc(_resV(f.n_reactions)) + '</td></tr>'; }).join('') +
           '</tbody></table>'
@@ -2465,7 +2517,7 @@
     }
 
     return '<div class="res-card res-pathway">' + head + role + net + keystone +
-      caveats + reactions + prov + _resRefChips(r.references, refsById) + '</div>';
+      caveats + reactions + prov + '</div>';
   }
 
   // imported-engine → engine/wraps/viva_package/role/used_by.
@@ -2479,8 +2531,7 @@
       '<div class="res-kv-grid">' +
         _resKV('Engine', r.engine) + _resKV('Wraps', r.wraps) +
         _resKV('viva package', r.viva_package) + _resKV('Role', r.role) +
-      '</div>' + usedBy +
-      _resRefChips(r.references, refsById) + '</div>';
+      '</div>' + usedBy + '</div>';
   }
 
   // paper-reference → a citation card, anchored by id so other resources'
@@ -8074,7 +8125,13 @@
     if (!headerEl) return;
     var group = headerEl.closest ? headerEl.closest('.viv-rail-investigations-group')
                                  : headerEl.parentNode;
-    if (group) group.classList.toggle('collapsed');
+    if (!group) return;
+    group.classList.toggle('collapsed');
+    // Persist the user's choice so it survives the next rail re-render (opening a
+    // study, a data refresh, a pin toggle, …) instead of snapping back to the
+    // active-only default.
+    var _iset = group.getAttribute('data-iset');
+    if (_iset) _saveInvExpanded(_iset, !group.classList.contains('collapsed'));
   }
   window._vivToggleInvGroup = _vivToggleInvGroup;
 
@@ -8110,6 +8167,25 @@
     var mru = _loadInvMru();
     mru[name] = new Date().getTime();
     try { window.localStorage.setItem('viv.invMru', JSON.stringify(mru)); } catch (e) { /* private mode */ }
+  }
+  // Per-investigation rail expand/collapse state, persisted so a group the user
+  // opened (or collapsed) STAYS that way across rail re-renders — navigating to
+  // a study no longer re-collapses the other open investigations. Map is
+  // {invName: true(open)|false(collapsed)}; absent = use the default (the active
+  // investigation opens, the rest stay collapsed).
+  function _loadInvExpanded() {
+    if (!window._invExpanded || typeof window._invExpanded !== 'object') {
+      try { window._invExpanded = JSON.parse(window.localStorage.getItem('viv.invExpanded') || '{}') || {}; }
+      catch (e) { window._invExpanded = {}; }
+      if (!window._invExpanded || typeof window._invExpanded !== 'object') window._invExpanded = {};
+    }
+    return window._invExpanded;
+  }
+  function _saveInvExpanded(name, open) {
+    if (!name || name === '__ungrouped__') return;
+    var m = _loadInvExpanded();
+    m[name] = !!open;
+    try { window.localStorage.setItem('viv.invExpanded', JSON.stringify(m)); } catch (e) { /* private mode */ }
   }
   function _loadPinnedInvestigations() {
     if (!Array.isArray(window._pinnedInvestigations)) {
@@ -9768,27 +9844,36 @@
     try { if (window.CSS && CSS.escape) return CSS.escape(String(s)); } catch (e) {}
     return String(s).replace(/["\\\]]/g, '\\$&');
   }
-  // Expand/collapse ONE DAG node in place (unclamp Asks/Finds + reveal the full
-  // findings list). Pure DOM — no relayout (the caller restacks the column).
+  // Expand/collapse ONE DAG node IN PLACE: the card's top-left stays anchored and
+  // the full detail block (Asks / Finds / plan + "Open study →") grows DOWNWARD,
+  // making the card taller where it already sits. The compact preview rows (clamped
+  // Asks/Finds + the band-2 inline plan) are hidden while expanded so nothing is
+  // duplicated. Pure DOM — NO relayout, so the card is never re-centered or
+  // repositioned; it may overlap the neighbours below it (a raised z-index keeps
+  // it on top) and the graph shell grows its scroll extent (see
+  // _aigAccommodateExpansion) so the user can scroll down to the added content.
   function _aigSetNodeExpanded(node, want) {
     if (!node) return;
     var exp = !!want;
     node.classList.toggle('aig-node-expanded', exp);
-    node.querySelectorAll('.aig-clamp').forEach(function (el) {
-      el.style.webkitLineClamp = exp ? 'unset' : (el.getAttribute('data-clamp') || '');
-      el.style.lineClamp = exp ? 'unset' : (el.getAttribute('data-clamp') || '');
+    node.querySelectorAll('.aig-clamp, .aig-plan-inline').forEach(function (el) {
+      el.style.display = exp ? 'none' : '';
     });
-    var _more = node.querySelector('.aig-more-findings');
-    var _all = node.querySelector('.aig-all-findings');
-    if (_more) _more.style.display = exp ? 'none' : '';
-    if (_all) _all.style.display = exp ? 'block' : 'none';
+    var full = node.querySelector('.aig-full-details');
+    if (full) full.style.display = exp ? 'block' : 'none';
+    var label = node.querySelector('.aig-more-label');
+    if (label) label.textContent = exp ? 'collapse' : (label.getAttribute('data-compact') || 'show full card');
+    var icon = node.querySelector('.aig-more-icon');
+    if (icon) icon.textContent = exp ? '⤡' : '⤢';
+    var btn = node.querySelector('.aig-more-findings');
+    if (btn) btn.setAttribute('aria-expanded', exp ? 'true' : 'false');
     node.style.zIndex = exp ? '60' : '';
     node.style.boxShadow = exp ? '0 8px 24px rgba(0,0,0,0.18)' : '';
-    node.style.whiteSpace = '';
   }
   window._aigSetNodeExpanded = _aigSetNodeExpanded;
   // Re-assert the selected highlight after a (re-)render so it survives. Only the
-  // class — the full-info view lives in a floating popout (below), not inline.
+  // class — the full-info view expands IN PLACE inside the card (see
+  // _aigSetNodeExpanded), not in a floating panel.
   function _aigApplySelection(slug) {
     try {
       var nodes = document.querySelectorAll('.iset-dag-node[data-study]');
@@ -9800,25 +9885,12 @@
   }
   window._aigApplySelection = _aigApplySelection;
 
-  // ── Selected-card POPOUT ───────────────────────────────────────────────────
-  // Selecting a study pops its full info out as a floating panel ON TOP of the
-  // window — its TOP pinned to the card's top so it grows only DOWNWARD and is
-  // never clipped by the graph pane. Always shows the full Asks / Finds / plan
-  // from the study DATA (not the band-limited inline card), so it reads well at
-  // any zoom. The panel's "Open study →" button (or a second click on the card)
-  // opens the study. Dismissed on Escape, outside click, scroll, or zoom.
-  var _aigPopoutDismiss = null;
-  function _aigCloseCardPopout() {
-    var p = document.getElementById('aig-card-popout');
-    if (p) p.remove();
-    if (_aigPopoutDismiss) {
-      document.removeEventListener('keydown', _aigPopoutDismiss, true);
-      document.removeEventListener('mousedown', _aigPopoutDismiss, true);
-      _aigPopoutDismiss = null;
-    }
-  }
-  window._aigCloseCardPopout = _aigCloseCardPopout;
-  function _aigPopoutBodyHtml(s) {
+  // ── Selected-card FULL DETAIL (inline) ─────────────────────────────────────
+  // The full Asks / Finds / plan body, from the study DATA (not the band-limited
+  // inline preview) so it reads the same at any zoom. Rendered hidden inside each
+  // node and revealed in place by _aigSetNodeExpanded when the user expands the
+  // card — it is NOT a floating panel.
+  function _aigCardDetailHtml(s) {
     var q = (s.question || '').replace(/\s+/g, ' ').trim();
     var finds = _asFindings(s.findings);
     var H = '';
@@ -9835,55 +9907,34 @@
     try { var plan = _dagPlanHtml(s); if (plan) H += '<div style="margin-top:14px">' + plan + '</div>'; } catch (e) { /* no plan layer */ }
     return H;
   }
-  function _aigShowCardPopout(node) {
-    _aigCloseCardPopout();
-    if (!node) return;
-    var s = node._study || {};
-    var slug = node.getAttribute('data-study') || s.name || '';
-    var headColor = node.dataset.headColor || '#2563eb';
-    var titleEl = node.querySelector('strong');
-    var title = (titleEl && titleEl.textContent) || slug;
-    var vm = null; try { vm = _verdictMeta(s); } catch (e) { /* pending */ }
-    var rect = node.getBoundingClientRect();
-    var width = Math.max(Math.min(Math.round(rect.width), 560), 400);
-    // Pin the TOP to the card's top; the panel grows downward from there.
-    var top = Math.max(8, Math.round(rect.top));
-    var left = Math.round(Math.min(Math.max(8, rect.left), (window.innerWidth || 1200) - width - 8));
-    var maxH = Math.max(160, (window.innerHeight || 800) - top - 16);
-    var pop = document.createElement('div');
-    pop.id = 'aig-card-popout';
-    pop.setAttribute('role', 'dialog');
-    pop.setAttribute('aria-label', 'Study ' + slug);
-    pop.style.cssText = 'position:fixed;top:' + top + 'px;left:' + left + 'px;width:' + width + 'px;' +
-      'max-height:' + maxH + 'px;overflow:auto;z-index:1000;background:#fff;' +
-      'border:1px solid #e5e7eb;border-top:3px solid ' + headColor + ';border-radius:10px;' +
-      'box-shadow:0 18px 50px rgba(0,0,0,0.30);padding:12px 14px 14px;box-sizing:border-box;' +
-      'font-size:13px;line-height:1.5;color:#1e293b';
-    var vpill = vm ? '<span style="font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:.03em;' +
-      'padding:2px 8px;border-radius:9999px;color:#fff;background:' + vm.color + '">' + _esc(vm.label) + '</span>' : '';
-    pop.innerHTML =
-      '<div style="display:flex;align-items:flex-start;gap:8px;justify-content:space-between;margin-bottom:6px">' +
-        '<div style="font-weight:700;font-size:1.05em;line-height:1.3;color:#1e293b">' + _esc(title) + '</div>' +
-        '<button type="button" aria-label="Close" onclick="window._aigCloseCardPopout()" ' +
-          'style="flex:none;border:none;background:transparent;color:#94a3b8;font-size:18px;line-height:1;cursor:pointer;padding:0 2px">&times;</button>' +
-      '</div>' +
-      (vpill ? '<div style="margin-bottom:2px">' + vpill + '</div>' : '') +
-      _aigPopoutBodyHtml(s) +
-      '<div style="position:sticky;bottom:-14px;margin:14px -14px -14px;padding:10px 14px;background:linear-gradient(to top,#fff 70%,rgba(255,255,255,0));text-align:right">' +
-        '<button type="button" onclick="window._openStudyInsideInvestigation(\'' + _esc(slug) + '\');window._aigCloseCardPopout();" ' +
-          'style="font-size:0.9em;font-weight:600;padding:5px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer">Open study &rarr;</button>' +
-      '</div>';
-    document.body.appendChild(pop);
-    _aigPopoutDismiss = function (e) {
-      if (e.type === 'keydown') { if (e.key === 'Escape') _aigCloseCardPopout(); return; }
-      var t = e.target;
-      if (t && t.closest && (t.closest('#aig-card-popout') || t.closest('.iset-dag-node'))) return;
-      _aigCloseCardPopout();
-    };
-    document.addEventListener('keydown', _aigPopoutDismiss, true);
-    document.addEventListener('mousedown', _aigPopoutDismiss, true);
+  window._aigCardDetailHtml = _aigCardDetailHtml;
+
+  // Back-compat no-op: the floating popout was replaced by in-place expansion, but
+  // a few zoom/layout call sites still call this defensively. Nothing to close now.
+  function _aigCloseCardPopout() { /* popout removed — in-place expansion replaces it */ }
+  window._aigCloseCardPopout = _aigCloseCardPopout;
+
+  // After a card expands/collapses in place, grow (or shrink back) the graph
+  // shell's scroll extent so the taller card's extra content is reachable by
+  // scrolling the graph window — WITHOUT relaying out (node tops stay anchored).
+  // The shell scrolls against the .aig-spacer that _applyAigZoom sizes from
+  // shell.dataset.canvasH, so we extend canvasH to the lowest card bottom.
+  function _aigAccommodateExpansion() {
+    var shell = document.getElementById('investigation-dag-shell');
+    var nodes = document.getElementById('investigation-dag-nodes');
+    if (!shell || !nodes) return;
+    var base = parseFloat(shell.dataset.layoutCanvasH) || parseFloat(shell.dataset.canvasH) || 0;
+    var maxBottom = 0;
+    nodes.querySelectorAll('.iset-dag-node').forEach(function (n) {
+      var b = n.offsetTop + n.offsetHeight;
+      if (b > maxBottom) maxBottom = b;
+    });
+    var need = Math.max(base, Math.ceil(maxBottom) + 24);
+    nodes.style.height = need + 'px';
+    shell.dataset.canvasH = String(need);
+    try { _applyAigZoom(); } catch (e) { /* zoom not ready */ }
   }
-  window._aigShowCardPopout = _aigShowCardPopout;
+  window._aigAccommodateExpansion = _aigAccommodateExpansion;
 
   // The next study along this investigation's leads-to chain, for the study
   // detail panel's "Next study →" button. Uses the server-computed studyEdges
@@ -10060,7 +10111,13 @@
     window._wsInvestigation = name;
     _showWorkspace();
     var title = document.getElementById('ws-title');
-    if (title) { title.textContent = name; title.title = name; }
+    if (title) {
+      // Show the investigation's display title (fall back to the slug when
+      // there's no title). Routing/API still keys off `name` (the slug).
+      var _iset = (window._isetIndex || []).find(function (i) { return i.name === name; });
+      var _label = (_iset && _iset.title) || name;
+      title.textContent = _label; title.title = _label;
+    }
     var kicker = document.getElementById('ws-title-kicker');
     if (kicker) kicker.textContent = 'Investigation';
     var status = document.getElementById('ws-status');
@@ -10883,8 +10940,10 @@
     var H = [];
     H.push('<div class="inv-brief inv-vs-' + vsClass + '">');
 
-    // Headline.
-    if (headline) H.push('<h2 class="inv-brief-q">' + _invInline(headline) + '</h2>');
+    // Headline. The chrome header (#ws-title) already shows the investigation
+    // title, so don't repeat it here — only render the brief headline when it's
+    // the driving-question fallback (title-less investigations), never a title dup.
+    if (headline && headline !== d.title) H.push('<h2 class="inv-brief-q">' + _invInline(headline) + '</h2>');
 
     // Front stays lean — just the headline — so the investigation graph sits high
     // on the page. The overview, verdict, background (with the question/hypothesis
@@ -12458,32 +12517,25 @@
       byDepth[d].sort(function(a, b) { return a.name.localeCompare(b.name); });
     });
 
-    // Orientation: auto-pick from the graph's shape (wide/shallow -> TB,
-    // deep/narrow -> LR) unless the user manually toggled it for this
-    // investigation, in which case the stored choice wins.
+    // Orientation. A transient MANUAL override (the ⇄/⇅ buttons, in-memory, held
+    // only within the current dock) wins; otherwise AUTO from the container aspect
+    // (_aigAutoOrient: dock side when docked, else the inline area's width≥height).
+    // The shape heuristic (chooseGraphOrientation) is a last-resort fallback for
+    // when nothing can be measured (e.g. a headless/test render). Auto is recomputed
+    // every render, so an initial load and every dock switch re-auto; a manual pick
+    // survives zoom/band re-renders because _aigManualOrient holds until the next
+    // dock switch clears it.
     var depthCounts = {};
     Object.keys(byDepth).forEach(function(d) { depthCounts[d] = byDepth[d].length; });
-    var _storedOrient = _getStoredGraphOrientation(window._currentIset);
-    var orient = _storedOrient ||
-      (window.chooseGraphOrientation ? window.chooseGraphOrientation(depthCounts) : 'LR');
-    // When the graph is hosted in the dockable side panel, the DOCK SIDE sets the
-    // DEFAULT orientation (left/right → vertical TB, top/bottom → horizontal LR)
-    // and keeps it stable across re-renders (a zoom/band change re-renders, which
-    // must not flip an auto value — the "docked on the side, then zoom → jumps to
-    // the top layout" bug). But a MANUAL choice via the LAYOUT ⇄/↕ buttons
-    // (_storedOrient) still wins, so the toggle keeps working while docked — the
-    // dock side only changes the default, it doesn't lock the orientation.
-    if (!_storedOrient) {
-      var _fsEl = document.getElementById('investigation-dag-fs');
-      if (_fsEl && _fsEl.closest && _fsEl.closest('#viv-graph-panel')) {
-        var _gp = document.getElementById('viv-graph-panel');
-        var _dock = _gp && _gp.dataset ? _gp.dataset.dock : '';
-        if (_dock === 'left' || _dock === 'right') orient = 'TB';
-        else if (_dock === 'top' || _dock === 'bottom') orient = 'LR';
-      }
+    var orient;
+    if (_aigManualOrient === 'LR' || _aigManualOrient === 'TB') {
+      orient = _aigManualOrient;
+    } else {
+      orient = _aigAutoOrient()
+        || (window.chooseGraphOrientation ? window.chooseGraphOrientation(depthCounts) : 'LR');
     }
     if (shellEl) { shellEl.classList.remove('aig-orient-lr', 'aig-orient-tb'); shellEl.classList.add(orient === 'TB' ? 'aig-orient-tb' : 'aig-orient-lr'); }
-    _syncGraphOrientToggleUI(orient, !!_storedOrient);
+    _syncGraphOrientToggleUI(orient, _aigUserLayout);
 
     // Card HEIGHT is NOT fixed: each card grows to fit its full text. We render
     // once, measure each card, then stack + center by the measured heights
@@ -12580,17 +12632,12 @@
       // Stamp the slug so _wsHighlightActiveDagNode can mark the node whose
       // study is open in the detail panel below.
       node.dataset.study = s.name;
-      // Expand/collapse this card in place (shared pure-DOM helper), then
-      // restack the column so the grown/shrunk card doesn't overlap neighbours.
-      var _toggleExpand = function () {
-        _aigSetNodeExpanded(node, !node.classList.contains('aig-node-expanded'));
-        if (_relayoutDag) _relayoutDag(false);
-      };
       // Three distinct gestures:
-      //   • first click on the card → SELECT only (highlight; no popout, no open).
-      //   • "… click to show" (the +N-more affordance) → POP the full info out as
-      //     a floating panel pinned to the card's top. Just a reader — it does NOT
-      //     move the "open" marker.
+      //   • first click on the card → SELECT only (highlight; no expand, no open).
+      //   • "… show full card" (the +N-more affordance) → EXPAND the card IN PLACE:
+      //     its top stays anchored and the full Asks/Finds/plan grow downward so
+      //     the card gets taller where it sits. Just a reader — it does NOT move
+      //     the "open" marker. Click again to collapse.
       //   • second click on the selected card → OPEN it as the open study.
       // A study can be both selected and open (then the "open" marker wins).
       var _namesOnly = (aigBand === 0);
@@ -12606,22 +12653,25 @@
       };
       var _aigNodeClick = function () {
         if (window._aigSelected === s.name) {
-          _aigCloseCardPopout();
           _openStudyInsideInvestigation(s.name);   // second click opens
           return;
         }
         _selectThis();                             // first click: select only
       };
-      // "click to show" → select (if needed) + pop the full card out. Explicitly
-      // NOT an open: this gesture only reveals, it never moves the open marker.
-      var _popoutFromShow = function (ev) {
+      // "show full card" → select (if needed) + toggle the card's in-place
+      // expansion. Explicitly NOT an open: this gesture only reveals/hides the
+      // full detail, it never moves the open marker. The card's top-left stays
+      // anchored; the detail grows downward and the shell's scroll extent grows
+      // to match (see _aigAccommodateExpansion).
+      var _toggleExpandInPlace = function (ev) {
         ev.stopPropagation();
         _selectThis();
-        _aigShowCardPopout(node);
+        _aigSetNodeExpanded(node, !node.classList.contains('aig-node-expanded'));
+        _aigAccommodateExpansion();
       };
       node.onclick = _aigNodeClick;
       node.title = s.name + ' — ' + confidence +
-        '\n\nClick to select · click again to open the study · "click to show" pops out the full card';
+        '\n\nClick to select · click again to open the study · "show full card" expands it in place';
       var x = (orient === 'TB')
         ? rowStartX[depth[s.name]] + breadthIndex[s.name] * (CARD_W + BREADTH_GAP)
         : PAD_X + depth[s.name] * (CARD_W + DEPTH_GAP);
@@ -12670,17 +12720,34 @@
               (claim ? _esc(claim) : '<em style="color:#94a3b8">pending evidence</em>') +
             '</div>'
           : '') +
-        // Universal "click to show" affordance: pops the full card out so ANY
-        // card's details are readable the same way — at EVERY zoom band,
-        // including the lowest (names-only, band 0) where the card shows nothing
-        // but its title. The full Asks/Finds/plan live in the popout, not inline.
-        ('<div class="aig-more-findings" style="font-size:0.72em;margin-top:6px;color:#7c3aed;font-weight:600;cursor:pointer">⤢ ' +
-              (moreN ? ('+' + moreN + ' more finding' + (moreN === 1 ? '' : 's') + ' — click to show')
-                     : 'click to show full card') +
-            '</div>') +
+        // Universal "show full card" affordance: expands the card IN PLACE so ANY
+        // card's details are readable the same way — at EVERY zoom band, including
+        // the lowest (names-only, band 0) where the card shows nothing but its
+        // title. The full Asks/Finds/plan live in .aig-full-details below, hidden
+        // until expanded (then the compact preview rows + inline plan are hidden).
+        ('<div class="aig-more-wrap" style="margin-top:6px">' +
+            '<button type="button" class="aig-more-findings" tabindex="-1" aria-expanded="false" ' +
+              'title="Expand the full card in place (a separate action from click-to-select / double-click-to-open)">' +
+              '<span class="aig-more-icon" aria-hidden="true">⤢</span>' +
+              '<span class="aig-more-label" data-compact="' +
+                (moreN ? ('+' + moreN + ' more finding' + (moreN === 1 ? '' : 's')) : 'show full card') + '">' +
+                (moreN ? ('+' + moreN + ' more finding' + (moreN === 1 ? '' : 's')) : 'show full card') +
+              '</span>' +
+            '</button>' +
+          '</div>') +
+        // In-place full detail (hidden until expanded): full Asks / Finds / plan.
+        // Grows the card downward from its anchored top; replaces the removed
+        // floating pop-out. (The redundant inline "Open study →" button was
+        // removed — a second click on the selected card opens the study.)
+        ('<div class="aig-full-details" style="display:none;margin-top:8px;padding-top:8px;' +
+            'border-top:1px solid #eef2f7;font-size:0.78em;line-height:1.5;color:#1e293b">' +
+            _aigCardDetailHtml(s) +
+          '</div>') +
         // Full-magnification Plan layer: declared contract + mechanisms +
-        // models/methods + success criteria (semantic-zoom band 2 only).
-        (_opts.plan ? _dagPlanHtml(s) : '') +
+        // models/methods + success criteria (semantic-zoom band 2 only). Wrapped
+        // so the in-place expansion can hide this compact preview (the full plan
+        // lives inside .aig-full-details above).
+        (_opts.plan ? ('<div class="aig-plan-inline">' + _dagPlanHtml(s) + '</div>') : '') +
         (_opts.followups ? followUpsChip : '') +
         (_opts.chain && chainsBySlug && typeof window._chainBlockHtml === 'function'
           ? window._chainBlockHtml(chainsBySlug[s.name]) : '') +
@@ -12694,8 +12761,8 @@
         _dagDownloadControlsHtml(s.name) +
         _dagTriggerControlsHtml(s.name);
       node._followUps = followUps;
-      node._study = s;                       // the selected-card popout reads this
-      node.dataset.headColor = headColor;    // match the popout's top accent
+      node._study = s;                       // the in-place expanded detail reads this
+      node.dataset.headColor = headColor;    // card's top accent
       nodesHost.appendChild(node);
       // Wire the pull-or-compute buttons (stopPropagation so the card's own
       // click-to-open handler doesn't also fire).
@@ -12719,15 +12786,17 @@
         _badge.addEventListener('click', _onBadge);
         _badge.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); _onBadge(ev); } });
       }
-      // "+N more … click to show" → pop the full card out (reader only, no open).
+      // "+N more … show full card" → expand the card in place (reader only, no open).
       node.querySelectorAll('.aig-more-findings').forEach(function (el) {
         el.setAttribute('role', 'button');
         el.setAttribute('tabindex', '0');
-        el.addEventListener('click', _popoutFromShow);
+        el.addEventListener('click', _toggleExpandInPlace);
         el.addEventListener('keydown', function (ev) {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); _popoutFromShow(ev); }
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); _toggleExpandInPlace(ev); }
         });
       });
+      // (The inline "Open study →" button was removed — opening is the card's own
+      // second-click gesture, _aigNodeClick → _openStudyInsideInvestigation.)
       if (chainsBySlug && window._groupClaims && window._openInvestigationDrawer) {
         (function (study, chain) {
           var claims = window._groupClaims(chain);
@@ -12826,6 +12895,9 @@
     var shellSize = document.getElementById('investigation-dag-shell');
     if (shellSize) {
       shellSize.dataset.canvasW = canvasW; shellSize.dataset.canvasH = canvasH;
+      // The layout's natural canvas height, so _aigAccommodateExpansion can grow
+      // the scroll extent for an expanded card and shrink back to this baseline.
+      shellSize.dataset.layoutCanvasH = canvasH;
       // Band-INVARIANT structural dims (same regardless of detail band) so the
       // smart default can pick the band from the available space without
       // oscillating: columns = depth levels, rows = widest column's card count.
@@ -12933,8 +13005,8 @@
     // Run once synchronously, then correct once final layout settles: the next
     // animation frame catches post-innerHTML reflow, and document.fonts.ready
     // catches web fonts that change text metrics (the usual cause of the
-    // column-overlap). _toggleExpand (above) also calls _layoutAndDraw(false)
-    // so an expanded card re-stacks its column instead of overlapping it.
+    // column-overlap). In-place card expansion does NOT relayout — it anchors the
+    // card's top and grows the shell's scroll extent (see _aigAccommodateExpansion).
     _relayoutDag = _layoutAndDraw;
     _layoutAndDraw(true);
     if (typeof requestAnimationFrame === 'function') {
@@ -13072,7 +13144,6 @@
 
   function _setAigUnifiedZoom(u, isUser) {
     if (_aigApplyingUnified) return;
-    _aigCloseCardPopout();                 // the popout is anchored to screen — drop it on zoom
     var _anchor = _aigCaptureAnchor();
     _aigApplyingUnified = true;
     try {
@@ -13150,12 +13221,6 @@
       shell.style.height = fitH + 'px';
       setTimeout(function () { shell._aigProgrammaticResize = false; }, 60);
     }
-    // One-time: scrolling the pane moves the graph under the screen-anchored
-    // selected-card popout, so dismiss it on scroll.
-    if (!shell._aigPopoutScrollBound) {
-      shell._aigPopoutScrollBound = true;
-      shell.addEventListener('scroll', function () { _aigCloseCardPopout(); }, { passive: true });
-    }
     // One-time: watch for a genuine user resize (drag of the resize handle) so
     // auto-fit steps aside once they've set a height themselves.
     if (!shell._aigResizeObserved && typeof ResizeObserver !== 'undefined') {
@@ -13180,7 +13245,6 @@
     if (_zs && document.activeElement !== _zs) _zs.value = String(aigZoom);
   }
   function _aigZoomBy(f) {
-    _aigCloseCardPopout();
     var _anchor = _aigCaptureAnchor();
     aigZoom = Math.max(0.3, Math.min(2.2, aigZoom * f));
     _applyAigZoom();
@@ -13188,7 +13252,6 @@
   }
   // Absolute zoom from the Zoom slider (same control style as Detail/Width).
   function _setAigZoom(v) {
-    _aigCloseCardPopout();
     var _anchor = _aigCaptureAnchor();
     aigZoom = Math.max(0.3, Math.min(2, Number(v) || 1));
     _applyAigZoom();
@@ -13226,6 +13289,56 @@
     _applyAigZoom();
     shell.scrollLeft = 0; shell.scrollTop = 0;
   }
+  // Reflow the graph viewport at the CURRENT zoom — re-apply the transform and
+  // resize the scroll spacer to match the (unchanged) scale, WITHOUT recomputing
+  // the zoom to fit. Relocating or resizing the dockable Graph panel then pans /
+  // reflows the view but never changes the zoom level the user set. This is the
+  // fix for "resize or re-dock snaps the graph to fit": the dock callbacks used to
+  // call _aigFit (which overwrites aigZoom); they now call this.
+  function _aigReflowKeepZoom() {
+    var shell = document.getElementById('investigation-dag-shell');
+    if (!shell) return;
+    _applyAigZoom();   // re-apply the current aigZoom + re-size the scroll extent
+  }
+  window._aigReflowKeepZoom = _aigReflowKeepZoom;
+  // Fit to the container UNLESS the user has taken the zoom over (_aigUserZoomed),
+  // in which case keep their zoom and just reflow. Used when the graph ENTERS or
+  // LEAVES the dock (an initial-ish fit) so the first dock view is sized sensibly,
+  // while still honoring the user's zoom intent lever.
+  function _aigFitOrKeep() {
+    if (_aigUserZoomed) { _aigReflowKeepZoom(); return; }
+    _aigFit();
+  }
+  window._aigFitOrKeep = _aigFitOrKeep;
+  // Fill the DOCKED Graph panel cleanly: zoom the graph to fill the panel's
+  // CONSTRAINED dimension so it doesn't sit small in a mostly-empty box (the
+  // top-dock "graph floats at the top, dead space below → Overview shoved down"
+  // bug). A top/bottom BAND is short, so fill its HEIGHT (the long chain scrolls
+  // horizontally); a left/right COLUMN is narrow, so fill its WIDTH (scrolls
+  // vertically). The panel itself is a bounded CSS band (--viv-graph-h) — this
+  // only sizes the GRAPH to it, it never grows the panel. Honors the zoom-intent
+  // lever: once the user has driven the zoom (_aigUserZoomed) we keep it. Used on
+  // dock enter / dock-position switch / expand, not on edge-resize (that reflows).
+  function _aigFitDockPanel() {
+    var shell = document.getElementById('investigation-dag-shell');
+    if (!shell) return;
+    var fs = document.getElementById('investigation-dag-fs');
+    if (!fs || !fs.closest || !fs.closest('#viv-graph-panel')) { _aigReflowKeepZoom(); return; }
+    if (_aigUserZoomed) { _aigReflowKeepZoom(); return; }   // respect a manual zoom
+    var cw = parseFloat(shell.dataset.canvasW) || 1, ch = parseFloat(shell.dataset.canvasH) || 1;
+    var gp = document.getElementById('viv-graph-panel');
+    var dock = gp && gp.dataset ? gp.dataset.dock : '';
+    var availW = shell.clientWidth || 1, availH = shell.clientHeight || 1;
+    var z;
+    if (dock === 'left' || dock === 'right') z = (availW - 16) / cw;       // fill column width
+    else if (dock === 'top' || dock === 'bottom') z = (availH - 16) / ch;  // fill band height
+    else z = Math.min((availW - 16) / cw, (availH - 16) / ch);             // fallback: fit both
+    aigZoom = Math.max(0.3, Math.min(2, z || 1));
+    _applyAigZoom();
+    shell.scrollLeft = 0; shell.scrollTop = 0;
+    try { _aigSyncZoomUI(aigBand, aigZoom); } catch (e) { /* ignore */ }
+  }
+  window._aigFitDockPanel = _aigFitDockPanel;
   // Default pre-study INLINE view: after _applyAigZoom has sized the pane to the
   // full viewport height, zoom the graph UP to fill that height (as large as it
   // goes, capped at 2×). The wide study chain scrolls horizontally. Skipped when
@@ -13322,7 +13435,6 @@
   function _aigFillToScreen() {
     var shell = document.getElementById('investigation-dag-shell');
     if (!shell) return;
-    try { _aigCloseCardPopout(); } catch (_e) { /* ignore */ }
     var cw = parseFloat(shell.dataset.canvasW) || 1, ch = parseFloat(shell.dataset.canvasH) || 1;
     var z = Math.min((shell.clientWidth - 16) / cw, (shell.clientHeight - 16) / ch);
     aigZoom = Math.max(0.3, Math.min(2, z || 1));
@@ -13631,7 +13743,6 @@
     if (sl && String(sl.value) !== String(nb)) sl.value = String(nb);
     // No band change → keep the slider synced (above) but skip the re-render.
     if (nb === aigBand) return;
-    _aigCloseCardPopout();   // layout changes under it — drop the anchored popout
     var _anchor = _aigCaptureAnchor();   // keep the selected study fixed on screen (same as zoom)
     aigBand = nb;
     if (!_aigApplyingUnified) _aigSyncZoomUI(aigBand, aigZoom);
@@ -13648,7 +13759,6 @@
     var sl = document.getElementById('aig-width-slider');
     if (sl && String(sl.value) !== String(s)) sl.value = String(s);
     if (s === aigWidthScale) return;
-    _aigCloseCardPopout();   // cards resize under it — drop the anchored popout
     var _anchor = _aigCaptureAnchor();   // keep the selected study fixed on screen (same as zoom)
     aigWidthScale = s;
     try { localStorage.setItem('aig-width-scale', String(s)); } catch (e) {}
@@ -15370,9 +15480,33 @@
     // falls back to most-recently-opened, then topological depth / title.
     var _mru = _loadInvMru();
     var _invOrder = _loadInvOrder();
+    // Preserve the CURRENT on-screen order AND open/collapsed state across a
+    // re-render: a group already in the rail keeps its position and its
+    // expanded-ness, so navigating to a study never reshuffles the list or closes
+    // another open investigation ("stay where I put them"). Only groups new to the
+    // rail (first load, a freshly-created investigation) fall back to the saved /
+    // default state below.
+    var _domOrder = {};
+    var _domCollapsed = {};
+    (function () {
+      var _i = 0;
+      var _host = document.getElementById('viv-rail-investigations');
+      if (_host) {
+        _host.querySelectorAll('.viv-rail-investigations-group[data-iset]').forEach(function (el) {
+          var k = el.getAttribute('data-iset');
+          if (k && !(k in _domOrder)) {
+            _domOrder[k] = _i++;
+            _domCollapsed[k] = el.classList.contains('collapsed');
+          }
+        });
+      }
+    })();
     var ordered = _applyUserOrder(groups, _invOrder, function(a, b) {
+      var ao = (a.name in _domOrder) ? _domOrder[a.name] : Infinity;
+      var bo = (b.name in _domOrder) ? _domOrder[b.name] : Infinity;
+      if (ao !== bo) return ao - bo;   // keep the order the user is already seeing
       var am = _mru[a.name] || 0, bm = _mru[b.name] || 0;
-      if (am !== bm) return bm - am;   // most-recently-opened first
+      if (am !== bm) return bm - am;   // new groups: most-recently-opened first
       var da = railDepthMap[a.name] || 0, db = railDepthMap[b.name] || 0;
       return da - db || String(a.title || a.name).localeCompare(String(b.title || b.name));
     });
@@ -15385,11 +15519,25 @@
 
     var hasActive = ordered.some(function(g) { return g.name === currentSlug; });
 
+    var _invExpandedState = _loadInvExpanded();
     function _railGroupHtml(g, forceOpen) {
       var isActive = g.name === currentSlug;
-      // Collapsed unless active, or the caller forces it open (first group when
-      // there is no active investigation), so the rail opens on something.
-      var collapsed = (isActive || forceOpen) ? '' : ' collapsed';
+      // Open/collapsed precedence, most-authoritative first:
+      //   1. the ACTIVE investigation always opens — navigating to it must reveal
+      //      its studies;
+      //   2. any OTHER group keeps its CURRENT on-screen state — so navigating
+      //      never closes another open investigation or reopens a collapsed one
+      //      ("stay where I put them");
+      //   3. on a fresh load (nothing on screen yet) restore the user's PERSISTED
+      //      toggle (localStorage);
+      //   4. otherwise the default: open the forced-first group, else collapsed.
+      var _dom = _domCollapsed[g.name];
+      var _saved = _invExpandedState[g.name];
+      var _open = isActive ? true
+                : (_dom !== undefined) ? !_dom
+                : (_saved !== undefined) ? _saved
+                : forceOpen;
+      var collapsed = _open ? '' : ' collapsed';
       // Remember the default collapse state so the live filter can restore it when
       // the search is cleared (it force-opens matching groups while searching).
       var defaultCollapsed = collapsed ? ' data-default-collapsed="1"' : '';

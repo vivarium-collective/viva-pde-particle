@@ -1011,16 +1011,6 @@ t = 3 s; 16 seeds per solver. Compared:
   </div>
   </div>
 
-  
-  <details class="model-advanced" style="margin-top:18px">
-    <summary style="cursor:pointer;font-weight:600;color:#475569">Advanced — build provenance</summary>
-    <div style="margin-top:12px">
-
-  <p class="muted" style="margin:0 0 12px 0"><strong>How the model was built</strong> — the <code>/viva-model-build</code> loop trajectory (draft, frozen tests, iteration edits, result) and the agent's notes, when it was built that way.</p>
-
-  <div id="build-loop-state"><div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading loop provenance…</span></div></div>
-    </div>
-  </details>
 </section>
 
 
@@ -1104,10 +1094,13 @@ t = 3 s; 16 seeds per solver. Compared:
 
 
 <section class="study-tab-panel" data-kind="audit" id="panel-audit" hidden>
-  <div class="overview-section" id="audit-tests-section">
-    <h3>Tests — the bar</h3>
 
-  <p class="muted" style="margin:0 0 12px 0"><strong>The bar</strong> — what must be true for this model to count as correct: the acceptance criteria, their bands, and the report cards that grade them.</p>
+  
+  <div id="audit-readiness" data-slug="bimolecular-hybrid" style="margin:0 0 18px 0">
+    <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readiness…</span></div>
+  </div>
+
+  <div class="overview-section" id="audit-tests-section">
 
   
   
@@ -1327,13 +1320,6 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "As above."},
   </div>
   </div>
 
-  <p class="muted" style="margin:0 0 12px 0"><strong>Is the bar sound?</strong> The concrete readiness gaps to close first, then whether the test set itself is rigorous and matched to the problem — sufficiency, sourcing, and the rigor + reproducibility scorecards.</p>
-
-  
-  <div id="audit-readiness" data-slug="bimolecular-hybrid" style="margin:0 0 18px 0">
-    <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading readiness…</span></div>
-  </div>
-
   <div class="checks-band">
     <div class="check-group check-group-sufficiency" id="audit-sufficiency" data-check-group="sufficiency">
       <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading sufficiency checks…</span></div>
@@ -1410,10 +1396,6 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "As above."},
   
 
   
-  <div class="overview-section decide-readiness-section">
-    <h2 class="overview-label">Readiness gaps</h2>
-    <div id="decide-readiness" data-slug="bimolecular-hybrid"></div>
-  </div>
 
   
   
@@ -1602,7 +1584,7 @@ each record time, and all studies were re-run.</p>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/fix/runs-outcomes-shape", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "cba5c125ce7b6535e82259644e569fb18848a8f1", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/cba5c125ce7b6535e82259644e569fb18848a8f1", "branch": "fix/runs-outcomes-shape", "generated_at": "2026-10-21 12:24 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "cba5c125ce7b6535e82259644e569fb18848a8f1", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/cba5c125ce7b6535e82259644e569fb18848a8f1", "branch": "main", "generated_at": "2026-10-21 12:44 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
