@@ -147,9 +147,11 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    framework-overhead-bounded: pass
-    cosim-not-slower-than-native-at-scale: pass
+    framework-overhead-bounded:
+      result: PASS
+    cosim-not-slower-than-native-at-scale:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

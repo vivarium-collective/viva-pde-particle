@@ -226,10 +226,13 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    mesh-membrane-removes-shell-bias: pass
-    mesh-membrane-exchange-balance: pass
-    sphere-membrane-shell-bias: fail
+    mesh-membrane-removes-shell-bias:
+      result: PASS
+    mesh-membrane-exchange-balance:
+      result: PASS
+    sphere-membrane-shell-bias:
 
+      result: FAIL
 findings:
 - id: F-01
   tier: observation

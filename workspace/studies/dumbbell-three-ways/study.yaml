@@ -218,11 +218,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    corrected-exchange-conserves: pass
-    corrected-near-membrane-unbiased: pass
-    mesh-exchange-conserves: pass
-    native-exchange-conserves: fail
+    corrected-exchange-conserves:
+      result: PASS
+    corrected-near-membrane-unbiased:
+      result: PASS
+    mesh-exchange-conserves:
+      result: PASS
+    native-exchange-conserves:
 
+      result: FAIL
 findings:
 - id: F-01
   tier: observation

@@ -255,13 +255,19 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    smoothed-grid-represents-ball: pass
-    smoothing-improves-surface: pass
-    native-interior-matches-expectation: pass
-    cosim-interior-matches-expectation: pass
-    native-shell-unbiased: fail
-    cosim-shell-unbiased: pass
+    smoothed-grid-represents-ball:
+      result: PASS
+    smoothing-improves-surface:
+      result: PASS
+    native-interior-matches-expectation:
+      result: PASS
+    cosim-interior-matches-expectation:
+      result: PASS
+    native-shell-unbiased:
+      result: FAIL
+    cosim-shell-unbiased:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

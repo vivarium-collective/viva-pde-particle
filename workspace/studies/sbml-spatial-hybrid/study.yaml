@@ -163,10 +163,13 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    model-round-trips-exactly: pass
-    cosim-from-sbml-is-identical: pass
-    native-from-sbml-is-identical: pass
+    model-round-trips-exactly:
+      result: PASS
+    cosim-from-sbml-is-identical:
+      result: PASS
+    native-from-sbml-is-identical:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

@@ -156,10 +156,13 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    fem-second-order: pass
-    fv-second-order: pass
-    engine-swap-preserves-coupled-result: pass
+    fem-second-order:
+      result: PASS
+    fv-second-order:
+      result: PASS
+    engine-swap-preserves-coupled-result:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

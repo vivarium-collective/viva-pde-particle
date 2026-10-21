@@ -237,11 +237,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    corrected-shell-unbiased: pass
-    corrected-interior-matches: pass
-    corrected-exchange-conserves: pass
-    vcell-like-shell-depletion: fail
+    corrected-shell-unbiased:
+      result: PASS
+    corrected-interior-matches:
+      result: PASS
+    corrected-exchange-conserves:
+      result: PASS
+    vcell-like-shell-depletion:
 
+      result: FAIL
 findings:
 - id: F-01
   tier: mechanism

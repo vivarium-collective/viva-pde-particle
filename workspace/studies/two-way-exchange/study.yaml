@@ -202,11 +202,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    cosim-conserves-mass: pass
-    cosim-reaches-steady-state: pass
-    cosim-creation-is-exact: pass
-    native-overproduction-matches-boundary-volume-defect: pass
+    cosim-conserves-mass:
+      result: PASS
+    cosim-reaches-steady-state:
+      result: PASS
+    cosim-creation-is-exact:
+      result: PASS
+    native-overproduction-matches-boundary-volume-defect:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

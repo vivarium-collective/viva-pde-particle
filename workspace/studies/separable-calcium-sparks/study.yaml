@@ -214,11 +214,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    cosim-error-falls-as-inverse-sqrt-n: pass
-    native-error-falls-as-inverse-sqrt-n: pass
-    cosim-error-small-at-128-trials: pass
-    solvers-differ-only-by-sampling: pass
+    cosim-error-falls-as-inverse-sqrt-n:
+      result: PASS
+    native-error-falls-as-inverse-sqrt-n:
+      result: PASS
+    cosim-error-small-at-128-trials:
+      result: PASS
+    solvers-differ-only-by-sampling:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

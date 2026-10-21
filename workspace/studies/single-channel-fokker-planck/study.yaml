@@ -270,12 +270,17 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    test3-cosim-matches-fokker-planck: fail
-    test3-native-matches-fokker-planck: pass
-    test4-cosim-matches-fokker-planck: pass
-    test5-cosim-matches-fokker-planck: pass
-    test3-bias-is-first-order-in-dtau: pass
+    test3-cosim-matches-fokker-planck:
+      result: FAIL
+    test3-native-matches-fokker-planck:
+      result: PASS
+    test4-cosim-matches-fokker-planck:
+      result: PASS
+    test5-cosim-matches-fokker-planck:
+      result: PASS
+    test3-bias-is-first-order-in-dtau:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

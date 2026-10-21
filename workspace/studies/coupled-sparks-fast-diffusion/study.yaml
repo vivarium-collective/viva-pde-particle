@@ -219,12 +219,17 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    cosim-matches-well-mixed-means: pass
-    native-matches-well-mixed-means: pass
-    cosim-channel-distribution-l2: pass
-    native-channel-distribution-l2: pass
-    solvers-agree: pass
+    cosim-matches-well-mixed-means:
+      result: PASS
+    native-matches-well-mixed-means:
+      result: PASS
+    cosim-channel-distribution-l2:
+      result: PASS
+    native-channel-distribution-l2:
+      result: PASS
+    solvers-agree:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

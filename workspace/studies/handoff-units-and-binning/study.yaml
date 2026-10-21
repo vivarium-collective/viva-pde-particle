@@ -185,11 +185,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    fv-matches-continuum-diffusion: pass
-    particle-variance-matches-2Dt: pass
-    histogram-conserves-molecules: pass
-    boundary-volumes-give-uniform-concentration: pass
+    fv-matches-continuum-diffusion:
+      result: PASS
+    particle-variance-matches-2Dt:
+      result: PASS
+    histogram-conserves-molecules:
+      result: PASS
+    boundary-volumes-give-uniform-concentration:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation
