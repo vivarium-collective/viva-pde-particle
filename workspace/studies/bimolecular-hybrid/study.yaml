@@ -169,11 +169,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    solvers-agree-on-survival: pass
-    solvers-agree-on-product: pass
-    cosim-near-continuum: pass
-    native-near-continuum: pass
+    solvers-agree-on-survival:
+      result: PASS
+    solvers-agree-on-product:
+      result: PASS
+    cosim-near-continuum:
+      result: PASS
+    native-near-continuum:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

@@ -274,15 +274,23 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    survival-follows-local-field: pass
-    no-decay-where-field-is-zero: pass
-    approaches-continuum-limit: pass
-    total-matches-continuum: pass
-    native-vcell-follows-local-field: pass
-    cosim-matches-native-static: pass
-    cosim-matches-native-diffusing: pass
-    cosim-matches-native-total: pass
+    survival-follows-local-field:
+      result: PASS
+    no-decay-where-field-is-zero:
+      result: PASS
+    approaches-continuum-limit:
+      result: PASS
+    total-matches-continuum:
+      result: PASS
+    native-vcell-follows-local-field:
+      result: PASS
+    cosim-matches-native-static:
+      result: PASS
+    cosim-matches-native-diffusing:
+      result: PASS
+    cosim-matches-native-total:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

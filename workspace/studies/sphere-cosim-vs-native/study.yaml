@@ -226,11 +226,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    native-represents-ball-volume: pass
-    conversion-agrees: pass
-    conversion-field-profiles-agree: pass
-    exchange-agrees: fail
+    native-represents-ball-volume:
+      result: PASS
+    conversion-agrees:
+      result: PASS
+    conversion-field-profiles-agree:
+      result: PASS
+    exchange-agrees:
 
+      result: FAIL
 findings:
 - id: F-01
   tier: observation

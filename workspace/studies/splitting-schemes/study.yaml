@@ -161,10 +161,13 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    jacobi-first-order: pass
-    gauss-seidel-first-order: pass
-    strang-much-more-accurate: pass
+    jacobi-first-order:
+      result: PASS
+    gauss-seidel-first-order:
+      result: PASS
+    strang-much-more-accurate:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

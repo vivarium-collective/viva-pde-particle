@@ -178,11 +178,15 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    particle-decay-exact-in-ball: pass
-    handoff-conserves-in-ball: pass
-    field-matches-continuum-in-ball: pass
-    exchange-steady-state-in-ball: pass
+    particle-decay-exact-in-ball:
+      result: PASS
+    handoff-conserves-in-ball:
+      result: PASS
+    field-matches-continuum-in-ball:
+      result: PASS
+    exchange-steady-state-in-ball:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation

@@ -167,10 +167,13 @@ runs:
 - name: default
   emitter: json
   outcomes:
-    cosim-fvsolver-mode-first-order: pass
-    native-first-order: pass
-    cosim-reproduces-native-coupling-error: pass
+    cosim-fvsolver-mode-first-order:
+      result: PASS
+    native-first-order:
+      result: PASS
+    cosim-reproduces-native-coupling-error:
 
+      result: PASS
 findings:
 - id: F-01
   tier: observation
