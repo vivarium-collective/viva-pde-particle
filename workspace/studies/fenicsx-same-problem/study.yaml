@@ -6,22 +6,26 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b1_fem_lumped_h_order — fitted h-order of the Q1 lumped-mass engine on the cosine mode
-  - b1_fv_h_order — fitted h-order of the FV engine
-  - b1_fem_consistent_h_order — fitted h-order of the Q1 consistent-mass engine
-  - b1_fem_lumped_vs_fv_survival_max_paired_z — max paired |z| of survival, FEniCSx (lumped) vs FV, same seeds
-  - b1_{fv,fem_lumped,fem_consistent}_err_n81 — L∞ error at N=81 per engine
-
+- name: b1_fem_lumped_h_order
+  description: fitted h-order of the Q1 lumped-mass engine on the cosine mode
+- name: b1_fv_h_order
+  description: fitted h-order of the FV engine
+- name: b1_fem_consistent_h_order
+  description: fitted h-order of the Q1 consistent-mass engine
+- name: b1_fem_lumped_vs_fv_survival_max_paired_z
+  description: max paired |z| of survival, FEniCSx (lumped) vs FV, same seeds
+- name: b1_{fv,fem_lumped,fem_consistent}_err_n81
+  description: L∞ error at N=81 per engine
 question: |
   Can the PDE half of the co-simulation be swapped for a different discretization
   (FEniCSx, Q1 finite elements) without changing anything else, and does that change the
@@ -57,22 +61,22 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {n_particles: 20000, dt: 0.01}
   variants:
-    - name: fv
-      diff_from_baseline: "PDE half solved by the VCell FV_SOLVER scheme (node-centred finite volume)."
-    - name: fenicsx-lumped
-      diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with lumped mass (pde_engine=\"fenicsx\")."
-    - name: fenicsx-consistent
-      diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with consistent mass."
+  - name: fv
+    diff_from_baseline: "PDE half solved by the VCell FV_SOLVER scheme (node-centred finite volume)."
+  - name: fenicsx-lumped
+    diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with lumped mass (pde_engine=\"fenicsx\")."
+  - name: fenicsx-consistent
+    diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with consistent mass."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [b1_fem_lumped_h_order, b1_fv_h_order, b1_fem_consistent_h_order, b1_fem_lumped_vs_fv_survival_max_paired_z]
-    pass_fail_tests: [fem-second-order, fv-second-order, engine-swap-preserves-coupled-result]
-    description: "Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds); results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b1_fem_lumped_h_order, b1_fv_h_order, b1_fem_consistent_h_order, b1_fem_lumped_vs_fv_survival_max_paired_z]
+  pass_fail_tests: [fem-second-order, fv-second-order, engine-swap-preserves-coupled-result]
+  description: "Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds); results/metrics.json."
 
 behavior_tests:
 - name: fem-second-order
@@ -149,41 +153,45 @@ conclusion: |
   are cleanly separable from coupling effects.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      fem-second-order: pass
-      fv-second-order: pass
-      engine-swap-preserves-coupled-result: pass
+- name: default
+  emitter: json
+  outcomes:
+    fem-second-order: pass
+    fv-second-order: pass
+    engine-swap-preserves-coupled-result: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      All three PDE engines are second order on the cosine mode: fitted h-orders are 1.97
-      (FV), 1.98 (Q1 lumped) and 2.04 (Q1 consistent), all inside the [1.8, 2.2] band, with
-      L∞ errors at N=81 of 5.5e-6 (FV), 1.6e-5 (lumped) and 4.7e-6 (consistent).
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: fem-second-order}
-    next_action: None — convergence order confirmed for all three engines.
-    next_action_type: replicate
-  - id: F-02
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      Swapping the PDE engine under the co-simulation changes nothing measurable in the
-      coupled result: the max paired |z| of survival (common random numbers) is 1.50 (lumped)
-      and 0.76 (consistent) against FV, far below 4.0, with mean survival differences of
-      2.6e-4 and 1.1e-4, and all three engines within 0.27% of the continuum.
-    claim_scope: mechanism
-    generality: {axes_tested: [discretization, alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: engine-swap-preserves-coupled-result}
-    next_action: None — the PDE engine is an interchangeable component of the hybrid coupling.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    All three PDE engines are second order on the cosine mode: fitted h-orders are 1.97
+    (FV), 1.98 (Q1 lumped) and 2.04 (Q1 consistent), all inside the [1.8, 2.2] band, with
+    L∞ errors at N=81 of 5.5e-6 (FV), 1.6e-5 (lumped) and 4.7e-6 (consistent).
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: fem-second-order}
+  next_action: None — convergence order confirmed for all three engines.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Swapping the PDE engine under the co-simulation changes nothing measurable in the
+    coupled result: the max paired |z| of survival (common random numbers) is 1.50 (lumped)
+    and 0.76 (consistent) against FV, far below 4.0, with mean survival differences of
+    2.6e-4 and 1.1e-4, and all three engines within 0.27% of the continuum.
+  claim_scope: mechanism
+  generality: {axes_tested: [discretization, alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: engine-swap-preserves-coupled-result}
+  next_action: None — the PDE engine is an interchangeable component of the hybrid coupling.
+  next_action_type: replicate
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -222,10 +230,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/fenicsx-same-problem/sims/run.py"
-      produces: [results/metrics.json, viz/engine_swap.html]
-      note: >
-        Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds). Needs
-        the pixi env for dolfinx (FEniCSx); the FV engine runs in any env.
+  - cmd: "pixi run -e dev python workspace/studies/fenicsx-same-problem/sims/run.py"
+    produces: [results/metrics.json, viz/engine_swap.html]
+    note: >
+      Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds). Needs
+      the pixi env for dolfinx (FEniCSx); the FV engine runs in any env.
   inputs_committed: [results/metrics.json]
   wall_time_s: 12.883005142211914

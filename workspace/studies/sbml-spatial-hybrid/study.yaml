@@ -6,24 +6,30 @@ created: '2026-10-07'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b6_model_round_trip_exact — from_sbml(to_sbml(model)) equals the original HybridModel (1 = exact)
-  - b6_cosim_vs_cosim_sbml_identical — co-sim from SBML vs from the original model, seed for seed (1 = bit-identical)
-  - b6_native_vs_native_sbml_identical — native from SBML vs from the original VCML, seed for seed (1 = bit-identical)
-  - b6_cosim_sbml_vs_native_sbml_a_max_z — cross-solver agreement on surviving A from the SBML (max two-sample |z|)
-  - b6_cosim_sbml_vs_native_sbml_b_max_z — cross-solver agreement on B from the SBML (max two-sample |z|)
-  - b6_native_a_final_mean / b6_cosim_a_final_mean — final mean A count, native vs co-sim from the SBML
-  - b6_native_mass_balance_final_rel — native A + B conservation at the final step (rel.)
-
+- name: b6_model_round_trip_exact
+  description: from_sbml(to_sbml(model)) equals the original HybridModel (1 = exact)
+- name: b6_cosim_vs_cosim_sbml_identical
+  description: co-sim from SBML vs from the original model, seed for seed (1 = bit-identical)
+- name: b6_native_vs_native_sbml_identical
+  description: native from SBML vs from the original VCML, seed for seed (1 = bit-identical)
+- name: b6_cosim_sbml_vs_native_sbml_a_max_z
+  description: cross-solver agreement on surviving A from the SBML (max two-sample |z|)
+- name: b6_cosim_sbml_vs_native_sbml_b_max_z
+  description: cross-solver agreement on B from the SBML (max two-sample |z|)
+- name: b6_native_a_final_mean / b6_cosim_a_final_mean
+  description: final mean A count, native vs co-sim from the SBML
+- name: b6_native_mass_balance_final_rel
+  description: native A + B conservation at the final step (rel.)
 parent_studies:
 - two-way-exchange
 
@@ -70,19 +76,19 @@ conditions:
     composite: viva_pde_particle.composites.examples.two_way_exchange
     params: {k1: 1.0, k2: 0.5, b0: 0.2, dt: 0.01}
   variants:
-    - name: sbml-roundtrip-and-run
-      diff_from_baseline: >-
-        The A3 two-way exchange is written to SBML Spatial (A particle, B continuous) and run four
-        ways — native from VCML, native from SBML, co-sim from HybridModel, co-sim from_sbml; 8 seeds.
+  - name: sbml-roundtrip-and-run
+    diff_from_baseline: >-
+      The A3 two-way exchange is written to SBML Spatial (A particle, B continuous) and run four
+      ways — native from VCML, native from SBML, co-sim from HybridModel, co-sim from_sbml; 8 seeds.
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.two_way_exchange
-    seeds: [0]
-    metrics: [b6_model_round_trip_exact, b6_cosim_vs_cosim_sbml_identical, b6_native_vs_native_sbml_identical, b6_cosim_sbml_vs_native_sbml_a_max_z, b6_native_mass_balance_final_rel]
-    pass_fail_tests: [model-round-trips-exactly, cosim-from-sbml-is-identical, native-from-sbml-is-identical]
-    description: "A3 two-way exchange from SBML Spatial: 8 seeds × (native, co-sim) × (original, SBML); results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.two_way_exchange
+  seeds: [0]
+  metrics: [b6_model_round_trip_exact, b6_cosim_vs_cosim_sbml_identical, b6_native_vs_native_sbml_identical, b6_cosim_sbml_vs_native_sbml_a_max_z, b6_native_mass_balance_final_rel]
+  pass_fail_tests: [model-round-trips-exactly, cosim-from-sbml-is-identical, native-from-sbml-is-identical]
+  description: "A3 two-way exchange from SBML Spatial: 8 seeds × (native, co-sim) × (original, SBML); results/metrics.json."
 
 behavior_tests:
 - name: model-round-trips-exactly
@@ -154,58 +160,64 @@ conclusion: |
     (virtualcell/vcell-fvsolver#24): A ended at 2.3× the co-sim's (|z| 135) and A + B grew 76%.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      model-round-trips-exactly: pass
-      cosim-from-sbml-is-identical: pass
-      native-from-sbml-is-identical: pass
+- name: default
+  emitter: json
+  outcomes:
+    model-round-trips-exactly: pass
+    cosim-from-sbml-is-identical: pass
+    native-from-sbml-is-identical: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The hybrid model round-trips exactly through SBML Spatial: from_sbml(to_sbml(model)) equals
-      the original HybridModel (b6_model_round_trip_exact = 1.0), including each species'
-      continuous/particle representation and all mass-action rate constants.
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: model-round-trips-exactly}
-    next_action: None — the SBML Spatial encoding carries every model quantity.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      Each solver reproduces itself from the SBML seed for seed: the co-sim from SBML is
-      bit-identical to the co-sim from the Python model (b6_cosim_vs_cosim_sbml_identical = 1.0,
-      max |z| = 0) and the native run from SBML is bit-identical to the native run from the
-      original VCML (b6_native_vs_native_sbml_identical = 1.0).
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: native-from-sbml-is-identical}
-    next_action: None — SBML import is lossless on both solvers.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      Across solvers the two SBML runs agree to within sampling: max two-sample |z| is 1.45 for A
-      (b6_cosim_sbml_vs_native_sbml_a_max_z) and 1.14 for B, with native A ending at 3826.6 vs the
-      co-sim's 3845.0, and native conserves A + B to +0.12% (b6_native_mass_balance_final_rel =
-      0.0012). The two are not bit-identical (b6_cosim_sbml_vs_native_sbml_identical = 0.0), as
-      expected for two independent solvers of the same SBML. Reaching this needed VCell's SBML
-      import to convert the hybrid to VCell's default units, since its spatial stochastic math is
-      only consistent there.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: native-from-sbml-is-identical}
-    next_action: >
-      Carry the SBML-import unit conversion (libvcell#26, pyvcell#63) upstream with the released stack.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    The hybrid model round-trips exactly through SBML Spatial: from_sbml(to_sbml(model)) equals
+    the original HybridModel (b6_model_round_trip_exact = 1.0), including each species'
+    continuous/particle representation and all mass-action rate constants.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: model-round-trips-exactly}
+  next_action: None — the SBML Spatial encoding carries every model quantity.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    Each solver reproduces itself from the SBML seed for seed: the co-sim from SBML is
+    bit-identical to the co-sim from the Python model (b6_cosim_vs_cosim_sbml_identical = 1.0,
+    max |z| = 0) and the native run from SBML is bit-identical to the native run from the
+    original VCML (b6_native_vs_native_sbml_identical = 1.0).
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-from-sbml-is-identical}
+  next_action: None — SBML import is lossless on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Across solvers the two SBML runs agree to within sampling: max two-sample |z| is 1.45 for A
+    (b6_cosim_sbml_vs_native_sbml_a_max_z) and 1.14 for B, with native A ending at 3826.6 vs the
+    co-sim's 3845.0, and native conserves A + B to +0.12% (b6_native_mass_balance_final_rel =
+    0.0012). The two are not bit-identical (b6_cosim_sbml_vs_native_sbml_identical = 0.0), as
+    expected for two independent solvers of the same SBML. Reaching this needed VCell's SBML
+    import to convert the hybrid to VCell's default units, since its spatial stochastic math is
+    only consistent there.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-from-sbml-is-identical}
+  next_action: >
+    Carry the SBML-import unit conversion (libvcell#26, pyvcell#63) upstream with the released stack.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -240,10 +252,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/sbml-spatial-hybrid/sims/run.py"
-      produces: [results/metrics.json, viz/sbml_spatial_hybrid.html, results/two_way_exchange.sbml]
-      note: >
-        A3 two-way exchange written to SBML Spatial and run four ways (8 seeds). The native arms
-        need the dev pixi env and the released VCell stack carrying the SBML unit conversion.
+  - cmd: "pixi run -e dev python workspace/studies/sbml-spatial-hybrid/sims/run.py"
+    produces: [results/metrics.json, viz/sbml_spatial_hybrid.html, results/two_way_exchange.sbml]
+    note: >
+      A3 two-way exchange written to SBML Spatial and run four ways (8 seeds). The native arms
+      need the dev pixi env and the released VCell stack carrying the SBML unit conversion.
   inputs_committed: [results/metrics.json]
   wall_time_s: 9.0

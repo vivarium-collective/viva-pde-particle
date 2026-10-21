@@ -6,28 +6,38 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - a3_cosim_mass_balance_max_rel_dev — max over time of |ensemble-mean (A+B)/initial − 1|, co-sim
-  - a3_cosim_steady_ratio_rel_err — relative error of the late-time total-A/total-B ratio vs k2/k1, co-sim
-  - a3_cosim_creation_ratio — created A ÷ exact expectation (creation-only, static B), co-sim
-  - a3_native_creation_ratio — created A ÷ exact expectation, native VCell
-  - a3_native_creation_vs_bug_factor — native creation ratio ÷ Σ(full)/Σ(actual) boundary-volume prediction
-  - a3_full_to_actual_cell_volume_factor — Σ(full cells)/Σ(actual cells) overproduction factor
-  - a3_native_mass_balance_max_rel_dev — native (A+B) max relative deviation
-  - a3_native_steady_ratio_rel_err — native late-time ratio relative error
-  - a3_cosim_vs_native_totals_max_z — |z| of co-sim vs native totals disagreement
-  - a3_cosim_vs_native_profile_max_z — |z| of co-sim vs native profile disagreement
-  - a3_wall_time_s — wall-clock time of the full run
-
+- name: a3_cosim_mass_balance_max_rel_dev
+  description: max over time of |ensemble-mean (A+B)/initial − 1|, co-sim
+- name: a3_cosim_steady_ratio_rel_err
+  description: relative error of the late-time total-A/total-B ratio vs k2/k1, co-sim
+- name: a3_cosim_creation_ratio
+  description: created A ÷ exact expectation (creation-only, static B), co-sim
+- name: a3_native_creation_ratio
+  description: created A ÷ exact expectation, native VCell
+- name: a3_native_creation_vs_bug_factor
+  description: native creation ratio ÷ Σ(full)/Σ(actual) boundary-volume prediction
+- name: a3_full_to_actual_cell_volume_factor
+  description: Σ(full cells)/Σ(actual cells) overproduction factor
+- name: a3_native_mass_balance_max_rel_dev
+  description: native (A+B) max relative deviation
+- name: a3_native_steady_ratio_rel_err
+  description: native late-time ratio relative error
+- name: a3_cosim_vs_native_totals_max_z
+  description: '|z| of co-sim vs native totals disagreement'
+- name: a3_cosim_vs_native_profile_max_z
+  description: '|z| of co-sim vs native profile disagreement'
+- name: a3_wall_time_s
+  description: wall-clock time of the full run
 parent_studies:
 - field-modulated-decay
 
@@ -77,22 +87,22 @@ conditions:
     composite: viva_pde_particle.composites.examples.two_way_exchange
     params: {k1: 1.0, k2: 0.5, b0: 0.2, dt: 0.01}
   variants:
-    - name: cosim-two-way
-      diff_from_baseline: "Full two-way exchange on the 11×11×3 slab, 16 seeds, co-simulation solver (t=5 s)."
-    - name: native-two-way
-      diff_from_baseline: "Same model solved by the native VCell embedded hybrid (16 seeds) for solver comparison."
-    - name: creation-only
-      diff_from_baseline: "B a static catalyst (2 s, 8 seeds per solver); created A vs exact k2·[B]·V·602.214·t."
+  - name: cosim-two-way
+    diff_from_baseline: "Full two-way exchange on the 11×11×3 slab, 16 seeds, co-simulation solver (t=5 s)."
+  - name: native-two-way
+    diff_from_baseline: "Same model solved by the native VCell embedded hybrid (16 seeds) for solver comparison."
+  - name: creation-only
+    diff_from_baseline: "B a static catalyst (2 s, 8 seeds per solver); created A vs exact k2·[B]·V·602.214·t."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.two_way_exchange
-    seeds: [0]
-    metrics: [a3_cosim_mass_balance_max_rel_dev, a3_cosim_steady_ratio_rel_err, a3_cosim_creation_ratio, a3_native_creation_vs_bug_factor]
-    pass_fail_tests: [cosim-conserves-mass, cosim-reaches-steady-state, cosim-creation-is-exact, native-overproduction-matches-boundary-volume-defect]
-    description: "Two-way exchange (16 seeds/solver) + creation-only check (8 seeds/solver); results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.two_way_exchange
+  seeds: [0]
+  metrics: [a3_cosim_mass_balance_max_rel_dev, a3_cosim_steady_ratio_rel_err, a3_cosim_creation_ratio, a3_native_creation_vs_bug_factor]
+  pass_fail_tests: [cosim-conserves-mass, cosim-reaches-steady-state, cosim-creation-is-exact, native-overproduction-matches-boundary-volume-defect]
+  description: "Two-way exchange (16 seeds/solver) + creation-only check (8 seeds/solver); results/metrics.json."
 
 behavior_tests:
 - name: cosim-conserves-mass
@@ -189,59 +199,65 @@ conclusion: |
   accurate of the two.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      cosim-conserves-mass: pass
-      cosim-reaches-steady-state: pass
-      cosim-creation-is-exact: pass
-      native-overproduction-matches-boundary-volume-defect: pass
+- name: default
+  emitter: json
+  outcomes:
+    cosim-conserves-mass: pass
+    cosim-reaches-steady-state: pass
+    cosim-creation-is-exact: pass
+    native-overproduction-matches-boundary-volume-defect: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The co-simulation conserves mass and reaches the right steady state across the
-      two-way handoff: ensemble-mean (A+B) stays within 1.18% of its initial value over
-      5 s, and the late-time total-A/total-B ratio is within 0.32% of k2/k1 (16 seeds).
-    claim_scope: behavioral
-    generality: {axes_tested: [initial_conditions], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-conserves-mass}
-    next_action: None — mass balance and detailed balance confirmed for the co-simulation.
-    next_action_type: replicate
-  - id: F-02
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      Field-dependent creation in the co-simulation is exact: created A is 0.994× the exact
-      expectation k2·[B]·V·602.214·t (creation-only, static B), confirming that using each
-      node's actual cell volume (1/2–1/8 at boundaries) removes the overproduction; the
-      0.6% shortfall is the ~2-step Smoldyn creation start-up artifact.
-    claim_scope: mechanism
-    generality: {axes_tested: [initial_conditions], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-creation-is-exact}
-    next_action: None — boundary-volume and skipped-node defects fixed in the Smoldyn fork.
-    next_action_type: replicate
-  - id: F-03
-    tier: interpretation
-    statement: >
-      The native VCell embedded solver diverges strongly and the divergence is fully
-      explained by a known defect: native creation is 1.813× the expectation, matching the
-      predicted full-volume boundary overproduction Σ(full)/Σ(actual)=1.815× to 0.1%
-      (ratio 0.999). As a consequence native (A+B) grows 177% in 5 s and its steady-state
-      ratio is 51% off, so the two solvers disagree at |z| ≈ 219 (totals) / 153 (profile).
-      This is vcell-fvsolver's bug (virtualcell/vcell-fvsolver#24), not the coupling method.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: native-overproduction-matches-boundary-volume-defect}
-    next_action: >
-      Carry the boundary-volume fix upstream to vcell-fvsolver; once fixed, replace this
-      characterization test with a native mass-balance test.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    The co-simulation conserves mass and reaches the right steady state across the
+    two-way handoff: ensemble-mean (A+B) stays within 1.18% of its initial value over
+    5 s, and the late-time total-A/total-B ratio is within 0.32% of k2/k1 (16 seeds).
+  claim_scope: behavioral
+  generality: {axes_tested: [initial_conditions], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-conserves-mass}
+  next_action: None — mass balance and detailed balance confirmed for the co-simulation.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Field-dependent creation in the co-simulation is exact: created A is 0.994× the exact
+    expectation k2·[B]·V·602.214·t (creation-only, static B), confirming that using each
+    node's actual cell volume (1/2–1/8 at boundaries) removes the overproduction; the
+    0.6% shortfall is the ~2-step Smoldyn creation start-up artifact.
+  claim_scope: mechanism
+  generality: {axes_tested: [initial_conditions], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-creation-is-exact}
+  next_action: None — boundary-volume and skipped-node defects fixed in the Smoldyn fork.
+  next_action_type: replicate
+  kind: computational
+  status: contradicts
+- id: F-03
+  tier: interpretation
+  statement: >
+    The native VCell embedded solver diverges strongly and the divergence is fully
+    explained by a known defect: native creation is 1.813× the expectation, matching the
+    predicted full-volume boundary overproduction Σ(full)/Σ(actual)=1.815× to 0.1%
+    (ratio 0.999). As a consequence native (A+B) grows 177% in 5 s and its steady-state
+    ratio is 51% off, so the two solvers disagree at |z| ≈ 219 (totals) / 153 (profile).
+    This is vcell-fvsolver's bug (virtualcell/vcell-fvsolver#24), not the coupling method.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-overproduction-matches-boundary-volume-defect}
+  next_action: >
+    Carry the boundary-volume fix upstream to vcell-fvsolver; once fixed, replace this
+    characterization test with a native mass-balance test.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: contradicts
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -283,10 +299,10 @@ report:
 reproducibility:
   level: L3   # scripted, committed inputs + metrics; native arm needs the dev env
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/two-way-exchange/sims/run.py"
-      produces: [results/metrics.json, viz/two_way_exchange.html]
-      note: >
-        Two-way exchange (16 seeds/solver) + creation-only check (8 seeds/solver). The
-        native VCell arm needs the dev pixi env; in the default env only the co-sim arm runs.
+  - cmd: "pixi run -e dev python workspace/studies/two-way-exchange/sims/run.py"
+    produces: [results/metrics.json, viz/two_way_exchange.html]
+    note: >
+      Two-way exchange (16 seeds/solver) + creation-only check (8 seeds/solver). The
+      native VCell arm needs the dev pixi env; in the default env only the co-sim arm runs.
   inputs_committed: [results/metrics.json]
   wall_time_s: 8.243252277374268

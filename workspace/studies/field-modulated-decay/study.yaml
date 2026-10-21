@@ -6,27 +6,34 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 parent_studies:
 - handoff-units-and-binning
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - a2_static_field_max_abs_z — max |z| over x-columns of survivors vs N0·exp(-k·B·t) (static B)
-  - a2_zero_field_decays — molecules lost from the B = 0 column (must be 0)
-  - a2_continuum_rel_l2_err — relative L2 of ensemble-mean A vs the continuum FV solution
-  - a2_continuum_total_rel_err — relative error of ensemble-mean total A vs continuum
-  - a2_native_static_field_max_abs_z — native VCell hybrid, static-B column survival |z|
-  - a2_cosim_vs_native_static_survival_z — co-sim vs native static-field survival |z|
-  - a2_cosim_vs_native_diffusing_profile_z — co-sim vs native diffusing final x-profile |z|
-  - a2_cosim_vs_native_diffusing_survival_rel_diff — co-sim vs native total survival (relative)
-
+- name: a2_static_field_max_abs_z
+  description: max |z| over x-columns of survivors vs N0·exp(-k·B·t) (static B)
+- name: a2_zero_field_decays
+  description: molecules lost from the B = 0 column (must be 0)
+- name: a2_continuum_rel_l2_err
+  description: relative L2 of ensemble-mean A vs the continuum FV solution
+- name: a2_continuum_total_rel_err
+  description: relative error of ensemble-mean total A vs continuum
+- name: a2_native_static_field_max_abs_z
+  description: native VCell hybrid, static-B column survival |z|
+- name: a2_cosim_vs_native_static_survival_z
+  description: co-sim vs native static-field survival |z|
+- name: a2_cosim_vs_native_diffusing_profile_z
+  description: co-sim vs native diffusing final x-profile |z|
+- name: a2_cosim_vs_native_diffusing_survival_rel_diff
+  description: co-sim vs native total survival (relative)
 question: |
   Does the Smoldyn process read the PDE field at each molecule as vcell-fvsolver does
   (nearest node, value from the previous coupling step)? Does the coupled model approach
@@ -87,20 +94,20 @@ conditions:
     composite: viva_pde_particle.composites.examples.field_modulated_decay
     params: {n_particles: 4000, k: 1.0, d_a: 0.0, d_b: 0.0, b_profile: linear, dt: 0.01}
   variants:
-    - name: native-vcell-slab
-      diff_from_baseline: "Same model on a quasi-2D slab (11×11×3), run by both co-sim and VCell's native hybrid; 8 seeds each."
-    - name: continuum-limit
-      diff_from_baseline: "Gaussian B (D_B=0.5), 20,000 diffusing A (D_A=1), 8 seeds; compared to the all-continuous FV solution."
+  - name: native-vcell-slab
+    diff_from_baseline: "Same model on a quasi-2D slab (11×11×3), run by both co-sim and VCell's native hybrid; 8 seeds each."
+  - name: continuum-limit
+    diff_from_baseline: "Gaussian B (D_B=0.5), 20,000 diffusing A (D_A=1), 8 seeds; compared to the all-continuous FV solution."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.field_modulated_decay
-    seeds: [0]
-    metrics: [a2_static_field_max_abs_z, a2_zero_field_decays, a2_continuum_rel_l2_err, a2_cosim_vs_native_static_survival_z]
-    pass_fail_tests: [survival-follows-local-field, no-decay-where-field-is-zero, approaches-continuum-limit, total-matches-continuum, native-vcell-follows-local-field, cosim-matches-native-static, cosim-matches-native-diffusing, cosim-matches-native-total]
-    description: "Static-field column survival + continuum-limit comparison + native-slab agreement (8 seeds each); results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.field_modulated_decay
+  seeds: [0]
+  metrics: [a2_static_field_max_abs_z, a2_zero_field_decays, a2_continuum_rel_l2_err, a2_cosim_vs_native_static_survival_z]
+  pass_fail_tests: [survival-follows-local-field, no-decay-where-field-is-zero, approaches-continuum-limit, total-matches-continuum, native-vcell-follows-local-field, cosim-matches-native-static, cosim-matches-native-diffusing, cosim-matches-native-total]
+  description: "Static-field column survival + continuum-limit comparison + native-slab agreement (8 seeds each); results/metrics.json."
 
 behavior_tests:
 - name: survival-follows-local-field
@@ -264,62 +271,68 @@ conclusion: |
   The two implementations are statistically indistinguishable on this model.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      survival-follows-local-field: pass
-      no-decay-where-field-is-zero: pass
-      approaches-continuum-limit: pass
-      total-matches-continuum: pass
-      native-vcell-follows-local-field: pass
-      cosim-matches-native-static: pass
-      cosim-matches-native-diffusing: pass
-      cosim-matches-native-total: pass
+- name: default
+  emitter: json
+  outcomes:
+    survival-follows-local-field: pass
+    no-decay-where-field-is-zero: pass
+    approaches-continuum-limit: pass
+    total-matches-continuum: pass
+    native-vcell-follows-local-field: pass
+    cosim-matches-native-static: pass
+    cosim-matches-native-diffusing: pass
+    cosim-matches-native-total: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The particle side reads the PDE field correctly: with static B and immobile A, per-
-      column survival matches N0·exp(-k·B_col·t) with max |z| = 1.56 (co-sim) and 1.68
-      (native VCell), both well under the |z| < 4 band, and exactly zero molecules decay
-      in the B = 0 column.
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: survival-follows-local-field}
-    next_action: None — field read confirmed against the exact expectation on both solvers.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      The coupled model converges to its deterministic continuum limit: with diffusing A
-      and a Gaussian B, the ensemble-mean A is within 2.7% relative L2 (band 6%) and the
-      total A within 0.05% (band 2%) of the all-continuous FV solution — both at the
-      sampling-noise level.
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: approaches-continuum-limit}
-    next_action: None.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      The co-simulation and VCell's native hybrid are statistically indistinguishable on
-      this field-to-particle coupling: static-field survival agrees at max |z| = 1.37, the
-      diffusing final x-profiles at |z| = 2.54, and total survival to 0.04%, with the B
-      fields identical to 1e-16 — so GridValueProvider's nearest-node field read is
-      reproduced by the process-bigraph decomposition.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-matches-native-diffusing}
-    next_action: >
-      Clears the pipeline gate to two-way-exchange; no further action for this model.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    The particle side reads the PDE field correctly: with static B and immobile A, per-
+    column survival matches N0·exp(-k·B_col·t) with max |z| = 1.56 (co-sim) and 1.68
+    (native VCell), both well under the |z| < 4 band, and exactly zero molecules decay
+    in the B = 0 column.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: survival-follows-local-field}
+  next_action: None — field read confirmed against the exact expectation on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    The coupled model converges to its deterministic continuum limit: with diffusing A
+    and a Gaussian B, the ensemble-mean A is within 2.7% relative L2 (band 6%) and the
+    total A within 0.05% (band 2%) of the all-continuous FV solution — both at the
+    sampling-noise level.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: approaches-continuum-limit}
+  next_action: None.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The co-simulation and VCell's native hybrid are statistically indistinguishable on
+    this field-to-particle coupling: static-field survival agrees at max |z| = 1.37, the
+    diffusing final x-profiles at |z| = 2.54, and total survival to 0.04%, with the B
+    fields identical to 1e-16 — so GridValueProvider's nearest-node field read is
+    reproduced by the process-bigraph decomposition.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-matches-native-diffusing}
+  next_action: >
+    Clears the pipeline gate to two-way-exchange; no further action for this model.
+  next_action_type: replicate
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -359,11 +372,11 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/field-modulated-decay/sims/run.py"
-      produces: [results/metrics.json, viz/field_modulated_decay.html]
-      note: >
-        Static-field column survival + continuum-limit comparison + native-slab agreement
-        (8 seeds each). The native-slab arm needs the dev pixi env (pyvcell spatial-hybrid);
-        in the default env only the co-sim arms run.
+  - cmd: "pixi run -e dev python workspace/studies/field-modulated-decay/sims/run.py"
+    produces: [results/metrics.json, viz/field_modulated_decay.html]
+    note: >
+      Static-field column survival + continuum-limit comparison + native-slab agreement
+      (8 seeds each). The native-slab arm needs the dev pixi env (pyvcell spatial-hybrid);
+      in the default env only the co-sim arms run.
   inputs_committed: [results/metrics.json]
   wall_time_s: 7.0801379680633545

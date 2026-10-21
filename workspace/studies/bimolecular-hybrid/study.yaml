@@ -6,25 +6,30 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 parent_studies:
 - two-way-exchange
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - a4_cosim_vs_native_survival_max_z — max-over-time |z| of surviving A fraction, co-sim vs native
-  - a4_cosim_vs_native_c_max_z — max-over-time |z| of produced C (/initial A), co-sim vs native
-  - a4_cosim_vs_native_profile_max_z — max-over-time |z| of the final x-profile, co-sim vs native
-  - a4_cosim_vs_continuum_survival_max_abs_diff — |survival − continuum survival| for the co-sim
-  - a4_native_vs_continuum_survival_max_abs_diff — |survival − continuum survival| for the native VCell hybrid
-  - a4_cosim_mass_balance_max_rel_dev / a4_native_mass_balance_max_rel_dev — B+C conservation (relative)
-
+- name: a4_cosim_vs_native_survival_max_z
+  description: max-over-time |z| of surviving A fraction, co-sim vs native
+- name: a4_cosim_vs_native_c_max_z
+  description: max-over-time |z| of produced C (/initial A), co-sim vs native
+- name: a4_cosim_vs_native_profile_max_z
+  description: max-over-time |z| of the final x-profile, co-sim vs native
+- name: a4_cosim_vs_continuum_survival_max_abs_diff
+  description: '|survival − continuum survival| for the co-sim'
+- name: a4_native_vs_continuum_survival_max_abs_diff
+  description: '|survival − continuum survival| for the native VCell hybrid'
+- name: a4_cosim_mass_balance_max_rel_dev / a4_native_mass_balance_max_rel_dev
+  description: B+C conservation (relative)
 question: |
   When particles consume a field (B substantially depleted by A), do the co-simulation
   and the native VCell hybrid agree with each other and with the deterministic continuum
@@ -58,20 +63,20 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {n_particles: 20000, k: 1.0, b0: 0.5, dt: 0.01}
   variants:
-    - name: native-vcell-arm
-      diff_from_baseline: "Same model solved by the native VCell hybrid (pyvcell → libvcell → vcell-fvsolver), 16 seeds."
-    - name: continuum-limit
-      diff_from_baseline: "Deterministic FV continuum solution (A treated as a field) for the convergence check."
+  - name: native-vcell-arm
+    diff_from_baseline: "Same model solved by the native VCell hybrid (pyvcell → libvcell → vcell-fvsolver), 16 seeds."
+  - name: continuum-limit
+    diff_from_baseline: "Deterministic FV continuum solution (A treated as a field) for the convergence check."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [a4_cosim_vs_native_survival_max_z, a4_cosim_vs_native_c_max_z, a4_cosim_vs_continuum_survival_max_abs_diff, a4_native_vs_continuum_survival_max_abs_diff]
-    pass_fail_tests: [solvers-agree-on-survival, solvers-agree-on-product, cosim-near-continuum, native-near-continuum]
-    description: "A_p + B_f → C_f: 16 seeds × 2 solvers + continuum limit; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [a4_cosim_vs_native_survival_max_z, a4_cosim_vs_native_c_max_z, a4_cosim_vs_continuum_survival_max_abs_diff, a4_native_vs_continuum_survival_max_abs_diff]
+  pass_fail_tests: [solvers-agree-on-survival, solvers-agree-on-product, cosim-near-continuum, native-near-continuum]
+  description: "A_p + B_f → C_f: 16 seeds × 2 solvers + continuum limit; results/metrics.json."
 
 behavior_tests:
 - name: solvers-agree-on-survival
@@ -161,56 +166,62 @@ conclusion: |
   each record time, and all studies were re-run.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      solvers-agree-on-survival: pass
-      solvers-agree-on-product: pass
-      cosim-near-continuum: pass
-      native-near-continuum: pass
+- name: default
+  emitter: json
+  outcomes:
+    solvers-agree-on-survival: pass
+    solvers-agree-on-product: pass
+    cosim-near-continuum: pass
+    native-near-continuum: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The co-simulation and the native VCell hybrid agree to within sampling on the
-      two-way nonlinear coupling: max-over-time |z| is 1.79 for surviving A fraction,
-      0.85 for produced C, and 2.10 for the final x-profile — all well under the |z| < 4
-      threshold.
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: solvers-agree-on-survival}
-    next_action: None — the two solvers are statistically indistinguishable on this model.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      Both solvers approach the deterministic continuum limit at 20,000 particles: the
-      max-over-time absolute survival difference is 0.29% (co-sim) and 0.18% (native),
-      both under the 1% band. The remainder is explicit-coupling lag plus discreteness.
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-near-continuum}
-    next_action: None.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      B + C is conserved to round-off on the PDE side in both solvers (max relative
-      deviation 3.6e-14 co-sim, 3.2e-14 native), confirming the particle-consumption /
-      field-production handoff is mass-balanced. Reaching this agreement exposed and fixed
-      a float-sum record-time bug in process-bigraph (pre-fix survival |z| = 5.9, C |z| = 71).
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: solvers-agree-on-product}
-    next_action: >
-      Carry the half-step record-time fix as a regression pin; no further action for this model.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    The co-simulation and the native VCell hybrid agree to within sampling on the
+    two-way nonlinear coupling: max-over-time |z| is 1.79 for surviving A fraction,
+    0.85 for produced C, and 2.10 for the final x-profile — all well under the |z| < 4
+    threshold.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: solvers-agree-on-survival}
+  next_action: None — the two solvers are statistically indistinguishable on this model.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    Both solvers approach the deterministic continuum limit at 20,000 particles: the
+    max-over-time absolute survival difference is 0.29% (co-sim) and 0.18% (native),
+    both under the 1% band. The remainder is explicit-coupling lag plus discreteness.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-near-continuum}
+  next_action: None.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    B + C is conserved to round-off on the PDE side in both solvers (max relative
+    deviation 3.6e-14 co-sim, 3.2e-14 native), confirming the particle-consumption /
+    field-production handoff is mass-balanced. Reaching this agreement exposed and fixed
+    a float-sum record-time bug in process-bigraph (pre-fix survival |z| = 5.9, C |z| = 71).
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: solvers-agree-on-product}
+  next_action: >
+    Carry the half-step record-time fix as a regression pin; no further action for this model.
+  next_action_type: replicate
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -250,10 +261,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/bimolecular-hybrid/sims/run.py"
-      produces: [results/metrics.json, viz/bimolecular_hybrid.html]
-      note: >
-        16 seeds × 2 solvers + continuum limit. The native arm needs the dev pixi env
-        (pyvcell spatial-hybrid); in the default env only the co-sim arm runs.
+  - cmd: "pixi run -e dev python workspace/studies/bimolecular-hybrid/sims/run.py"
+    produces: [results/metrics.json, viz/bimolecular_hybrid.html]
+    note: >
+      16 seeds × 2 solvers + continuum limit. The native arm needs the dev pixi env
+      (pyvcell spatial-hybrid); in the default env only the co-sim arm runs.
   inputs_committed: [results/metrics.json]
   wall_time_s: 7.375601053237915

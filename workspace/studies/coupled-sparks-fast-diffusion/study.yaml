@@ -6,26 +6,32 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 parent_studies:
 - separable-calcium-sparks
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - c2_cosim_max_mean_z — max over t∈{1,2,3}s and {U,n} of |z| of co-sim mean vs exact well-mixed
-  - c2_native_max_mean_z — same |z|, native VCell hybrid
-  - c2_cosim_max_l2_n — max over t of L2 distance between P(n,t) histograms, co-sim vs reference
-  - c2_native_max_l2_n — same L2, native VCell hybrid
-  - c2_cosim_vs_native_min_ks_pvalue — min KS p-value over t and {U,n}, co-sim vs native
-  - c2_{cosim,native}_min_ks_pvalue — min KS p vs the well-mixed reference (open observation)
-  - c2_{cosim,native}_max_l2_u — max over t of L2 distance between p(U,t) histograms vs reference
-
+- name: c2_cosim_max_mean_z
+  description: max over t∈{1,2,3}s and {U,n} of |z| of co-sim mean vs exact well-mixed
+- name: c2_native_max_mean_z
+  description: same |z|, native VCell hybrid
+- name: c2_cosim_max_l2_n
+  description: max over t of L2 distance between P(n,t) histograms, co-sim vs reference
+- name: c2_native_max_l2_n
+  description: same L2, native VCell hybrid
+- name: c2_cosim_vs_native_min_ks_pvalue
+  description: min KS p-value over t and {U,n}, co-sim vs native
+- name: c2_{cosim,native}_min_ks_pvalue
+  description: min KS p vs the well-mixed reference (open observation)
+- name: c2_{cosim,native}_max_l2_u
+  description: max over t of L2 distance between p(U,t) histograms vs reference
 question: |
   With channel opening coupled to local calcium (k_on·U(rᵢ)/U₀) and fast diffusion
   (D = 1000 µm²/s), do both hybrid solvers reproduce the distributions of calcium and
@@ -68,22 +74,22 @@ conditions:
     composite: viva_pde_particle.composites.examples.calcium_sparks
     params: {test: 2, dt: 0.0002}
   variants:
-    - name: cosim-arm
-      diff_from_baseline: "Spatial hybrid as process-bigraph co-simulation; 500 trials at D=1000 µm²/s, Δt=0.2 ms."
-    - name: native-vcell-arm
-      diff_from_baseline: "Same model solved by the native VCell hybrid (dev env) for the solver-agreement check."
-    - name: well-mixed-reference
-      diff_from_baseline: "20,000 exact realizations of the well-mixed piecewise-deterministic process (viva_pde_particle.benchmarks.pdmp)."
+  - name: cosim-arm
+    diff_from_baseline: "Spatial hybrid as process-bigraph co-simulation; 500 trials at D=1000 µm²/s, Δt=0.2 ms."
+  - name: native-vcell-arm
+    diff_from_baseline: "Same model solved by the native VCell hybrid (dev env) for the solver-agreement check."
+  - name: well-mixed-reference
+    diff_from_baseline: "20,000 exact realizations of the well-mixed piecewise-deterministic process (viva_pde_particle.benchmarks.pdmp)."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.calcium_sparks
-    seeds: [0]
-    metrics: [c2_cosim_max_mean_z, c2_native_max_mean_z, c2_cosim_max_l2_n, c2_cosim_vs_native_min_ks_pvalue]
-    pass_fail_tests: [cosim-matches-well-mixed-means, native-matches-well-mixed-means, cosim-channel-distribution-l2, native-channel-distribution-l2, solvers-agree]
-    description: "Fig 2: 500 trials × 2 solvers at D=1000 µm²/s vs 20,000 exact well-mixed realizations; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.calcium_sparks
+  seeds: [0]
+  metrics: [c2_cosim_max_mean_z, c2_native_max_mean_z, c2_cosim_max_l2_n, c2_cosim_vs_native_min_ks_pvalue]
+  pass_fail_tests: [cosim-matches-well-mixed-means, native-matches-well-mixed-means, cosim-channel-distribution-l2, native-channel-distribution-l2, solvers-agree]
+  description: "Fig 2: 500 trials × 2 solvers at D=1000 µm²/s vs 20,000 exact well-mixed realizations; results/metrics.json."
 
 behavior_tests:
 - name: cosim-matches-well-mixed-means
@@ -210,69 +216,77 @@ conclusion: |
   Larger ensembles, or a D → ∞ check, would settle it (follow-up).
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      cosim-matches-well-mixed-means: pass
-      native-matches-well-mixed-means: pass
-      cosim-channel-distribution-l2: pass
-      native-channel-distribution-l2: pass
-      solvers-agree: pass
+- name: default
+  emitter: json
+  outcomes:
+    cosim-matches-well-mixed-means: pass
+    native-matches-well-mixed-means: pass
+    cosim-channel-distribution-l2: pass
+    native-channel-distribution-l2: pass
+    solvers-agree: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      In the fast-diffusion limit (D = 1000 µm²/s) both hybrid solvers match the exact
-      well-mixed process in mean: max |z| over t∈{1,2,3}s and {U,n} is 1.57 (co-sim) and
-      0.64 (native VCell), both well under the |z| < 4 threshold.
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-matches-well-mixed-means}
-    next_action: None — mean agreement confirmed on both solvers.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      The open-channel-number distribution P(n, t) reproduces the paper's Fig 2 metric to
-      the 500-trial sampling floor: max-over-t L2 distance is 0.052 (co-sim) and 0.048
-      (native), both below the 0.1 band (the paper's 10,000-realization value was ~0.002–0.003).
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-channel-distribution-l2}
-    next_action: None.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      The co-simulation and native VCell solvers agree with each other: their minimum KS
-      p-value over t and {U,n} is 0.035 (> 0.001), so decomposing the coupled fast-diffusion
-      hybrid into process-bigraph processes is answer-preserving.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: solvers-agree}
-    next_action: >
-      Settle the shared marginal residual against the well-mixed reference (min KS p ≈ 7·10⁻⁴
-      for both solvers) with a larger ensemble or a D → ∞ check.
-    next_action_type: replicate
-  - id: F-04
-    tier: observation
-    statement: >
-      Open observation (not a gated test): both solvers show the same small marginal minimum
-      KS p against the well-mixed reference — 7.70·10⁻⁴ (co-sim) and 6.87·10⁻⁴ (native). The
-      effect is shared across solvers, so it is not a co-simulation artifact; a plausible cause
-      is residual spatial structure (local U at an open channel slightly exceeds the volume mean).
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: solvers-agree}
-    next_action: Larger ensembles or a D → ∞ check to confirm the residual is spatial structure.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    In the fast-diffusion limit (D = 1000 µm²/s) both hybrid solvers match the exact
+    well-mixed process in mean: max |z| over t∈{1,2,3}s and {U,n} is 1.57 (co-sim) and
+    0.64 (native VCell), both well under the |z| < 4 threshold.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-matches-well-mixed-means}
+  next_action: None — mean agreement confirmed on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    The open-channel-number distribution P(n, t) reproduces the paper's Fig 2 metric to
+    the 500-trial sampling floor: max-over-t L2 distance is 0.052 (co-sim) and 0.048
+    (native), both below the 0.1 band (the paper's 10,000-realization value was ~0.002–0.003).
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-channel-distribution-l2}
+  next_action: None.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The co-simulation and native VCell solvers agree with each other: their minimum KS
+    p-value over t and {U,n} is 0.035 (> 0.001), so decomposing the coupled fast-diffusion
+    hybrid into process-bigraph processes is answer-preserving.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: solvers-agree}
+  next_action: >
+    Settle the shared marginal residual against the well-mixed reference (min KS p ≈ 7·10⁻⁴
+    for both solvers) with a larger ensemble or a D → ∞ check.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-04
+  tier: observation
+  statement: >
+    Open observation (not a gated test): both solvers show the same small marginal minimum
+    KS p against the well-mixed reference — 7.70·10⁻⁴ (co-sim) and 6.87·10⁻⁴ (native). The
+    effect is shared across solvers, so it is not a co-simulation artifact; a plausible cause
+    is residual spatial structure (local U at an open channel slightly exceeds the volume mean).
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: solvers-agree}
+  next_action: Larger ensembles or a D → ∞ check to confirm the residual is spatial structure.
+  next_action_type: replicate
 
+  kind: computational
+  status: partial
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -313,14 +327,14 @@ report:
 reproducibility:
   level: L3   # scripted, committed inputs + metrics; native arm needs the dev env
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/coupled-sparks-fast-diffusion/sims/run.py"
-      produces: [results/metrics.json, viz/calcium_sparks_fig2.html]
-      note: >
-        Full Fig-2 run (500 trials × 2 solvers at D=1000 µm²/s vs 20,000 exact well-mixed
-        realizations). The native arm needs the dev pixi env; in the default env only the
-        co-sim arm runs.
-    - cmd: "pixi run -e dev python workspace/studies/coupled-sparks-fast-diffusion/sims/render_3d.py record && pixi run python workspace/studies/coupled-sparks-fast-diffusion/sims/render_3d.py render"
-      produces: [viz/coupled_sparks_3d.png, viz/coupled_sparks_3d_movie.gif, viz/coupled_sparks_3d_interactive.html]
-      note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
+  - cmd: "pixi run -e dev python workspace/studies/coupled-sparks-fast-diffusion/sims/run.py"
+    produces: [results/metrics.json, viz/calcium_sparks_fig2.html]
+    note: >
+      Full Fig-2 run (500 trials × 2 solvers at D=1000 µm²/s vs 20,000 exact well-mixed
+      realizations). The native arm needs the dev pixi env; in the default env only the
+      co-sim arm runs.
+  - cmd: "pixi run -e dev python workspace/studies/coupled-sparks-fast-diffusion/sims/render_3d.py record && pixi run python workspace/studies/coupled-sparks-fast-diffusion/sims/render_3d.py render"
+    produces: [viz/coupled_sparks_3d.png, viz/coupled_sparks_3d_movie.gif, viz/coupled_sparks_3d_interactive.html]
+    note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
   inputs_committed: [results/metrics.json]
   wall_time_s: 1926.3

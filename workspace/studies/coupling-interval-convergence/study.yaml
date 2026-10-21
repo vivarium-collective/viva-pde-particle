@@ -6,25 +6,30 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 parent_studies:
 - bimolecular-hybrid
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - a5_cosim_fvsolver_order — fitted order (k ≥ 4) of the co-sim error, coupling="fvsolver"
-  - a5_native_order — fitted order (k ≥ 4) of the native VCell hybrid error
-  - a5_fvsolver_mode_vs_native_err_ratio_k16 — co-sim (fvsolver) error ÷ native error at k = 16
-  - a5_cosim_fvsolver_err_k{1..32} — co-sim fvsolver-mode error across the step-multiplier sweep
-  - a5_cosim_start_of_interval_err_k{1..32} / a5_cosim_start_of_interval_order — the alternate scheme
-  - a5_native_err_k{1..16} — native VCell hybrid error across the sweep (crashes at k = 32)
-
+- name: a5_cosim_fvsolver_order
+  description: fitted order (k ≥ 4) of the co-sim error, coupling="fvsolver"
+- name: a5_native_order
+  description: fitted order (k ≥ 4) of the native VCell hybrid error
+- name: a5_fvsolver_mode_vs_native_err_ratio_k16
+  description: co-sim (fvsolver) error ÷ native error at k = 16
+- name: a5_cosim_fvsolver_err_k{1..32}
+  description: co-sim fvsolver-mode error across the step-multiplier sweep
+- name: a5_cosim_start_of_interval_err_k{1..32} / a5_cosim_start_of_interval_order
+  description: the alternate scheme
+- name: a5_native_err_k{1..16}
+  description: native VCell hybrid error across the sweep (crashes at k = 32)
 question: |
   How does the error of the lagged explicit coupling grow with the coupling interval
   k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
@@ -64,20 +69,20 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {k: 2.0, dt: 0.005, step_multiplier: 1}
   variants:
-    - name: step-multiplier-sweep
-      diff_from_baseline: "step_multiplier k ∈ {1,2,4,8,16,32}, 64 seeds each; error vs k·Δt for fvsolver, start-of-interval and native."
-    - name: native-vcell-arm
-      diff_from_baseline: "Same sweep solved by the native VCell hybrid (SimTool.cpp main loop); crashes at k=32."
+  - name: step-multiplier-sweep
+    diff_from_baseline: "step_multiplier k ∈ {1,2,4,8,16,32}, 64 seeds each; error vs k·Δt for fvsolver, start-of-interval and native."
+  - name: native-vcell-arm
+    diff_from_baseline: "Same sweep solved by the native VCell hybrid (SimTool.cpp main loop); crashes at k=32."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [a5_cosim_fvsolver_order, a5_native_order, a5_fvsolver_mode_vs_native_err_ratio_k16, a5_cosim_start_of_interval_order]
-    pass_fail_tests: [cosim-fvsolver-mode-first-order, native-first-order, cosim-reproduces-native-coupling-error]
-    description: "Error vs k·Δt: co-sim (fvsolver, start-of-interval) and native; 64 seeds each; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [a5_cosim_fvsolver_order, a5_native_order, a5_fvsolver_mode_vs_native_err_ratio_k16, a5_cosim_start_of_interval_order]
+  pass_fail_tests: [cosim-fvsolver-mode-first-order, native-first-order, cosim-reproduces-native-coupling-error]
+  description: "Error vs k·Δt: co-sim (fvsolver, start-of-interval) and native; 64 seeds each; results/metrics.json."
 
 behavior_tests:
 - name: cosim-fvsolver-mode-first-order
@@ -159,56 +164,62 @@ conclusion: |
     the output interval), so native results stop at k = 16.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      cosim-fvsolver-mode-first-order: pass
-      native-first-order: pass
-      cosim-reproduces-native-coupling-error: pass
+- name: default
+  emitter: json
+  outcomes:
+    cosim-fvsolver-mode-first-order: pass
+    native-first-order: pass
+    cosim-reproduces-native-coupling-error: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The lagged explicit coupling is first order in the coupling interval k·Δt on both
-      fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and
-      1.07 (native), both inside the theoretical [0.7, 1.5] band.
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-fvsolver-mode-first-order}
-    next_action: None — convergence order confirmed on both solvers.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      The co-simulation reproduces the embedded solver's coupling error, not just its
-      results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native
-      error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-reproduces-native-coupling-error}
-    next_action: None.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      Plain process-bigraph "start-of-interval" scheduling roughly halves the coupling
-      error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver
-      mode; fitted order 0.80), because reading the field at the start of the particle step
-      partly cancels the PDE side's lag. vcell-fvsolver's fixed ordering cannot use this
-      without changing the solver.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-fvsolver-mode-first-order}
-    next_action: >
-      Pursue higher-order operator splitting in Investigation B; the native solver crashes
-      at k=32 (Smoldyn step equal to the output interval), so its sweep stops at k=16.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    The lagged explicit coupling is first order in the coupling interval k·Δt on both
+    fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and
+    1.07 (native), both inside the theoretical [0.7, 1.5] band.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-fvsolver-mode-first-order}
+  next_action: None — convergence order confirmed on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    The co-simulation reproduces the embedded solver's coupling error, not just its
+    results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native
+    error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-reproduces-native-coupling-error}
+  next_action: None.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Plain process-bigraph "start-of-interval" scheduling roughly halves the coupling
+    error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver
+    mode; fitted order 0.80), because reading the field at the start of the particle step
+    partly cancels the PDE side's lag. vcell-fvsolver's fixed ordering cannot use this
+    without changing the solver.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-fvsolver-mode-first-order}
+  next_action: >
+    Pursue higher-order operator splitting in Investigation B; the native solver crashes
+    at k=32 (Smoldyn step equal to the output interval), so its sweep stops at k=16.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -247,10 +258,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/coupling-interval-convergence/sims/run.py"
-      produces: [results/metrics.json, viz/coupling_convergence.html]
-      note: >
-        Step-multiplier sweep k ∈ {1,2,4,8,16,32}, 64 seeds per configuration. The native
-        arm needs the dev pixi env (pyvcell spatial-hybrid) and stops at k=16.
+  - cmd: "pixi run -e dev python workspace/studies/coupling-interval-convergence/sims/run.py"
+    produces: [results/metrics.json, viz/coupling_convergence.html]
+    note: >
+      Step-multiplier sweep k ∈ {1,2,4,8,16,32}, 64 seeds per configuration. The native
+      arm needs the dev pixi env (pyvcell spatial-hybrid) and stops at k=16.
   inputs_committed: [results/metrics.json]
   wall_time_s: 91.3147361278534

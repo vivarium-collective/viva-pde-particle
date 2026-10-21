@@ -6,23 +6,28 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - c1_cosim_eps_slope — log-log slope of ε vs N, co-simulation (theory −1/2)
-  - c1_native_eps_slope — log-log slope of ε vs N, native VCell hybrid (theory −1/2)
-  - c1_cosim_eps_n128 — ε at N=128, Δt=0.005 s, co-simulation
-  - c1_native_eps_n128 — ε at N=128, Δt=0.005 s, native VCell hybrid
-  - c1_cosim_vs_native_eps_ratio — solver difference ÷ combined statistical error
-  - c1_{cosim,native}_eps_dt{0.02,0.01,0.005} — ε across Δt (flat ⇒ statistically dominated)
-
+- name: c1_cosim_eps_slope
+  description: log-log slope of ε vs N, co-simulation (theory −1/2)
+- name: c1_native_eps_slope
+  description: log-log slope of ε vs N, native VCell hybrid (theory −1/2)
+- name: c1_cosim_eps_n128
+  description: ε at N=128, Δt=0.005 s, co-simulation
+- name: c1_native_eps_n128
+  description: ε at N=128, Δt=0.005 s, native VCell hybrid
+- name: c1_cosim_vs_native_eps_ratio
+  description: solver difference ÷ combined statistical error
+- name: c1_{cosim,native}_eps_dt{0.02,0.01,0.005}
+  description: ε across Δt (flat ⇒ statistically dominated)
 question: |
   Do the native VCell hybrid solver and the process-bigraph co-simulation both reproduce
   Fig 1B of Schaff et al. (2016)? The error of the trial-mean calcium against its exact
@@ -76,20 +81,20 @@ conditions:
     composite: viva_pde_particle.composites.examples.calcium_sparks
     params: {test: 1, dt: 0.005}
   variants:
-    - name: dt-sweep
-      diff_from_baseline: "Δt ∈ {0.02, 0.01, 0.005} s at N=128 (ε(Δt) series)."
-    - name: native-vcell-arm
-      diff_from_baseline: "Same model solved by the native VCell hybrid (dev env) for the solver-agreement check."
+  - name: dt-sweep
+    diff_from_baseline: "Δt ∈ {0.02, 0.01, 0.005} s at N=128 (ε(Δt) series)."
+  - name: native-vcell-arm
+    diff_from_baseline: "Same model solved by the native VCell hybrid (dev env) for the solver-agreement check."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.calcium_sparks
-    seeds: [0]
-    metrics: [c1_cosim_eps_slope, c1_native_eps_slope, c1_cosim_eps_n128, c1_cosim_vs_native_eps_ratio]
-    pass_fail_tests: [cosim-error-falls-as-inverse-sqrt-n, native-error-falls-as-inverse-sqrt-n, cosim-error-small-at-128-trials, solvers-differ-only-by-sampling]
-    description: "Fig 1B: 128 trials × 3 Δt × 2 solvers; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.calcium_sparks
+  seeds: [0]
+  metrics: [c1_cosim_eps_slope, c1_native_eps_slope, c1_cosim_eps_n128, c1_cosim_vs_native_eps_ratio]
+  pass_fail_tests: [cosim-error-falls-as-inverse-sqrt-n, native-error-falls-as-inverse-sqrt-n, cosim-error-small-at-128-trials, solvers-differ-only-by-sampling]
+  description: "Fig 1B: 128 trials × 3 Δt × 2 solvers; results/metrics.json."
 
 behavior_tests:
 - name: cosim-error-falls-as-inverse-sqrt-n
@@ -206,57 +211,63 @@ conclusion: |
     run without this fix gave a native ε(128) of 1.6%.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      cosim-error-falls-as-inverse-sqrt-n: pass
-      native-error-falls-as-inverse-sqrt-n: pass
-      cosim-error-small-at-128-trials: pass
-      solvers-differ-only-by-sampling: pass
+- name: default
+  emitter: json
+  outcomes:
+    cosim-error-falls-as-inverse-sqrt-n: pass
+    native-error-falls-as-inverse-sqrt-n: pass
+    cosim-error-small-at-128-trials: pass
+    solvers-differ-only-by-sampling: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      Both solvers reproduce Fig 1B's Monte-Carlo convergence: the log-log slope of ε vs
-      N is −0.47 (co-simulation) and −0.46 (native VCell hybrid), both within sampling of
-      the theoretical −1/2.
-    claim_scope: behavioral
-    generality: {axes_tested: [alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-error-falls-as-inverse-sqrt-n}
-    next_action: None — convergence rate confirmed on both solvers.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      At N=128, Δt=0.005 s the error is small and essentially solver-independent: ε=1.37%
-      (co-sim) vs 1.32% (native), and ε is flat across Δt=0.02–0.005 s (1.3–1.6%) — i.e.
-      statistically dominated, exactly as the paper reports.
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: cosim-error-small-at-128-trials}
-    next_action: None.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      The co-simulation and native solvers agree to within sampling: their trial-mean
-      difference is 0.75× the combined statistical error (<1.5), so decomposing the hybrid
-      solver into process-bigraph processes does not change the answer. Reaching this
-      required two documented VCell fixes in the native path (no-op jump process
-      virtualcell/vcell#2158; zero-reactant mass-action leak).
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: solvers-differ-only-by-sampling}
-    next_action: >
-      Carry the two VCell fixes upstream; revisit the provisional Δz=0.25 and channel
-      coordinates once VCell supports Δz=0.5 and per-node particle counts.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    Both solvers reproduce Fig 1B's Monte-Carlo convergence: the log-log slope of ε vs
+    N is −0.47 (co-simulation) and −0.46 (native VCell hybrid), both within sampling of
+    the theoretical −1/2.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-error-falls-as-inverse-sqrt-n}
+  next_action: None — convergence rate confirmed on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    At N=128, Δt=0.005 s the error is small and essentially solver-independent: ε=1.37%
+    (co-sim) vs 1.32% (native), and ε is flat across Δt=0.02–0.005 s (1.3–1.6%) — i.e.
+    statistically dominated, exactly as the paper reports.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: cosim-error-small-at-128-trials}
+  next_action: None.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The co-simulation and native solvers agree to within sampling: their trial-mean
+    difference is 0.75× the combined statistical error (<1.5), so decomposing the hybrid
+    solver into process-bigraph processes does not change the answer. Reaching this
+    required two documented VCell fixes in the native path (no-op jump process
+    virtualcell/vcell#2158; zero-reactant mass-action leak).
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: solvers-differ-only-by-sampling}
+  next_action: >
+    Carry the two VCell fixes upstream; revisit the provisional Δz=0.25 and channel
+    coordinates once VCell supports Δz=0.5 and per-node particle counts.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -296,13 +307,13 @@ report:
 reproducibility:
   level: L3   # scripted, committed inputs + metrics; native arm needs the dev env
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/separable-calcium-sparks/sims/run.py"
-      produces: [results/metrics.json, viz/calcium_sparks_fig1b.html]
-      note: >
-        Full Fig-1B run (128 trials × 3 Δt × 2 solvers). The native arm needs the dev
-        pixi env (pyvcell spatial-hybrid). In the default env only the co-sim arm runs.
-    - cmd: "pixi run -e dev python workspace/studies/separable-calcium-sparks/sims/render_3d.py record && pixi run python workspace/studies/separable-calcium-sparks/sims/render_3d.py render"
-      produces: [viz/sparks_3d.png, viz/sparks_3d_movie.gif, viz/sparks_3d_interactive.html]
-      note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
+  - cmd: "pixi run -e dev python workspace/studies/separable-calcium-sparks/sims/run.py"
+    produces: [results/metrics.json, viz/calcium_sparks_fig1b.html]
+    note: >
+      Full Fig-1B run (128 trials × 3 Δt × 2 solvers). The native arm needs the dev
+      pixi env (pyvcell spatial-hybrid). In the default env only the co-sim arm runs.
+  - cmd: "pixi run -e dev python workspace/studies/separable-calcium-sparks/sims/render_3d.py record && pixi run python workspace/studies/separable-calcium-sparks/sims/render_3d.py render"
+    produces: [viz/sparks_3d.png, viz/sparks_3d_movie.gif, viz/sparks_3d_interactive.html]
+    note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
   inputs_committed: [results/metrics.json]
   wall_time_s: 196.5

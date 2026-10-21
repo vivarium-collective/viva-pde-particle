@@ -6,22 +6,26 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b2d_grid_mesh_shell_bias — outer-shell bias of the default co-sim (grid transfer, mesh membrane)
-  - b2d_grid_mesh_exchange_mass_balance_final_signed — exchange mass balance at t=5 s, mesh membrane
-  - b2d_grid_mesh_interior_rel — interior conversion level vs E[B], mesh membrane
-  - b2d_grid_sphere_shell_bias — outer-shell bias with the exact-sphere membrane (documents the domain mismatch)
-  - b2d_{grid,positions}_{sphere,mesh}_wall_s_per_sim_s — wall time per simulated second, per variant
-
+- name: b2d_grid_mesh_shell_bias
+  description: outer-shell bias of the default co-sim (grid transfer, mesh membrane)
+- name: b2d_grid_mesh_exchange_mass_balance_final_signed
+  description: exchange mass balance at t=5 s, mesh membrane
+- name: b2d_grid_mesh_interior_rel
+  description: interior conversion level vs E[B], mesh membrane
+- name: b2d_grid_sphere_shell_bias
+  description: outer-shell bias with the exact-sphere membrane (documents the domain mismatch)
+- name: b2d_{grid,positions}_{sphere,mesh}_wall_s_per_sim_s
+  description: wall time per simulated second, per variant
 parent_studies:
 - near-membrane-fields
 
@@ -84,24 +88,24 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {}
   variants:
-    - name: grid-sphere
-      diff_from_baseline: "Grid transfer, exact-sphere membrane (the B2b/B2c default)."
-    - name: positions-sphere
-      diff_from_baseline: "Exact P1 position load, exact-sphere membrane."
-    - name: grid-mesh
-      diff_from_baseline: "Grid transfer, mesh-boundary-triangle membrane (the new default)."
-    - name: positions-mesh
-      diff_from_baseline: "Exact P1 position load, mesh-boundary-triangle membrane."
+  - name: grid-sphere
+    diff_from_baseline: "Grid transfer, exact-sphere membrane (the B2b/B2c default)."
+  - name: positions-sphere
+    diff_from_baseline: "Exact P1 position load, exact-sphere membrane."
+  - name: grid-mesh
+    diff_from_baseline: "Grid transfer, mesh-boundary-triangle membrane (the new default)."
+  - name: positions-mesh
+    diff_from_baseline: "Exact P1 position load, mesh-boundary-triangle membrane."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [b2d_grid_mesh_shell_bias, b2d_grid_mesh_exchange_mass_balance_final_signed, b2d_grid_sphere_shell_bias, b2d_grid_mesh_interior_rel]
-    pass_fail_tests: [mesh-membrane-removes-shell-bias, mesh-membrane-exchange-balance, sphere-membrane-shell-bias]
-    description: "Ball: 4 transfer/membrane variants × conversion + exchange, 32 seeds each; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b2d_grid_mesh_shell_bias, b2d_grid_mesh_exchange_mass_balance_final_signed, b2d_grid_sphere_shell_bias, b2d_grid_mesh_interior_rel]
+  pass_fail_tests: [mesh-membrane-removes-shell-bias, mesh-membrane-exchange-balance, sphere-membrane-shell-bias]
+  description: "Ball: 4 transfer/membrane variants × conversion + exchange, 32 seeds each; results/metrics.json."
 
 behavior_tests:
 - name: mesh-membrane-removes-shell-bias
@@ -219,54 +223,60 @@ conclusion: |
   transfer. B2, B2b and B2c are re-run with it.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      mesh-membrane-removes-shell-bias: pass
-      mesh-membrane-exchange-balance: pass
-      sphere-membrane-shell-bias: fail
+- name: default
+  emitter: json
+  outcomes:
+    mesh-membrane-removes-shell-bias: pass
+    mesh-membrane-exchange-balance: pass
+    sphere-membrane-shell-bias: fail
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the
-      mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from
-      +1.27% (z = 10.3) with the exact-sphere membrane.
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: mesh-membrane-removes-shell-bias}
-    next_action: None — the default (grid transfer, mesh membrane) is unbiased in the shell.
-    next_action_type: replicate
-  - id: F-02
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching
-      grid→positions transfer under the sphere membrane leaves the shell bias at +1.24%
-      (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh
-      boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact
-      sphere and the inscribed P1 mesh.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation, geometry], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: sphere-membrane-shell-bias}
-    next_action: Keep the mesh membrane as the default; carry the Smoldyn centre-test creation fix upstream.
-    next_action_type: escalate_model
-  - id: F-03
-    tier: observation
-    statement: >
-      With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5%
-      band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once
-      the domains match. The sphere membrane leaves it at +2.9%.
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: mesh-membrane-exchange-balance}
-    next_action: None.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the
+    mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from
+    +1.27% (z = 10.3) with the exact-sphere membrane.
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: mesh-membrane-removes-shell-bias}
+  next_action: None — the default (grid transfer, mesh membrane) is unbiased in the shell.
+  next_action_type: replicate
+  kind: computational
+  status: contradicts
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching
+    grid→positions transfer under the sphere membrane leaves the shell bias at +1.24%
+    (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh
+    boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact
+    sphere and the inscribed P1 mesh.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation, geometry], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: sphere-membrane-shell-bias}
+  next_action: Keep the mesh membrane as the default; carry the Smoldyn centre-test creation fix upstream.
+  next_action_type: escalate_model
+  kind: computational
+  status: contradicts
+- id: F-03
+  tier: observation
+  statement: >
+    With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5%
+    band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once
+    the domains match. The sphere membrane leaves it at +2.9%.
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: mesh-membrane-exchange-balance}
+  next_action: None.
+  next_action_type: replicate
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -305,10 +315,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/cosim-boundary-transfer/sims/run.py"
-      produces: [results/metrics.json, viz/cosim_boundary_transfer.html]
-      note: >
-        4 transfer/membrane variants × conversion + exchange, 32 seeds each. Needs the dev
-        pixi env (patched Smoldyn with the curved-compartment creation fix).
+  - cmd: "pixi run -e dev python workspace/studies/cosim-boundary-transfer/sims/run.py"
+    produces: [results/metrics.json, viz/cosim_boundary_transfer.html]
+    note: >
+      4 transfer/membrane variants × conversion + exchange, 32 seeds each. Needs the dev
+      pixi env (patched Smoldyn with the curved-compartment creation fix).
   inputs_committed: [results/metrics.json]
   wall_time_s: 1040.9784080982208

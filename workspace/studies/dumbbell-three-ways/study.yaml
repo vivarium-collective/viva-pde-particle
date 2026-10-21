@@ -6,22 +6,26 @@ created: '2026-10-04'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b2f_vcell_corrected_exchange_balance — A+B balance at 5 s, co-sim on VCell's geometry with adapters+volumes
-  - b2f_vcell_corrected_band_bias — near-membrane B bias, corrected co-sim (E[B] uniform)
-  - b2f_mesh_exchange_balance — A+B balance at 5 s, co-sim on the Netgen mesh
-  - b2f_native_exchange_balance — A+B balance at 5 s, native VCell (documents the smooth-vs-staircase mismatch)
-  - b2f_volume_vcell_smooth_rel — VCell smooth-membrane cell-volume error vs the analytic shape
-
+- name: b2f_vcell_corrected_exchange_balance
+  description: A+B balance at 5 s, co-sim on VCell's geometry with adapters+volumes
+- name: b2f_vcell_corrected_band_bias
+  description: near-membrane B bias, corrected co-sim (E[B] uniform)
+- name: b2f_mesh_exchange_balance
+  description: A+B balance at 5 s, co-sim on the Netgen mesh
+- name: b2f_native_exchange_balance
+  description: A+B balance at 5 s, native VCell (documents the smooth-vs-staircase mismatch)
+- name: b2f_volume_vcell_smooth_rel
+  description: VCell smooth-membrane cell-volume error vs the analytic shape
 parent_studies:
 - vcell-geometry-cosim
 
@@ -68,24 +72,24 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {}
   variants:
-    - name: native
-      diff_from_baseline: "The GeometryDescription converted to VCML; vcell-fvsolver with embedded Smoldyn; 8 seeds."
-    - name: vcell_none
-      diff_from_baseline: "Co-sim on VCell's own realization, correction `none`; 16 seeds."
-    - name: vcell_corrected
-      diff_from_baseline: "Co-sim on VCell's own realization, correction `adapters+volumes`; 16 seeds."
-    - name: mesh
-      diff_from_baseline: "Co-sim on a Netgen tet mesh (h = 0.3); 16 seeds."
+  - name: native
+    diff_from_baseline: "The GeometryDescription converted to VCML; vcell-fvsolver with embedded Smoldyn; 8 seeds."
+  - name: vcell_none
+    diff_from_baseline: "Co-sim on VCell's own realization, correction `none`; 16 seeds."
+  - name: vcell_corrected
+    diff_from_baseline: "Co-sim on VCell's own realization, correction `adapters+volumes`; 16 seeds."
+  - name: mesh
+    diff_from_baseline: "Co-sim on a Netgen tet mesh (h = 0.3); 16 seeds."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [b2f_vcell_corrected_exchange_balance, b2f_mesh_exchange_balance, b2f_native_exchange_balance, b2f_vcell_corrected_band_bias]
-    pass_fail_tests: [corrected-exchange-conserves, corrected-near-membrane-unbiased, mesh-exchange-conserves, native-exchange-conserves]
-    description: "Dumbbell: native VCell + co-sim on VCell geometry (none/corrected) + co-sim on Netgen mesh; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b2f_vcell_corrected_exchange_balance, b2f_mesh_exchange_balance, b2f_native_exchange_balance, b2f_vcell_corrected_band_bias]
+  pass_fail_tests: [corrected-exchange-conserves, corrected-near-membrane-unbiased, mesh-exchange-conserves, native-exchange-conserves]
+  description: "Dumbbell: native VCell + co-sim on VCell geometry (none/corrected) + co-sim on Netgen mesh; results/metrics.json."
 
 behavior_tests:
 - name: corrected-exchange-conserves
@@ -211,55 +215,61 @@ conclusion: |
   - One description drove all four paths; no solver-specific geometry code was needed.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      corrected-exchange-conserves: pass
-      corrected-near-membrane-unbiased: pass
-      mesh-exchange-conserves: pass
-      native-exchange-conserves: fail
+- name: default
+  emitter: json
+  outcomes:
+    corrected-exchange-conserves: pass
+    corrected-near-membrane-unbiased: pass
+    mesh-exchange-conserves: pass
+    native-exchange-conserves: fail
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The accessible-volume correction keeps the co-sim conservative and unbiased on exactly
-      VCell's thin-necked geometry: exchange A+B balance is -0.07% (±1.5% band) and the
-      near-membrane bias is -0.02% (z = -1.2, ±0.5% band), with the steady ratio off by 0.39%.
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: corrected-exchange-conserves}
-    next_action: None — the corrected co-sim path is conservative on the dumbbell.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      The body-fitted Netgen mesh path is also conservative: exchange balance is -0.12%
-      (±1.5% band) with a +0.04% near-membrane bias, against a -3.0% mesh cell-volume error.
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry, alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: mesh-exchange-conserves}
-    next_action: Lobe asymmetry (+0.60%, z = 1.9) is borderline at 16 seeds; add seeds if it matters.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: observed
-    statement: >
-      On a thin-necked shape the uncorrected smooth-vs-staircase mismatch is severe and the
-      native path fails the band: native VCell loses -25.9% of A+B in exchange and misses the
-      steady ratio by 8.9%, driven by the -12.4% smooth-membrane volume error that shrinks the
-      neck and small lobes. The co-sim with VCell's own volumes (`none`) isolates the volume
-      effect at -18.2%; the rest is consistent with the binning (vcell-fvsolver#25) and creation
-      (#26) defects.
-    claim_scope: mechanism
-    generality: {axes_tested: [geometry, alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: native-exchange-conserves}
-    next_action: Carry the volume correction and the #25/#26 fixes upstream into VCell.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    The accessible-volume correction keeps the co-sim conservative and unbiased on exactly
+    VCell's thin-necked geometry: exchange A+B balance is -0.07% (±1.5% band) and the
+    near-membrane bias is -0.02% (z = -1.2, ±0.5% band), with the steady ratio off by 0.39%.
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: corrected-exchange-conserves}
+  next_action: None — the corrected co-sim path is conservative on the dumbbell.
+  next_action_type: replicate
+  kind: computational
+  status: contradicts
+- id: F-02
+  tier: observation
+  statement: >
+    The body-fitted Netgen mesh path is also conservative: exchange balance is -0.12%
+    (±1.5% band) with a +0.04% near-membrane bias, against a -3.0% mesh cell-volume error.
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry, alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: mesh-exchange-conserves}
+  next_action: Lobe asymmetry (+0.60%, z = 1.9) is borderline at 16 seeds; add seeds if it matters.
+  next_action_type: replicate
+  kind: computational
+  status: contradicts
+- id: F-03
+  tier: mechanism
+  mechanism_origin: observed
+  statement: >
+    On a thin-necked shape the uncorrected smooth-vs-staircase mismatch is severe and the
+    native path fails the band: native VCell loses -25.9% of A+B in exchange and misses the
+    steady ratio by 8.9%, driven by the -12.4% smooth-membrane volume error that shrinks the
+    neck and small lobes. The co-sim with VCell's own volumes (`none`) isolates the volume
+    effect at -18.2%; the rest is consistent with the binning (vcell-fvsolver#25) and creation
+    (#26) defects.
+  claim_scope: mechanism
+  generality: {axes_tested: [geometry, alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-exchange-conserves}
+  next_action: Carry the volume correction and the   #25/#26 fixes upstream into VCell.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: contradicts
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -299,13 +309,13 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/dumbbell-three-ways/sims/run.py"
-      produces: [results/metrics.json, viz/dumbbell_three_ways.html]
-      note: >
-        Native VCell (8 seeds) + three co-sim paths (16 seeds each). Needs the dev pixi env
-        (pyvcell spatial-hybrid, patched Smoldyn). In the default env only the co-sim paths run.
-    - cmd: "pixi run -e dev python workspace/studies/dumbbell-three-ways/sims/render_3d.py record && pixi run python workspace/studies/dumbbell-three-ways/sims/render_3d.py render"
-      produces: [viz/dumbbell_3d.png, viz/dumbbell_3d_movie.gif, viz/dumbbell_3d_interactive.html]
-      note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
+  - cmd: "pixi run -e dev python workspace/studies/dumbbell-three-ways/sims/run.py"
+    produces: [results/metrics.json, viz/dumbbell_three_ways.html]
+    note: >
+      Native VCell (8 seeds) + three co-sim paths (16 seeds each). Needs the dev pixi env
+      (pyvcell spatial-hybrid, patched Smoldyn). In the default env only the co-sim paths run.
+  - cmd: "pixi run -e dev python workspace/studies/dumbbell-three-ways/sims/render_3d.py record && pixi run python workspace/studies/dumbbell-three-ways/sims/render_3d.py render"
+    produces: [viz/dumbbell_3d.png, viz/dumbbell_3d_movie.gif, viz/dumbbell_3d_interactive.html]
+    note: Record 3D bundles in the dev env; render figures in the default env (PyVista).
   inputs_committed: [results/metrics.json]
   wall_time_s: 330.48261284828186

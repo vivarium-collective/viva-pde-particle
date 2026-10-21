@@ -6,24 +6,30 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Accepted
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b2_conversion_decay_max_z — max |z| over time of mean A against A₀·e^(−kt), conversion case
-  - b2_conversion_mass_balance_max_rel_dev — max relative deviation of mean (A + B) from the initial total
-  - b2_conversion_b_vs_continuum_rel_l2 — mesh-weighted relative L2 of mean B against the continuum FEM at t = 2 s
-  - b2_exchange_steady_ratio_rel_err — relative error of the late-time A/B ratio against k2/k1
-  - b2_exchange_mass_balance_max_rel_dev — max relative (A + B) deviation, exchange case
-  - b2_mesh_volume_rel_err — polyhedral mesh volume vs the exact ball (geometry-representation error)
-  - b2_wall_time_s — wall-clock time of the run
-
+- name: b2_conversion_decay_max_z
+  description: max |z| over time of mean A against A₀·e^(−kt), conversion case
+- name: b2_conversion_mass_balance_max_rel_dev
+  description: max relative deviation of mean (A + B) from the initial total
+- name: b2_conversion_b_vs_continuum_rel_l2
+  description: mesh-weighted relative L2 of mean B against the continuum FEM at t = 2 s
+- name: b2_exchange_steady_ratio_rel_err
+  description: relative error of the late-time A/B ratio against k2/k1
+- name: b2_exchange_mass_balance_max_rel_dev
+  description: max relative (A + B) deviation, exchange case
+- name: b2_mesh_volume_rel_err
+  description: polyhedral mesh volume vs the exact ball (geometry-representation error)
+- name: b2_wall_time_s
+  description: wall-clock time of the run
 parent_studies:
 - fenicsx-same-problem
 
@@ -61,20 +67,20 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {R_um: 4.0, mesh_h_um: 0.8, grid: 33, dx_um: 0.25, dt: 0.01, seeds: 8}
   variants:
-    - name: conversion-arm
-      diff_from_baseline: "A_p → B_f (k = 0.5 /s, 20,000 A): decay, A + B conservation, B vs continuum FEM."
-    - name: exchange-arm
-      diff_from_baseline: "A_p ⇌ B_f with field-dependent creation in the sphere (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): balance + steady ratio."
+  - name: conversion-arm
+    diff_from_baseline: "A_p → B_f (k = 0.5 /s, 20,000 A): decay, A + B conservation, B vs continuum FEM."
+  - name: exchange-arm
+    diff_from_baseline: "A_p ⇌ B_f with field-dependent creation in the sphere (k1 = 1, k2 = 0.5, B₀ = 0.2 µM): balance + steady ratio."
 
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [b2_conversion_decay_max_z, b2_conversion_mass_balance_max_rel_dev, b2_conversion_b_vs_continuum_rel_l2, b2_exchange_steady_ratio_rel_err]
-    pass_fail_tests: [particle-decay-exact-in-ball, handoff-conserves-in-ball, field-matches-continuum-in-ball, exchange-steady-state-in-ball]
-    description: "Ball (R = 4 µm, unstructured P1): conversion + exchange, 8 seeds each; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b2_conversion_decay_max_z, b2_conversion_mass_balance_max_rel_dev, b2_conversion_b_vs_continuum_rel_l2, b2_exchange_steady_ratio_rel_err]
+  pass_fail_tests: [particle-decay-exact-in-ball, handoff-conserves-in-ball, field-matches-continuum-in-ball, exchange-steady-state-in-ball]
+  description: "Ball (R = 4 µm, unstructured P1): conversion + exchange, 8 seeds each; results/metrics.json."
 
 behavior_tests:
 - name: particle-decay-exact-in-ball
@@ -169,56 +175,62 @@ conclusion: |
   - higher-order (P2) PDE, or a finer mesh, to shrink the 1.4% volume error.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      particle-decay-exact-in-ball: pass
-      handoff-conserves-in-ball: pass
-      field-matches-continuum-in-ball: pass
-      exchange-steady-state-in-ball: pass
+- name: default
+  emitter: json
+  outcomes:
+    particle-decay-exact-in-ball: pass
+    handoff-conserves-in-ball: pass
+    field-matches-continuum-in-ball: pass
+    exchange-steady-state-in-ball: pass
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      The particle reaction is geometry-independent: on the body-fitted tetrahedral ball mesh
-      the mean A follows A₀·e^(−kt) with a max |z| of 1.54 over time (well under the 4.0 band),
-      so the unstructured domain does not perturb the first-order decay.
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: particle-decay-exact-in-ball}
-    next_action: None — decay confirmed geometry-independent on the mesh.
-    next_action_type: replicate
-  - id: F-02
-    tier: mechanism
-    mechanism_origin: engineered
-    statement: >
-      The sparse interpolation/scatter matrix P keeps the particle ↔ field handoff conservative
-      and accurate on the mesh: mean (A + B) is conserved to 0.11% (b2_conversion_mass_balance_max_rel_dev
-      = 0.00107) and mean B matches the continuum FEM solution to 0.53% relative L2
-      (b2_conversion_b_vs_continuum_rel_l2 = 0.00530), both far inside their 2% / 5% bands.
-    claim_scope: mechanism
-    generality: {axes_tested: [geometry], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: handoff-conserves-in-ball}
-    next_action: >
-      Extend to membrane-bound particles and a higher-order (P2) PDE to shrink the 1.4% mesh
-      volume error (b2_mesh_volume_rel_err = −0.0139).
-    next_action_type: escalate_model
-  - id: F-03
-    tier: observation
-    statement: >
-      Detailed balance holds on the mesh with field-dependent creation: the late-time A/B ratio
-      is within 0.11% of k2/k1 (b2_exchange_steady_ratio_rel_err = 0.00110) and exchange mass
-      balance holds to 0.86% (b2_exchange_mass_balance_max_rel_dev = 0.00864).
-    claim_scope: behavioral
-    generality: {axes_tested: [geometry], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: exchange-steady-state-in-ball}
-    next_action: None — steady state reproduced on the unstructured mesh.
-    next_action_type: replicate
+- id: F-01
+  tier: observation
+  statement: >
+    The particle reaction is geometry-independent: on the body-fitted tetrahedral ball mesh
+    the mean A follows A₀·e^(−kt) with a max |z| of 1.54 over time (well under the 4.0 band),
+    so the unstructured domain does not perturb the first-order decay.
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: particle-decay-exact-in-ball}
+  next_action: None — decay confirmed geometry-independent on the mesh.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The sparse interpolation/scatter matrix P keeps the particle ↔ field handoff conservative
+    and accurate on the mesh: mean (A + B) is conserved to 0.11% (b2_conversion_mass_balance_max_rel_dev
+    = 0.00107) and mean B matches the continuum FEM solution to 0.53% relative L2
+    (b2_conversion_b_vs_continuum_rel_l2 = 0.00530), both far inside their 2% / 5% bands.
+  claim_scope: mechanism
+  generality: {axes_tested: [geometry], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: handoff-conserves-in-ball}
+  next_action: >
+    Extend to membrane-bound particles and a higher-order (P2) PDE to shrink the 1.4% mesh
+    volume error (b2_mesh_volume_rel_err = −0.0139).
+  next_action_type: escalate_model
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: observation
+  statement: >
+    Detailed balance holds on the mesh with field-dependent creation: the late-time A/B ratio
+    is within 0.11% of k2/k1 (b2_exchange_steady_ratio_rel_err = 0.00110) and exchange mass
+    balance holds to 0.86% (b2_exchange_mass_balance_max_rel_dev = 0.00864).
+  claim_scope: behavioral
+  generality: {axes_tested: [geometry], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: exchange-steady-state-in-ball}
+  next_action: None — steady state reproduced on the unstructured mesh.
+  next_action_type: replicate
 
+  kind: computational
+  status: confirms
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -257,10 +269,10 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/unstructured-geometry/sims/run.py"
-      produces: [results/metrics.json, viz/unstructured_geometry.html]
-      note: >
-        Ball (R = 4 µm, P1 on a gmsh tet mesh, 33³ background grid): conversion + exchange,
-        8 seeds each. Needs dolfinx (FEniCSx) and the patched Smoldyn from the pixi env.
+  - cmd: "pixi run -e dev python workspace/studies/unstructured-geometry/sims/run.py"
+    produces: [results/metrics.json, viz/unstructured_geometry.html]
+    note: >
+      Ball (R = 4 µm, P1 on a gmsh tet mesh, 33³ background grid): conversion + exchange,
+      8 seeds each. Needs dolfinx (FEniCSx) and the patched Smoldyn from the pixi env.
   inputs_committed: [results/metrics.json]
   wall_time_s: 119.36

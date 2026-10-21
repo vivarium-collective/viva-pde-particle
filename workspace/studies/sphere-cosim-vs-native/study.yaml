@@ -6,25 +6,32 @@ created: '2026-10-03'
 status: ran
 phase: Evaluate
 # Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
-design_status: designed
-implementation_status: implemented
+design_status: drafted
+implementation_status: complete
 simulation_status: ran
 evaluation_status: evaluated
 gate_status: passed
-expert_review_status: not_reviewed
+expert_review_status: not_requested
 confidence: Reported
 
 # What the study measures (anchors for the test rows / report).
 readouts:
-  - b2b_native_staircase_volume_rel_err — rel. volume error of VCell's Cartesian ball representation
-  - b2b_cosim_mesh_volume_rel_err — rel. volume error of the co-sim body-fitted mesh at h = 0.8 µm
-  - b2b_conversion_survival_max_z — max two-sample |z| of surviving A, co-sim vs native (conversion)
-  - b2b_final_radial_b_rel_diff — max rel. difference of the final radial B profiles (8 shells)
-  - b2b_exchange_a_totals_max_z — max two-sample |z| of total A, co-sim vs native (exchange)
-  - b2b_native_exchange_mass_balance_final_signed — native signed A + B mass balance at t (exchange)
-  - b2b_exchange_native_minus_cosim_a_final_rel — native final A relative to co-sim (exchange)
-  - b2b_native_exchange_a_binned_outside_cell_frac — fraction of native A binned to nodes outside the cell
-
+- name: b2b_native_staircase_volume_rel_err
+  description: rel. volume error of VCell's Cartesian ball representation
+- name: b2b_cosim_mesh_volume_rel_err
+  description: rel. volume error of the co-sim body-fitted mesh at h = 0.8 µm
+- name: b2b_conversion_survival_max_z
+  description: max two-sample |z| of surviving A, co-sim vs native (conversion)
+- name: b2b_final_radial_b_rel_diff
+  description: max rel. difference of the final radial B profiles (8 shells)
+- name: b2b_exchange_a_totals_max_z
+  description: max two-sample |z| of total A, co-sim vs native (exchange)
+- name: b2b_native_exchange_mass_balance_final_signed
+  description: native signed A + B mass balance at t (exchange)
+- name: b2b_exchange_native_minus_cosim_a_final_rel
+  description: native final A relative to co-sim (exchange)
+- name: b2b_native_exchange_a_binned_outside_cell_frac
+  description: fraction of native A binned to nodes outside the cell
 parent_studies:
 - unstructured-geometry
 
@@ -62,19 +69,19 @@ conditions:
     composite: viva_pde_particle.composites.examples.bimolecular_hybrid
     params: {}
   variants:
-    - name: native-cartesian-arm
-      diff_from_baseline: "Native VCell hybrid on its Cartesian volume grid (37³, staircase membrane numerics); 8 seeds."
-    - name: cosim-body-fitted-arm
-      diff_from_baseline: "Co-simulation on a body-fitted P1 mesh (h = 0.8 µm), conversion and exchange cases; 8 seeds."
+  - name: native-cartesian-arm
+    diff_from_baseline: "Native VCell hybrid on its Cartesian volume grid (37³, staircase membrane numerics); 8 seeds."
+  - name: cosim-body-fitted-arm
+    diff_from_baseline: "Co-simulation on a body-fitted P1 mesh (h = 0.8 µm), conversion and exchange cases; 8 seeds."
 simulation_set:
-  - name: default
-    kind: baseline
-    status: ran
-    base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
-    seeds: [0]
-    metrics: [b2b_native_staircase_volume_rel_err, b2b_conversion_survival_max_z, b2b_final_radial_b_rel_diff, b2b_exchange_a_totals_max_z, b2b_native_exchange_mass_balance_final_signed]
-    pass_fail_tests: [native-represents-ball-volume, conversion-agrees, conversion-field-profiles-agree, exchange-agrees]
-    description: "Ball: native VCell vs co-sim, conversion + exchange, 8 seeds each; results/metrics.json."
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b2b_native_staircase_volume_rel_err, b2b_conversion_survival_max_z, b2b_final_radial_b_rel_diff, b2b_exchange_a_totals_max_z, b2b_native_exchange_mass_balance_final_signed]
+  pass_fail_tests: [native-represents-ball-volume, conversion-agrees, conversion-field-profiles-agree, exchange-agrees]
+  description: "Ball: native VCell vs co-sim, conversion + exchange, 8 seeds each; results/metrics.json."
 
 behavior_tests:
 - name: native-represents-ball-volume
@@ -216,63 +223,69 @@ conclusion: |
     correction, and draw creation in every cell overlapping the compartment.
 
 runs:
-  - name: default
-    emitter: json
-    outcomes:
-      native-represents-ball-volume: pass
-      conversion-agrees: pass
-      conversion-field-profiles-agree: pass
-      exchange-agrees: fail
+- name: default
+  emitter: json
+  outcomes:
+    native-represents-ball-volume: pass
+    conversion-agrees: pass
+    conversion-field-profiles-agree: pass
+    exchange-agrees: fail
 
 findings:
-  - id: F-01
-    tier: observation
-    statement: >
-      At this resolution VCell's Cartesian representation of the ball is the more accurate
-      geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4%
-      for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: native-represents-ball-volume}
-    next_action: None — both representations are within a few percent of the ball volume.
-    next_action_type: replicate
-  - id: F-02
-    tier: observation
-    statement: >
-      For the conversion case the two discretizations agree: surviving A matches to max
-      two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree
-      to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers
-      conserving A + B to under 1%.
-    claim_scope: behavioral
-    generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: conversion-agrees}
-    next_action: None — first-order conversion agrees across discretizations.
-    next_action_type: replicate
-  - id: F-03
-    tier: mechanism
-    mechanism_origin: discovered
-    statement: >
-      The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1
-      (b2b_exchange_a_totals_max_z, band < 4.0), with native A ending 8.1% below the co-sim
-      (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at
-      −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim's +0.51%.
-      Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A
-      binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac =
-      0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn's
-      centre-inside test skips cells that partly overlap the curved compartment). Native fixes:
-      re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in
-      every overlapping cell.
-    claim_scope: mechanism
-    generality: {axes_tested: [alt_implementation], level: mechanism}
-    provenance: {run_ids: [default]}
-    evidence: {from_test: exchange-agrees}
-    next_action: >
-      Land the two native vcell-fvsolver/Smoldyn fixes and re-run the exchange case; the co-sim
-      already loses neither effect after B2d.
-    next_action_type: escalate_model
+- id: F-01
+  tier: observation
+  statement: >
+    At this resolution VCell's Cartesian representation of the ball is the more accurate
+    geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4%
+    for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-represents-ball-volume}
+  next_action: None — both representations are within a few percent of the ball volume.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    For the conversion case the two discretizations agree: surviving A matches to max
+    two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree
+    to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers
+    conserving A + B to under 1%.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: conversion-agrees}
+  next_action: None — first-order conversion agrees across discretizations.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: discovered
+  statement: >
+    The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1
+    (b2b_exchange_a_totals_max_z, band < 4.0), with native A ending 8.1% below the co-sim
+    (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at
+    −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim's +0.51%.
+    Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A
+    binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac =
+    0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn's
+    centre-inside test skips cells that partly overlap the curved compartment). Native fixes:
+    re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in
+    every overlapping cell.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: exchange-agrees}
+  next_action: >
+    Land the two native vcell-fvsolver/Smoldyn fixes and re-run the exchange case; the co-sim
+    already loses neither effect after B2d.
+  next_action_type: escalate_model
 
+  kind: computational
+  status: contradicts
 conclusion_verdicts:
   regression_compatibility:
     basis: >
@@ -310,13 +323,13 @@ report:
 reproducibility:
   level: L3
   rerun:
-    - cmd: "pixi run -e dev python workspace/studies/sphere-cosim-vs-native/sims/run.py"
-      produces: [results/metrics.json, viz/sphere_cosim_vs_native.html]
-      note: >
-        Ball, native VCell vs co-sim, conversion + exchange, 8 seeds each. The native arm needs
-        the dev pixi env (pyvcell spatial-hybrid) and the patched Smoldyn.
-    - cmd: "pixi run -e dev python workspace/studies/sphere-cosim-vs-native/sims/render_3d.py record && pixi run python workspace/studies/sphere-cosim-vs-native/sims/render_3d.py render"
-      produces: [viz/sphere_3d_conversion.png, viz/sphere_3d_exchange.png, viz/sphere_3d_movie.gif, viz/sphere_3d_interactive.html]
-      note: Record 3D bundles in the dev env; render figures in the default env (PyVista / three.js).
+  - cmd: "pixi run -e dev python workspace/studies/sphere-cosim-vs-native/sims/run.py"
+    produces: [results/metrics.json, viz/sphere_cosim_vs_native.html]
+    note: >
+      Ball, native VCell vs co-sim, conversion + exchange, 8 seeds each. The native arm needs
+      the dev pixi env (pyvcell spatial-hybrid) and the patched Smoldyn.
+  - cmd: "pixi run -e dev python workspace/studies/sphere-cosim-vs-native/sims/render_3d.py record && pixi run python workspace/studies/sphere-cosim-vs-native/sims/render_3d.py render"
+    produces: [viz/sphere_3d_conversion.png, viz/sphere_3d_exchange.png, viz/sphere_3d_movie.gif, viz/sphere_3d_interactive.html]
+    note: Record 3D bundles in the dev env; render figures in the default env (PyVista / three.js).
   inputs_committed: [results/metrics.json]
   wall_time_s: 922.4
