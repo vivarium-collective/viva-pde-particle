@@ -1,7 +1,7 @@
 {
   "mode": "snapshot",
   "smsApiBase": "",
-  "repo": "https://github.com/vivarium-collective/viva-pde-particle",
-  "commit": "3b609148e4ec3cf0a88fcfd510eccae4176bb929",
-  "generated_from_ref": "main"
+  "repo": "https://github.com/vivarium-collective/viva-pde-particle.git",
+  "commit": "73ba09006b662040dcebbd56a3ecc96a0945212c",
+  "generated_from_ref": "harden/pde-particle-audit"
 }
