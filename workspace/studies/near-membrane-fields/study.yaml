@@ -5,6 +5,33 @@ investigation: hybrid-generalizability
 created: '2026-10-03'
 status: ran
 phase: Evaluate
+# Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
+design_status: drafted
+implementation_status: complete
+simulation_status: ran
+evaluation_status: evaluated
+gate_status: passed
+expert_review_status: not_requested
+confidence: Reported
+
+# What the study measures (anchors for the test rows / report).
+readouts:
+- name: b2c_node_centred_smoothed_volume_rel_err
+  description: rel. volume error of the node-centred smoothed cell domain vs the exact ball
+- name: b2c_pyvcell_vtk_as_is_volume_rel_err
+  description: rel. volume error of the pyvcell export taken as-is (tiling convention)
+- name: b2c_smoothed_surface_r_rms_err
+  description: RMS radial error of the smoothed boundary surface (µm)
+- name: b2c_staircase_surface_r_rms_err
+  description: RMS radial error of the raw staircase boundary surface (µm)
+- name: b2c_native_interior_rel
+  description: native interior (r < R/2) mean B relative to E[B]
+- name: b2c_cosim_interior_rel
+  description: co-sim interior mean B relative to E[B]
+- name: b2c_native_shell_bias
+  description: native outer-shell (r > 3.5 µm) mean B relative to the interior
+- name: b2c_cosim_shell_bias
+  description: co-sim outer-shell mean B relative to the interior
 parent_studies:
 - sphere-cosim-vs-native
 
@@ -53,6 +80,27 @@ baseline:
 
 variants: []
 
+# v4 Build-tab view (conditions.baseline + the two solver arms actually run).
+conditions:
+  baseline:
+    composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+    params: {}
+  variants:
+  - name: native-smoothed-grid-arm
+    diff_from_baseline: "Native VCell hybrid, fields read on pyvcell's smoothed unstructured grid; 32 seeds."
+  - name: cosim-body-fitted-arm
+    diff_from_baseline: "Co-simulation on the body-fitted P1 mesh (B2d default membrane=mesh); 32 seeds."
+
+simulation_set:
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b2c_node_centred_smoothed_volume_rel_err, b2c_smoothed_surface_r_rms_err, b2c_native_interior_rel, b2c_native_shell_bias, b2c_cosim_shell_bias]
+  pass_fail_tests: [smoothed-grid-represents-ball, smoothing-improves-surface, native-interior-matches-expectation, cosim-interior-matches-expectation, native-shell-unbiased, cosim-shell-unbiased]
+  description: "Ball conversion A_p → B_f, 32 seeds per solver; native read on pyvcell's smoothed grid; results/metrics.json."
+
 behavior_tests:
 - name: smoothed-grid-represents-ball
   classification: primary
@@ -68,6 +116,8 @@ behavior_tests:
       kind: theory
       note: Whole node-centred voxels; windowed-sinc smoothing preserves volume.
   requires_simulation: ball-conversion
+  status: pass
+  gate_class: acceptance_criterion
 - name: smoothing-improves-surface
   classification: secondary
   description: RMS radial error of the smoothed boundary surface (µm); the staircase surface is about 0.11 µm.
@@ -81,6 +131,8 @@ behavior_tests:
       kind: theory
       note: Smoothing should cut the staircase error (Δ = 0.25 µm) substantially.
   requires_simulation: ball-conversion
+  status: pass
+  gate_class: acceptance_criterion
 - name: native-interior-matches-expectation
   classification: primary
   description: Native interior (r < R/2) mean B relative to E[B].
@@ -95,6 +147,8 @@ behavior_tests:
       kind: theory
       note: First-order conversion; the expectation is exact.
   requires_simulation: ball-conversion
+  status: pass
+  gate_class: acceptance_criterion
 - name: cosim-interior-matches-expectation
   classification: primary
   description: Co-sim interior mean B relative to E[B].
@@ -109,6 +163,8 @@ behavior_tests:
       kind: theory
       note: As above.
   requires_simulation: ball-conversion
+  status: pass
+  gate_class: acceptance_criterion
 - name: native-shell-unbiased
   classification: secondary
   description: >-
@@ -125,6 +181,8 @@ behavior_tests:
       kind: theory
       note: E[B] is uniform; kept so the boundary artifact stays visible in the report card.
   requires_simulation: ball-conversion
+  status: fail
+  gate_class: acceptance_criterion
 - name: cosim-shell-unbiased
   classification: secondary
   description: >-
@@ -141,6 +199,8 @@ behavior_tests:
       kind: theory
       note: As above.
   requires_simulation: ball-conversion
+  status: pass
+  gate_class: acceptance_criterion
 
 canonical_runs:
 - name: default
@@ -151,6 +211,7 @@ canonical_runs:
 
 visualizations:
 - name: near-membrane-fields
+  address: html:viz/near_membrane_fields.html
   chart: viz/near_membrane_fields.html
   render: "python sims/run.py"
 
@@ -189,3 +250,108 @@ conclusion: |
     nearest same-compartment neighbour) is present but commented out. Re-enabling it is the
     likely native fix (virtualcell/vcell-fvsolver#25).
   - Co-sim fix (B2d, done): the mesh boundary as the particle membrane.
+
+runs:
+- name: default
+  emitter: json
+  outcomes:
+    smoothed-grid-represents-ball: pass
+    smoothing-improves-surface: pass
+    native-interior-matches-expectation: pass
+    cosim-interior-matches-expectation: pass
+    native-shell-unbiased: fail
+    cosim-shell-unbiased: pass
+
+findings:
+- id: F-01
+  tier: observation
+  statement: >
+    The node-centred smoothed cell domain reproduces the ball to within −0.50%
+    (b2c_node_centred_smoothed_volume_rel_err = −0.0050), against −8.4% for the pyvcell export
+    taken as-is, and smoothing cuts the RMS radial error of the boundary surface from 0.108 µm
+    (staircase) to 0.065 µm.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: smoothed-grid-represents-ball}
+  next_action: None — the analysis-side node-centred tiling correction recovers the geometry.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: observation
+  statement: >
+    Away from the membrane both solvers match the exact uniform E[B]: the native interior is
+    +0.49% (b2c_native_interior_rel = 0.0049) and the co-sim interior +0.25%
+    (b2c_cosim_interior_rel = 0.0025), both well inside ±2%.
+  claim_scope: behavioral
+  generality: {axes_tested: [alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-interior-matches-expectation}
+  next_action: None — interior transfer is unbiased on both solvers.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: mechanism
+  mechanism_origin: discovered
+  statement: >
+    The native outer shell (r > 3.5 µm) sits 2.3% below the interior
+    (b2c_native_shell_bias = −0.0227, z = −20.1), failing the ±1% unbiasedness band, while the
+    co-sim shell is unbiased at +0.12% (b2c_cosim_shell_bias = 0.0012, z = 1.17). This localizes
+    B2b's exterior-binning loss to the field next to the curved membrane: molecules binned to
+    nodes outside the voxelized cell drop their PDE source. The native fix is to re-enable the
+    commented-out same-compartment binning correction in VCellSmoldynOutput::computeHistogram
+    (virtualcell/vcell-fvsolver#25).
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: native-shell-unbiased}
+  next_action: >
+    Re-enable the same-compartment binning correction in vcell-fvsolver and re-run the shell bias.
+  next_action_type: escalate_model
+
+  kind: computational
+  status: contradicts
+conclusion_verdicts:
+  regression_compatibility:
+    basis: >
+      results/metrics.json is committed and regenerated by sims/run.py; the four geometry and
+      interior tests pass, and the native-shell failure is a pinned, intentional marker of the
+      boundary artifact.
+  biological_validation:
+    basis: >
+      Both solvers reproduce the exact uniform E[B] in the interior (native +0.49%, co-sim +0.25%);
+      the only departure is the native near-membrane depletion.
+  explanatory_gain:
+    basis: >
+      F-03 localizes B2b's native mass loss to exterior-node binning at the curved membrane
+      (−2.3% outer-shell depletion), distinguishing it from the co-sim, whose shell is unbiased
+      once the mesh boundary is the particle membrane (B2d).
+conclusion_logic:
+  if_primary_tests_pass: >
+    Both solvers transfer particles to the field without interior bias and the smoothed grid
+    represents the ball — the near-membrane depletion seen natively is a coupling artifact, not a
+    PDE or geometry error. Pursue the vcell-fvsolver same-compartment binning fix.
+  if_primary_tests_fail: >
+    An interior bias beyond ±2% or a smoothed-grid volume error beyond ±1% would mean the
+    particle-to-field transfer or the geometry correction is wrong — re-examine smoothed_domain
+    and the lumped-mass weighting before trusting the shell diagnosis.
+
+report:
+  confidence: high
+  evidence_quality: theory-matched
+  caveat: >
+    The native-shell test fails by design (−2.3%) to keep the boundary artifact visible; it marks
+    an open vcell-fvsolver issue, not a study defect. Native fields need the dev pixi env.
+
+reproducibility:
+  level: L3
+  rerun:
+  - cmd: "pixi run -e dev python workspace/studies/near-membrane-fields/sims/run.py"
+    produces: [results/metrics.json, viz/near_membrane_fields.html, results/native_mean_B_smoothed.vtu]
+    note: >
+      Ball conversion, 32 seeds per solver; the native arm reads fields on pyvcell's smoothed
+      grid and needs the dev pixi env (pyvcell spatial-hybrid).
+  inputs_committed: [results/metrics.json]
+  wall_time_s: 73.4

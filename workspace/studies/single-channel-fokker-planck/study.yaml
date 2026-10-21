@@ -5,9 +5,33 @@ investigation: vcell-hybrid-paper-benchmarks
 created: '2026-10-04'
 status: ran
 phase: Evaluate
+# Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
+design_status: drafted
+implementation_status: complete
+simulation_status: ran
+evaluation_status: evaluated
+gate_status: failed
+expert_review_status: not_requested
+confidence: Reported
 parent_studies:
 - coupled-sparks-fast-diffusion
 
+# What the study measures (anchors for the test rows / report).
+readouts:
+- name: c3_test3_cosim_chi2
+  description: reduced χ² of co-sim histogram of ρ̄ (τ=30) against Eq 4 (fast diffusion)
+- name: c3_test3_native_chi2
+  description: reduced χ² of native VCell histogram of ρ̄ (τ=30) against Eq 4
+- name: c3_test4_i0_cosim_chi2
+  description: reduced χ² of co-sim ρ(x₀) (τ=1) against extrapolated Eq T2.1 (d=1)
+- name: c3_test5_i0_cosim_chi2
+  description: reduced χ² of co-sim ρ(x₀) (τ=1) against extrapolated Eq T2.1 (d=50)
+- name: c3_dtau_mean_bias_offset
+  description: offset of the Test 3 mean-bias fit (offset + slope·Δτ); zero ⇒ first-order
+- name: c3_dtau_mean_bias_slope
+  description: slope of the Test 3 mean-bias vs Δτ fit
+- name: c3_test{3,4,5}_*_rel_l2
+  description: relative L2 (RMS over bins / reference maximum) per test/cell
 question: |
   With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
   co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
@@ -64,6 +88,32 @@ baseline:
 
 variants: []
 
+# v4 Build-tab view (conditions.baseline + the Test 3/4/5 arms and Δτ sweep actually run).
+conditions:
+  baseline:
+    composite: viva_pde_particle.composites.examples.calcium_sparks
+    params: {}
+    note: "Built in sims/run.py from fokker_planck.channel_model; dimensionless single-channel model."
+  variants:
+  - name: test3-fast-diffusion
+    diff_from_baseline: "α=β=1, a=24, d=10⁴, 3D cube; co-sim (10,000 trials) + native VCell (10,000) vs Eq 4."
+  - name: test4-finite-diffusion
+    diff_from_baseline: "α=10, β=1, a=20/3, d=1, two cells; co-sim (12,500 trials) vs extrapolated Eq T2.1."
+  - name: test5-finite-diffusion
+    diff_from_baseline: "α=20, β=0.5, a=20, d=50, three cells; co-sim (12,500 trials) vs extrapolated Eq T2.1."
+  - name: dtau-sweep
+    diff_from_baseline: "Test 3 Δτ ∈ {0.008, 0.004, 0.002, 0.001}, 4,000 trials × 5 samples (mean-bias fit)."
+
+simulation_set:
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.calcium_sparks
+  seeds: [0]
+  metrics: [c3_test3_cosim_chi2, c3_test3_native_chi2, c3_test4_i0_cosim_chi2, c3_test5_i0_cosim_chi2, c3_dtau_mean_bias_offset]
+  pass_fail_tests: [test3-cosim-matches-fokker-planck, test3-native-matches-fokker-planck, test4-cosim-matches-fokker-planck, test5-cosim-matches-fokker-planck, test3-bias-is-first-order-in-dtau]
+  description: "Tests 3–5: co-sim ensembles (10,000 / 12,500 / 12,500) + native Test 3 vs direct Fokker–Planck solutions; results/metrics.json."
+
 behavior_tests:
 - name: test3-cosim-matches-fokker-planck
   classification: primary
@@ -79,6 +129,9 @@ behavior_tests:
       kind: theory
       note: Sampling noise alone gives ≈ 1 (the 99th percentile of χ²/k for k ≈ 20–40 bins is about 1.7–1.9).
   requires_simulation: single-channel
+  status: fail
+  gate_class: acceptance_criterion
+  cites: [schaff2016hybrid]
 - name: test3-native-matches-fokker-planck
   classification: primary
   description: Reduced χ² of native VCell's histogram of ρ̄ (τ = 30) against Eq 4.
@@ -93,6 +146,9 @@ behavior_tests:
       kind: theory
       note: As above.
   requires_simulation: single-channel
+  status: pass
+  gate_class: acceptance_criterion
+  cites: [schaff2016hybrid]
 - name: test4-cosim-matches-fokker-planck
   classification: primary
   description: Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.
@@ -107,9 +163,12 @@ behavior_tests:
       kind: theory
       note: As above. The paper reports a relative L2 of 1.9% (i = 0) and 3.3% (i = 1).
   requires_simulation: single-channel
+  status: pass
+  gate_class: acceptance_criterion
+  cites: [schaff2016hybrid]
 - name: test5-cosim-matches-fokker-planck
   classification: primary
-  description: Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1.
+  description: Reduced χ² of the co-sim histogram of ρ(x₀) (τ = 1) against the extrapolated Eq T2.1, Test 5 three-cell regime (d = 50, α = 20, β = 0.5).
   measure:
     kind: derived_scalar
     field: c3_test5_i0_cosim_chi2
@@ -121,6 +180,9 @@ behavior_tests:
       kind: theory
       note: As above. The paper reports 1.3–1.5%.
   requires_simulation: single-channel
+  status: pass
+  gate_class: acceptance_criterion
+  cites: [schaff2016hybrid]
 
 - name: test3-bias-is-first-order-in-dtau
   classification: secondary
@@ -138,6 +200,9 @@ behavior_tests:
       kind: theory
       note: A first-order scheme has no Δτ-independent bias. The bound is about 3.7 SE (SE ≈ 0.027%).
   requires_simulation: single-channel
+  status: pass
+  gate_class: acceptance_criterion
+  cites: [schaff2016hybrid]
 
 canonical_runs:
 - name: default
@@ -152,9 +217,11 @@ canonical_runs:
 
 visualizations:
 - name: fokker-planck
+  address: html:viz/fokker_planck.html
   chart: viz/fokker_planck.html
   render: "python sims/run.py report"
 - name: dtau
+  address: html:viz/dtau.html
   chart: viz/dtau.html
   render: "python sims/run.py report"
 
@@ -198,3 +265,112 @@ conclusion: |
       the SD's sampling error 2–4× the normal-theory value.
     - The reduced χ² stays above 2 down to Δτ = 0.001. With 20,000 samples, the histogram resolves a 0.1% shift
       of a density that is steep near ρ = a.
+
+runs:
+- name: default
+  emitter: json
+  outcomes:
+    test3-cosim-matches-fokker-planck: fail
+    test3-native-matches-fokker-planck: pass
+    test4-cosim-matches-fokker-planck: pass
+    test5-cosim-matches-fokker-planck: pass
+    test3-bias-is-first-order-in-dtau: pass
+
+findings:
+- id: F-01
+  tier: observation
+  statement: >
+    Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck
+    solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀),
+    0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2].
+    Relative L2 differences (1.0–1.6%) are smaller than the paper's (1.9% / 3.3% for Test 4).
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: test4-cosim-matches-fokker-planck}
+  next_action: None — finite-diffusion regime reproduced within sampling noise.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: anomaly
+  statement: >
+    DIVERGENCE (failed primary): in the fast-diffusion regime (Test 3) the co-simulation's
+    reduced χ² against Eq 4 is 2.48, just over the [0, 2] band, so test3-cosim-matches-fokker-planck
+    FAILS. The native VCell arm sits just under at 1.82 (passes). Both solvers share the same
+    small 0.58% relative-L2 bias (about twice the 0.30% sampling noise), so the gap belongs to
+    the spatial hybrid at Δτ = 0.002, not to the co-simulation.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: test3-cosim-matches-fokker-planck}
+  next_action: >
+    Reduce Δτ for the Test 3 fast-diffusion arm (the Δτ check shows the bias is first-order
+    and vanishes as Δτ → 0), or widen the χ² band to reflect the resolved 0.1% histogram shift.
+  next_action_type: refine_representation
+  kind: computational
+  status: partial
+- id: F-03
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    The Test 3 gap is a first-order time-discretization error, not a model error: the mean-bias
+    fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.044% ± 0.027%,
+    consistent with zero (passes [−0.001, 0.001]). Native VCell at Δτ = 0.002 matches the fit's
+    prediction, confirming the bias scales with Δτ and vanishes as Δτ → 0.
+  claim_scope: mechanism
+  generality: {axes_tested: [discretization], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: test3-bias-is-first-order-in-dtau}
+  next_action: Carry the Δτ-convergence result into the Test 3 arm's acceptance reasoning.
+  next_action_type: escalate_model
+
+  kind: computational
+  status: contradicts
+conclusion_verdicts:
+  regression_compatibility:
+    basis: >
+      results/metrics.json is committed and regenerated by sims/run.py; four of five behavior
+      tests pass against it, with the Test 3 co-sim χ² = 2.48 failing the [0, 2] band honestly.
+  biological_validation:
+    basis: >
+      Reproduces Schaff et al. 2016 Figs 4–6: finite-diffusion Tests 4–5 match the Fokker–Planck
+      solutions within sampling noise (reduced χ² 0.54–0.89, rel. L2 below the paper's). Test 3
+      (fast diffusion) matches to 0.58% rel. L2 but its co-sim χ² (2.48) is marginally over threshold.
+  explanatory_gain:
+    basis: >
+      F-02/F-03 localize the Test 3 marginal failure to a first-order Δτ discretization bias shared
+      by both solvers (slope −0.51 ± 0.06, offset consistent with zero), not to the co-simulation —
+      the bias vanishes as Δτ → 0.
+
+conclusion_logic:
+  if_primary_tests_pass: >
+    All regimes reproduce the direct Fokker–Planck solutions within sampling noise — the hybrid
+    co-simulation samples the piecewise-deterministic process the paper's equations describe.
+  if_primary_tests_fail: >
+    Test 3's co-sim reduced χ² (2.48) is just over the [0, 2] band. The divergence is a first-order
+    Δτ time-discretization bias (slope −0.51 ± 0.06, offset ≈ 0) shared with the native solver, so
+    it is a resolvable discretization effect, not a co-simulation or model error — rerun the Test 3
+    arm at smaller Δτ to bring χ² under threshold.
+
+# Executive panel (top of the study page). Most fields derive from the spine; these are
+# the authored overrides that make the card read well at a glance.
+report:
+  confidence: medium
+  evidence_quality: literature-matched
+  caveat: >
+    Test 3's co-sim reduced χ² (2.48) marginally exceeds the [0, 2] band (native 1.82 passes);
+    the gap is a first-order Δτ bias shared by both solvers that vanishes as Δτ → 0. Tests 4–5 run
+    co-sim only (VCell's node-centred mesh differs from Eq T2.1), and Test 5 runs at Δτ = 10⁻⁴.
+    The native arm needs the dev pixi env.
+
+# Reproducibility — how to regenerate every artifact in this study.
+reproducibility:
+  level: L3   # scripted, committed inputs + metrics; native arm needs the dev env
+  rerun:
+  - cmd: "pixi run -e dev python workspace/studies/single-channel-fokker-planck/sims/run.py"
+    produces: [results/metrics.json, viz/fokker_planck.html, viz/dtau.html]
+    note: >
+      Tests 3–5: references, co-sim ensembles (10,000 / 12,500 / 12,500) and native Test 3.
+      The native arm needs the dev pixi env; in the default env only the co-sim arms run.
+  inputs_committed: [results/metrics.json]

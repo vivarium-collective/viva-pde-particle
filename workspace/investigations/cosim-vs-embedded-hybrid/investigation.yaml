@@ -73,4 +73,10 @@ studies:
 - coupling-interval-convergence
 - performance-scaling
 expert_docs: []
-acceptance_criteria: []
+acceptance_criteria:
+  - {study: handoff-units-and-binning, behavior: fv-matches-continuum-diffusion}
+  - {study: field-modulated-decay, behavior: survival-follows-local-field}
+  - {study: two-way-exchange, behavior: cosim-conserves-mass}
+  - {study: bimolecular-hybrid, behavior: solvers-agree-on-survival}
+  - {study: coupling-interval-convergence, behavior: cosim-fvsolver-mode-first-order}
+  - {study: performance-scaling, behavior: framework-overhead-bounded}

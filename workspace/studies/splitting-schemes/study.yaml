@@ -5,6 +5,31 @@ investigation: hybrid-generalizability
 created: '2026-10-03'
 status: ran
 phase: Evaluate
+# Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
+design_status: drafted
+implementation_status: complete
+simulation_status: ran
+evaluation_status: evaluated
+gate_status: passed
+expert_review_status: not_requested
+confidence: Accepted
+
+# What the study measures (anchors for the test rows / report).
+readouts:
+- name: b3_jacobi_order
+  description: fitted convergence order in the coupling interval τ, Jacobi (fvsolver) scheme
+- name: b3_gs_particles_first_order
+  description: fitted order of Gauss–Seidel, particles stepped first
+- name: b3_gs_pde_first_order
+  description: fitted order of Gauss–Seidel, PDE stepped first
+- name: b3_strang_order
+  description: fitted order of symmetric Strang splitting (sits near the sampling floor)
+- name: b3_strang_over_jacobi_err_k32
+  description: Strang error ÷ Jacobi error at the largest interval (k=32, τ=0.16 s)
+- name: b3_{jacobi,gs_particles_first,gs_pde_first,strang}_err_k{2,4,8,16,32}
+  description: max-over-time |mean survival − continuum| per coupling interval
+- name: b3_wall_time_s
+  description: wall-clock time of the full sweep
 parent_studies:
 - coupling-interval-convergence
 
@@ -36,6 +61,27 @@ baseline:
 
 variants: []
 
+# v4 Build-tab view (conditions.baseline + the scheme × coupling-interval sweep as variants).
+conditions:
+  baseline:
+    composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+    params: {k: 2.0, dt: 0.005}
+  variants:
+  - name: splitting-scheme-sweep
+    diff_from_baseline: "Same engines, re-ordered substeps: Jacobi (fvsolver), Gauss–Seidel (particles-first and pde-first), symmetric Strang."
+  - name: coupling-interval-sweep
+    diff_from_baseline: "τ = k·Δt with k ∈ {2, 4, 8, 16, 32} at Δt = 0.005 s; 64 seeds per point; orders fitted for k ≥ 4."
+
+simulation_set:
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b3_jacobi_order, b3_gs_particles_first_order, b3_strang_over_jacobi_err_k32, b3_strang_err_k32]
+  pass_fail_tests: [jacobi-first-order, gauss-seidel-first-order, strang-much-more-accurate]
+  description: "4 splitting schemes × 5 coupling intervals × 64 seeds; results/metrics.json."
+
 behavior_tests:
 - name: jacobi-first-order
   classification: primary
@@ -51,6 +97,8 @@ behavior_tests:
       kind: theory
       note: Explicit lagged splitting is first order.
   requires_simulation: splitting-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 - name: gauss-seidel-first-order
   classification: secondary
   description: Fitted order of Gauss–Seidel (particles first).
@@ -65,6 +113,8 @@ behavior_tests:
       kind: theory
       note: Sequential (Lie) splitting is first order.
   requires_simulation: splitting-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 - name: strang-much-more-accurate
   classification: primary
   description: Strang error / Jacobi error at the largest coupling interval (k = 32, τ = 0.16 s).
@@ -78,6 +128,8 @@ behavior_tests:
       kind: theory
       note: Symmetric splitting cancels the leading splitting error.
   requires_simulation: splitting-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 
 canonical_runs:
 - name: default
@@ -88,6 +140,7 @@ canonical_runs:
 
 visualizations:
 - name: splitting-schemes
+  address: html:viz/splitting_schemes.html
   chart: viz/splitting_schemes.html
   render: "python sims/run.py"
 
@@ -103,3 +156,107 @@ conclusion: |
     k ≈ 1–2. That's a large potential speed-up for particle-dominated runs (A6).
     vcell-fvsolver's hybrid loop (SimTool.cpp) fixes one splitting order, so adopting
     Strang there would mean modifying the solver; here it is a coupler option.
+
+runs:
+- name: default
+  emitter: json
+  outcomes:
+    jacobi-first-order: pass
+    gauss-seidel-first-order: pass
+    strang-much-more-accurate: pass
+
+findings:
+- id: F-01
+  tier: observation
+  statement: >
+    All three lagged splittings are first order in the coupling interval τ: the fitted
+    order is 1.23 for Jacobi (fvsolver), 1.01 for Gauss–Seidel (particles-first) and 1.08
+    for Gauss–Seidel (pde-first). At τ = 0.16 s their errors cluster at 2.1–2.3% (Jacobi
+    0.0218, GS-particles 0.0208, GS-pde 0.0226).
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: jacobi-first-order}
+  next_action: None — first-order behaviour confirmed for all lagged schemes.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Symmetric Strang splitting is dramatically more accurate at large coupling interval:
+    at k = 32 (τ = 0.16 s) the Strang error is 0.000859, 3.94% of the Jacobi error
+    (b3_strang_over_jacobi_err_k32 = 0.0394, i.e. a 25× reduction), well under the 0.25
+    acceptance band. Expressing the coupling as process-bigraph substeps makes this
+    re-ordering a coupler option rather than a solver modification.
+  claim_scope: mechanism
+  generality: {axes_tested: [alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: strang-much-more-accurate}
+  next_action: >
+    Exploit in particle-dominated runs (A6): Strang lets the particle side step ~32× less
+    often than the PDE side at the accuracy Jacobi reaches near k ≈ 1–2.
+  next_action_type: escalate_model
+  kind: computational
+  status: confirms
+- id: F-03
+  tier: observation
+  statement: >
+    Strang's error stays within ~2× of the sampling floor across the whole sweep
+    (0.000405 at k=2 to 0.000859 at k=32), so its fitted order (0.34) is floor-dominated
+    and not resolvable — more seeds or larger τ would be needed to measure the expected
+    second order.
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: strang-much-more-accurate}
+  next_action: Add more seeds or extend τ to resolve the Strang convergence order.
+  next_action_type: replicate
+
+  kind: computational
+  status: partial
+conclusion_verdicts:
+  regression_compatibility:
+    basis: >
+      results/metrics.json is committed and regenerated by sims/run.py; the Jacobi scheme
+      reproduces the fvsolver two-process composite exactly (regression test in
+      tests/test_hybrid_cosim.py). All three behavior tests pass against the committed metrics.
+  biological_validation:
+    basis: >
+      Not a biological claim — this is a numerical-methods study of operator-splitting
+      accuracy for the PDE/particle coupling against the continuum survival curve.
+  explanatory_gain:
+    basis: >
+      F-02 shows the process-bigraph decomposition unlocks a splitting (Strang) the embedded
+      fvsolver cannot express, buying a 25× accuracy gain at the largest coupling interval.
+
+conclusion_logic:
+  if_primary_tests_pass: >
+    Lagged splittings (Jacobi, Gauss–Seidel) are first order and Strang is far more accurate
+    at large τ (25× smaller error at k=32) — adopt Strang as a coupler option for
+    particle-dominated runs; resolve the Strang order with more seeds / larger τ.
+  if_primary_tests_fail: >
+    A fitted Jacobi order outside [0.7, 1.5], or a Strang/Jacobi ratio ≥ 0.25 at k=32, would
+    mean the splitting substeps are mis-ordered or the sampling floor was mis-estimated —
+    re-check build_coupler_document and the seed count before trusting the accuracy claim.
+
+# Executive panel (top of the study page).
+report:
+  confidence: high
+  evidence_quality: theory-matched
+  caveat: >
+    Strang's fitted order (0.34) is sampling-floor-dominated and does not resolve its
+    expected second order; the accuracy claim rests on the error ratio, not the fitted order.
+
+# Reproducibility — how to regenerate every artifact in this study.
+reproducibility:
+  level: L3
+  rerun:
+  - cmd: "pixi run -e dev python workspace/studies/splitting-schemes/sims/run.py"
+    produces: [results/metrics.json, viz/splitting_schemes.html]
+    note: >
+      Full sweep (4 splitting schemes × 5 coupling intervals × 64 seeds). Deterministic
+      per seed; the Jacobi scheme matches the fvsolver two-process composite exactly.
+  inputs_committed: [results/metrics.json]
+  wall_time_s: 25.66

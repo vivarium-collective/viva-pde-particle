@@ -5,7 +5,27 @@ investigation: hybrid-generalizability
 created: '2026-10-03'
 status: ran
 phase: Evaluate
+# Six-axis canonical status (derived-consistent; legacy `status` kept for back-compat)
+design_status: drafted
+implementation_status: complete
+simulation_status: ran
+evaluation_status: evaluated
+gate_status: passed
+expert_review_status: not_requested
+confidence: Accepted
 
+# What the study measures (anchors for the test rows / report).
+readouts:
+- name: b1_fem_lumped_h_order
+  description: fitted h-order of the Q1 lumped-mass engine on the cosine mode
+- name: b1_fv_h_order
+  description: fitted h-order of the FV engine
+- name: b1_fem_consistent_h_order
+  description: fitted h-order of the Q1 consistent-mass engine
+- name: b1_fem_lumped_vs_fv_survival_max_paired_z
+  description: max paired |z| of survival, FEniCSx (lumped) vs FV, same seeds
+- name: b1_{fv,fem_lumped,fem_consistent}_err_n81
+  description: L∞ error at N=81 per engine
 question: |
   Can the PDE half of the co-simulation be swapped for a different discretization
   (FEniCSx, Q1 finite elements) without changing anything else, and does that change the
@@ -35,6 +55,29 @@ baseline:
 
 variants: []
 
+# v4 Build-tab view (conditions.baseline + the three PDE engines as variants).
+conditions:
+  baseline:
+    composite: viva_pde_particle.composites.examples.bimolecular_hybrid
+    params: {n_particles: 20000, dt: 0.01}
+  variants:
+  - name: fv
+    diff_from_baseline: "PDE half solved by the VCell FV_SOLVER scheme (node-centred finite volume)."
+  - name: fenicsx-lumped
+    diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with lumped mass (pde_engine=\"fenicsx\")."
+  - name: fenicsx-consistent
+    diff_from_baseline: "PDE half swapped to FEniCSx Q1 finite elements with consistent mass."
+
+simulation_set:
+- name: default
+  kind: baseline
+  status: ran
+  base_model: viva_pde_particle.composites.examples.bimolecular_hybrid
+  seeds: [0]
+  metrics: [b1_fem_lumped_h_order, b1_fv_h_order, b1_fem_consistent_h_order, b1_fem_lumped_vs_fv_survival_max_paired_z]
+  pass_fail_tests: [fem-second-order, fv-second-order, engine-swap-preserves-coupled-result]
+  description: "Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds); results/metrics.json."
+
 behavior_tests:
 - name: fem-second-order
   classification: primary
@@ -50,6 +93,8 @@ behavior_tests:
       kind: theory
       note: Q1 Lagrange elements are second order in L∞ for smooth solutions.
   requires_simulation: engine-swap-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 - name: fv-second-order
   classification: primary
   description: Fitted h-order of the FV engine on the cosine mode.
@@ -64,6 +109,8 @@ behavior_tests:
       kind: theory
       note: Node-centred FV with a 5/7-point stencil is second order.
   requires_simulation: engine-swap-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 - name: engine-swap-preserves-coupled-result
   classification: primary
   description: Max paired |z| of survival, FEniCSx (lumped) vs FV engine, same seeds.
@@ -77,6 +124,8 @@ behavior_tests:
       kind: theory
       note: On matched grids the engines differ only by O(h²) discretization, far below the coupling error.
   requires_simulation: engine-swap-bimolecular
+  status: pass
+  gate_class: acceptance_criterion
 
 canonical_runs:
 - name: default
@@ -87,6 +136,7 @@ canonical_runs:
 
 visualizations:
 - name: engine-swap
+  address: html:viz/engine_swap.html
   chart: viz/engine_swap.html
   render: "python sims/run.py"
 
@@ -101,3 +151,89 @@ conclusion: |
     - all three within 0.27% of the continuum.
   The PDE engine is interchangeable under the co-simulation, and discretization effects
   are cleanly separable from coupling effects.
+
+runs:
+- name: default
+  emitter: json
+  outcomes:
+    fem-second-order: pass
+    fv-second-order: pass
+    engine-swap-preserves-coupled-result: pass
+
+findings:
+- id: F-01
+  tier: observation
+  statement: >
+    All three PDE engines are second order on the cosine mode: fitted h-orders are 1.97
+    (FV), 1.98 (Q1 lumped) and 2.04 (Q1 consistent), all inside the [1.8, 2.2] band, with
+    L∞ errors at N=81 of 5.5e-6 (FV), 1.6e-5 (lumped) and 4.7e-6 (consistent).
+  claim_scope: behavioral
+  generality: {axes_tested: [discretization, alt_implementation], level: instance_specific}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: fem-second-order}
+  next_action: None — convergence order confirmed for all three engines.
+  next_action_type: replicate
+  kind: computational
+  status: confirms
+- id: F-02
+  tier: mechanism
+  mechanism_origin: engineered
+  statement: >
+    Swapping the PDE engine under the co-simulation changes nothing measurable in the
+    coupled result: the max paired |z| of survival (common random numbers) is 1.50 (lumped)
+    and 0.76 (consistent) against FV, far below 4.0, with mean survival differences of
+    2.6e-4 and 1.1e-4, and all three engines within 0.27% of the continuum.
+  claim_scope: mechanism
+  generality: {axes_tested: [discretization, alt_implementation], level: mechanism}
+  provenance: {run_ids: [default]}
+  evidence: {from_test: engine-swap-preserves-coupled-result}
+  next_action: None — the PDE engine is an interchangeable component of the hybrid coupling.
+  next_action_type: replicate
+
+  kind: computational
+  status: confirms
+conclusion_verdicts:
+  regression_compatibility:
+    basis: >
+      results/metrics.json is committed and regenerated by sims/run.py; all three primary
+      tests pass against it.
+  biological_validation:
+    basis: >
+      Not a biological claim: a numerical interchangeability study. The second-order
+      convergence bands and the paired-z coupling-invariance band are the acceptance criteria,
+      all met.
+  explanatory_gain:
+    basis: >
+      F-02 shows the PDE discretization is a swappable process-bigraph component (paired
+      |z| ≤ 1.50, differences ~1e-4), cleanly separating discretization error from coupling
+      error — something VCell cannot express, where the PDE scheme is baked into the solver.
+conclusion_logic:
+  if_primary_tests_pass: >
+    The PDE half (FV or FEniCSx Q1) is interchangeable under the co-simulation: all engines are
+    second order and the coupled survival is invariant to the swap within sampling. Treat the
+    PDE engine as a component, not a solver choice.
+  if_primary_tests_fail: >
+    An h-order outside [1.8, 2.2] or a paired |z| ≥ 4.0 would mean the engines are not matched
+    on the shared grid or the swap perturbs the coupling — re-examine the lumped-mass/control-volume
+    equivalence and the particle binning before trusting interchangeability.
+
+# Executive panel (top of the study page).
+report:
+  confidence: high
+  evidence_quality: theory-matched
+  caveat: >
+    Interchangeability shown on one coupled problem (A4's A_p + B_f → C_f on an 11×11×3 slab)
+    with matched structured grids; the lumped-mass/control-volume equivalence is the enabling
+    assumption. FEniCSx needs the pixi env (dolfinx).
+
+# Reproducibility — how to regenerate every artifact in this study.
+reproducibility:
+  level: L3
+  rerun:
+  - cmd: "pixi run -e dev python workspace/studies/fenicsx-same-problem/sims/run.py"
+    produces: [results/metrics.json, viz/engine_swap.html]
+    note: >
+      Cosine-mode h-convergence (3 engines) + coupled engine swap (16 paired seeds). Needs
+      the pixi env for dolfinx (FEniCSx); the FV engine runs in any env.
+  inputs_committed: [results/metrics.json]
+  wall_time_s: 12.883005142211914

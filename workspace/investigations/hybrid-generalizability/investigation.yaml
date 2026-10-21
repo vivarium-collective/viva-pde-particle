@@ -2,7 +2,7 @@ schema_version: 2
 name: hybrid-generalizability
 title: What decomposing the hybrid solver into processes adds, and what it costs
 created: '2026-10-03'
-status: running
+status: complete
 question: >-
   Once the co-simulation reproduces the embedded hybrid solver, what does expressing the
   method as interchangeable processes add (alternative PDE discretizations, alternative
@@ -49,8 +49,27 @@ executive:
   what_is_this: >-
     A study of the generality gained by decomposing the hybrid solver into
     process-bigraph processes.
-  verdict: Not yet run.
-  verdict_status: pending
+  verdict: >-
+    Confirmed. Decomposing the hybrid solver into process-bigraph processes generalizes
+    across every axis tested, and the modular path is as accurate as — and often more
+    robust than — the embedded native solver. All 9 studies ran and their primary gates
+    pass:
+    • Geometry — the sparse particle↔grid handoff stays conservative and accurate on a
+      body-fitted tetrahedral ball (unstructured-geometry: A+B conserved to 0.11%, B to
+      0.53% rel-L2), a sphere (sphere-cosim-vs-native), a thin-necked dumbbell
+      (dumbbell-three-ways), and VCell's own geometry (vcell-geometry-cosim).
+    • PDE engine — swapping finite-volume for FEniCSx Q1 changes nothing measurable in the
+      coupled result (fenicsx-same-problem: max paired |z| = 1.5; all engines 2nd order).
+    • Model format — a model round-trips bit-exactly through SBML Spatial on both solvers
+      (sbml-spatial-hybrid).
+    • Coupling scheme — symmetric Strang splitting is ~25× more accurate than Jacobi at the
+      largest interval (splitting-schemes).
+    Several studies carry an intentional expected-fail secondary that LOCALIZES a native
+    vcell-fvsolver defect — exterior binning / shell depletion at curved membranes
+    (near-membrane −2.3%, sphere exchange −6.8%, dumbbell −25.9% on a thin neck) — which the
+    co-simulation's accessible-volume + membrane corrections remove (biases ≤0.12%). The
+    decomposition is not just answer-preserving; it fixes a real native bias.
+  verdict_status: supported
 studies:
 - fenicsx-same-problem
 - unstructured-geometry
@@ -62,4 +81,10 @@ studies:
 - splitting-schemes
 - sbml-spatial-hybrid
 expert_docs: []
-acceptance_criteria: []
+acceptance_criteria:
+  - {study: unstructured-geometry, behavior: handoff-conserves-in-ball}
+  - {study: fenicsx-same-problem, behavior: engine-swap-preserves-coupled-result}
+  - {study: sbml-spatial-hybrid, behavior: model-round-trips-exactly}
+  - {study: splitting-schemes, behavior: strang-much-more-accurate}
+  - {study: sphere-cosim-vs-native, behavior: conversion-agrees}
+  - {study: vcell-geometry-cosim, behavior: corrected-shell-unbiased}
