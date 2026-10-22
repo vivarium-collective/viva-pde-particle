@@ -9,7 +9,7 @@ build_runner_core`):
 - reads the first ``.pbg`` in the archive, or the ``.pbg`` given directly;
 - builds a ``Composite`` and runs it for the interval;
 - writes ``results_<date>.pber``: ``gather_emitter_results`` as JSON, as pbest does;
-- a document with a ``SpatialRecorder`` (:func:`viva_pde_particle.viz3d.record.attach_recorder`) records into
+- a document with a recorder (:func:`viva_pde_particle.viz3d.record.attach_recorder`) records into
   ``<output>/<name>.fenics``: the runner finalizes it after the run (its tick at the end time is never executed),
   makes it web-viewable (:mod:`viva_pde_particle.steps.spatial_export`) and announces it as a ``results-bundle``
   dataset, which compose-api's web UI views (compose-api docs/plan-viewers.md).
@@ -72,12 +72,12 @@ def run(path: Path, output: Path, interval: float) -> Path:
     return out
 
 
-RECORDER = "local:SpatialRecorder"
+RECORDERS = ("local:GridRecorder", "local:MeshRecorder")
 
 
 def _recorders(state: dict) -> list[str]:
-    """Keys of the top-level SpatialRecorder nodes."""
-    return [k for k, v in state.items() if isinstance(v, dict) and v.get("address") == RECORDER]
+    """Keys of the top-level recorder nodes."""
+    return [k for k, v in state.items() if isinstance(v, dict) and v.get("address") in RECORDERS]
 
 
 def _bundle_path(out_dir: str, output: Path) -> Path:
@@ -103,10 +103,10 @@ def _run(path: Path, output: Path, interval: float) -> tuple[Path, list[dict]]:
             bundles.append(Path(config["out_dir"]))
         sim = Composite(doc, core=build_runner_core())
         sim.run(interval)
-        from viva_pde_particle.processes.recorder import SpatialRecorder
+        from viva_pde_particle.processes.recorder import GridRecorder, MeshRecorder
 
         for node in sim.state.values():  # a recorder's tick at the end time is never executed: record it here
-            if isinstance(node, dict) and isinstance(node.get("instance"), SpatialRecorder):
+            if isinstance(node, dict) and isinstance(node.get("instance"), (GridRecorder, MeshRecorder)):
                 node["instance"].close(sim.state, float(interval))
         results = gather_emitter_results(sim)
         exported = export(bundles)
