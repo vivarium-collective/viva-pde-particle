@@ -23,8 +23,9 @@ vcell-fvsolver.
   on Python 3.11. Engine tests must `pytest.importorskip` their engine.
 - **Don't edit generated workflows by hand.** Files under `.github/workflows/` that carry the
   `viva-template-provenance` header are drift-guarded. Add new workflows as separate files.
-- **`dev` environment:** `pixi run -e dev ...` uses `../pyvcell` editable (co-developing its
-  spatial-hybrid support, virtualcell/pyvcell#62). The native VCell reference
+- **`dev` environment:** `pixi run -e dev ...` uses `../pyvcell` editable (its spatial-hybrid support,
+  virtualcell/pyvcell#62 and #63, shipped in pyvcell 0.4.2 on 2026-10-08; the env still takes the checkout). The
+  native VCell reference
   (`viva_pde_particle.reference.vcell_native`) and Study A2 part 3 need it. Build Smoldyn there
   too with `pixi run -e dev build-smoldyn`. CI uses `default`, where native tests skip.
 - **`compose` environment:** `default` minus the `workbench` feature (vivarium-workbench). The compose-api image
