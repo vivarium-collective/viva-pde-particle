@@ -33,8 +33,9 @@ It pushes `sha-<short>` and `latest` from `main`.
     apptainer run --compat --bind $PWD/exp:/experiment image.sif example /experiment/experiment.omex
     apptainer run --compat --bind $PWD/exp:/experiment image.sif run /experiment/experiment.omex -o /experiment/output -n 1
 
-**Not included yet:** native VCell. It needs pyvcell with spatial-hybrid support (pyvcell#62, not yet
-released), so the image runs the co-simulation only.
+**Not included:** native VCell. pyvcell 0.4.2 (2026-10-08) has the spatial-hybrid support (pyvcell#62, #63), but the
+`compose` environment carries neither pyvcell nor libvcell nor pyvcell-fvsolver, so the image runs the co-simulation
+only.
 
 ## Ensembles as documents
 
