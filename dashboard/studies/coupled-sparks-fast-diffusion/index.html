@@ -44,18 +44,6 @@
 
 
 
-<div class="composite-lint-banner" role="alert"
-     style="margin:8px 0 14px 0;padding:10px 14px;background:#fffbeb;border:1px solid #f59e0b;border-left-width:5px;border-radius:6px;color:#92400e;font-size:0.9em">
-  
-  <div>⚠ composite not found in registry: <code>viva_pde_particle.composites.examples.calcium_sparks</code></div>
-  
-  <div style="margin-top:4px;font-size:0.86em;color:#a16207">
-    This study references a composite that doesn't resolve — it may not declare a
-    real, registered composite. Add a <code>.composite.yaml</code> and register it
-    in <code>core.py</code>, or fix the ref.
-  </div>
-</div>
-
 
 
 
@@ -219,6 +207,19 @@ open-channel number given by the exact well-mixed process, as in Fig 2 of the pa
 .figure-media-frame{display:block;width:100%;border:0;background:#fff}
 .figure-media-frame--native{height:auto;min-height:320px}  /* JS (_autosizeNativeFrames) grows this to the figure's full content height */
 .figure-media-frame--embed{min-height:200px}
+/* Explore-module launch card: a deeper interactive module (Corpus Explorer, 3D
+   viewers, …) is linked out full-size rather than squeezed into an iframe. */
+.explore-module-card{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 18px;border:1px solid #c7d2fe;background:linear-gradient(0deg,#f5f7ff,#fff)}
+.explore-module-main{min-width:0}
+.explore-module-badge{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;
+  text-transform:uppercase;color:#4338ca;background:#e0e7ff;border-radius:9999px;padding:2px 9px;margin-right:8px}
+.explore-module-launch{flex:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  text-decoration:none;font-weight:600;font-size:0.9rem;color:#fff;background:#4f46e5;
+  border-radius:7px;padding:9px 16px;transition:background .12s}
+.explore-module-launch:hover{background:#4338ca}
+:root[data-theme="dark"] .explore-module-card{border-color:#3730a3;background:linear-gradient(0deg,#1e1b4b,var(--surface))}
+:root[data-theme="dark"] .explore-module-badge{color:#c7d2fe;background:#312e81}
 /* SVGs/PNGs scale to fit their card; preserves aspect ratio so a 1400×484
    chart shrinks instead of overflowing horizontally + clipping. */
 .figure-card svg,.figure-card img.chart-img{display:block;width:100%;max-width:100%;height:auto}
@@ -1258,6 +1259,9 @@ At t = 1, 2, 3 s the comparison uses:
       <div style="margin-top:6px;font-size:0.85em;padding:6px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:3px">
         <strong>Latest result:</strong>
         
+        
+          
+        
       </div>
       
       
@@ -1302,6 +1306,9 @@ cites:   ["schaff2016hybrid"]</pre>
       
       <div style="margin-top:6px;font-size:0.85em;padding:6px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:3px">
         <strong>Latest result:</strong>
+        
+        
+          
         
       </div>
       
@@ -1348,6 +1355,9 @@ cites:   ["schaff2016hybrid"]</pre>
       <div style="margin-top:6px;font-size:0.85em;padding:6px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:3px">
         <strong>Latest result:</strong>
         
+        
+          
+        
       </div>
       
       
@@ -1393,6 +1403,9 @@ cites:   ["schaff2016hybrid"]</pre>
       <div style="margin-top:6px;font-size:0.85em;padding:6px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:3px">
         <strong>Latest result:</strong>
         
+        
+          
+        
       </div>
       
       
@@ -1437,6 +1450,9 @@ cites:   ["schaff2016hybrid"]</pre>
       
       <div style="margin-top:6px;font-size:0.85em;padding:6px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:3px">
         <strong>Latest result:</strong>
+        
+        
+          
         
       </div>
       
@@ -1724,7 +1740,7 @@ Larger ensembles, or a D → ∞ check, would settle it (follow-up).</p>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "cba5c125ce7b6535e82259644e569fb18848a8f1", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/cba5c125ce7b6535e82259644e569fb18848a8f1", "branch": "main", "generated_at": "2026-10-21 12:44 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/dashboard", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "65f9a622e5df0e5ffc1766a4de21117962feb410", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/65f9a622e5df0e5ffc1766a4de21117962feb410", "branch": "main", "lockfile": "uv.lock@b5009062a599", "generated_at": "2026-10-26 14:39 UTC"} };</script>
 <script src="/viva-pde-particle/dashboard/assets/data-source.js"></script>
 <script src="/viva-pde-particle/dashboard/assets/toast.js"></script>
 <script>
@@ -1882,6 +1898,13 @@ window._seedFollowupProposal = _seedFollowupProposal;
   // run buttons in a published read-only snapshot (reproducible-rerun-spine
   // Task 4 / G2: both equally inert with no live backend to launch against).
   if (window.__DASH_CONFIG__ && window.__DASH_CONFIG__.mode === "snapshot") {
+    // The study-detail shell does NOT load walkthrough.js (which sets this on
+    // the main SPA), so set body.snapshot here. Without it every snapshot check
+    // on this page reads false — most visibly the inline bigraph-loom embed,
+    // which then mounts in LIVE mode (?id=&live=1) and hangs forever fetching
+    // /api/composite-state?ref=… against a backend the static bundle doesn't
+    // have, instead of the baked static /api/composite-state/<id>.json.
+    document.body.classList.add("snapshot");
     var reproduceBtn = document.getElementById("study-reproduce");
     if (reproduceBtn) reproduceBtn.style.display = "none";
     var runCurrentBtn = document.getElementById("study-run-current-spec");

@@ -16,10 +16,65 @@
 
   var ctl = null;            // the VivPanelDock controller
   var placeholder = null;    // marks the graph's inline home while it lives in the panel
+  var popoutWin = null;      // the ?popout=graph window opened from THIS (main) window
+  var initDone = false;      // guards onClose→returnInline against the init-time close
+  var popoutArmed = false;   // true once the popout's panel has settled open — only
+                             // THEN does a close mean "user wants the graph back inline"
+                             // (setup fires programmatic GraphPanel.close()s we must ignore)
 
   function el(id) { return document.getElementById(id); }
   function graphEl() { return el(GRAPH_ID); }
   function bodyEl() { return el(BODY_ID); }
+
+  // True when THIS page is the popped-out graph window (?popout=graph).
+  function inPopout() {
+    try { return !!(document.body && document.body.classList.contains('viv-popout')); }
+    catch (e) { return false; }
+  }
+
+  // Popout window → tell the opener (main window) to restore the inline graph,
+  // then close this window. Mirrors the studies panel's returnInline.
+  function returnInline() {
+    try {
+      if (window.opener && !window.opener.closed &&
+          typeof window.opener._graphReturnInline === 'function') {
+        window.opener._graphReturnInline();
+      }
+    } catch (e) { /* cross-origin / closed opener */ }
+    try { window.close(); } catch (e) { /* ignore */ }
+  }
+
+  // --- Main-window side: while the graph is popped out it VACATES the inset; a
+  // slim "popped out" bar takes its place, and closing the popout restores it. ---
+  function poppedBar() {
+    var g = graphEl(); if (!g || !g.parentNode) return null;
+    var bar = el('aig-poppedout-bar');
+    if (!bar) {
+      bar = document.createElement('button');
+      bar.id = 'aig-poppedout-bar';
+      bar.type = 'button';
+      bar.className = 'aig-poppedout-bar';
+      bar.textContent = '⧉ Investigation graph is open in a pop-out window — click to bring it back';
+      bar.addEventListener('click', bringBackGraph);
+      g.parentNode.insertBefore(bar, g);
+    }
+    return bar;
+  }
+  function setMainPoppedOut(on) {
+    var g = graphEl(); if (!g) return;
+    if (on) { poppedBar(); g.classList.add('aig-poppedout-hidden'); }
+    else {
+      g.classList.remove('aig-poppedout-hidden');
+      var bar = el('aig-poppedout-bar');
+      if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+    }
+  }
+  // Bring the graph back inline from the main window (also closes the popout).
+  function bringBackGraph() {
+    setMainPoppedOut(false);
+    try { if (popoutWin && !popoutWin.closed) popoutWin.close(); } catch (e) { /* ignore */ }
+    popoutWin = null;
+  }
 
   // Fit on dock ENTER/EXIT (an initial-ish fit) but honor the user's zoom intent:
   // _aigFitOrKeep keeps the current zoom once the user has driven it, else fits.
@@ -82,33 +137,99 @@
     }
   }
 
-  // Move the graph into the panel body, leaving a hidden placeholder at its inline
-  // home so it can be put back exactly where it was.
+  // The investigation title header ("INVESTIGATION / <name>" + nav) — captured into
+  // the docked pane along with the graph, so the whole investigation tab travels
+  // together instead of leaving the title behind in the main view.
+  var HEADER_ID = 'iset-workspace';
+  var hdrPlaceholder = null;
+  // Find the single investigation header wherever it currently lives — under
+  // #iset-workspace inline, OR relocated into #viv-graph-body while the window is
+  // open. (Querying only #iset-workspace lost it once moved, stranding the header
+  // in the hidden window on close.)
+  function headerEl() {
+    return document.querySelector('.inv-header-bar');
+  }
+
+  // What travels into the window: the whole investigation detail view
+  // (#investigation-detail-view = the overview brief + Overview/Verdict/Background…
+  // tabs, THEN the graph) so the overview opens ABOVE the graph in the window rather
+  // than hijacking the study's centre. Falls back to just the graph if the detail
+  // view isn't present.
+  var RELOC_ID = 'investigation-detail-view';
+  function relocEl() { return el(RELOC_ID) || graphEl(); }
+
+  // Move the investigation detail (overview + graph) and header into the panel body,
+  // leaving hidden placeholders at their inline homes so they can be put back exactly.
   function graphIntoPanel() {
-    var g = graphEl(), b = bodyEl();
-    if (!g || !b) return false;
-    if (g.parentNode === b) return true;      // already hosted here
+    var node = relocEl(), b = bodyEl();
+    if (!node || !b) return false;
+    var hdr = headerEl();
+    if (node.parentNode === b && hdr && hdr.parentNode === b) return true;  // already hosted
     if (!placeholder) {
       placeholder = document.createElement('div');
       placeholder.className = 'viv-graph-home';
       placeholder.style.display = 'none';
     }
-    if (g.parentNode) g.parentNode.insertBefore(placeholder, g);
-    b.appendChild(g);
+    if (node.parentNode && node.parentNode !== b) node.parentNode.insertBefore(placeholder, node);
+    b.appendChild(node);
+    // Header above the detail view in the pane.
+    if (hdr && hdr.parentNode !== b) {
+      if (!hdrPlaceholder) {
+        hdrPlaceholder = document.createElement('div');
+        hdrPlaceholder.className = 'viv-graph-header-home';
+        hdrPlaceholder.style.display = 'none';
+      }
+      hdr.parentNode.insertBefore(hdrPlaceholder, hdr);
+      b.insertBefore(hdr, node);
+      hdr.classList.add('inv-header-bar-docked');
+    }
     return true;
   }
 
-  // Return the graph to its inline home (before the placeholder) for full-page view.
+  // Return the detail view + header to their inline homes for the full-page view.
   function graphToInline() {
-    var g = graphEl();
-    if (g && placeholder && placeholder.parentNode) {
-      placeholder.parentNode.insertBefore(g, placeholder);
+    var hdr = headerEl();
+    if (hdr && hdrPlaceholder && hdrPlaceholder.parentNode) {
+      hdr.classList.remove('inv-header-bar-docked');
+      hdrPlaceholder.parentNode.insertBefore(hdr, hdrPlaceholder);
+      hdrPlaceholder.parentNode.removeChild(hdrPlaceholder);
+    }
+    hdrPlaceholder = null;
+    var node = relocEl();
+    if (node && placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(node, placeholder);
       placeholder.parentNode.removeChild(placeholder);
     }
     placeholder = null;
   }
 
+  // Inline slim title bar — shown ABOVE the investigation header while the graph is
+  // inline (window closed), so the whole header+graph reads as one movable window
+  // even before a study is open. The bar IS the drag handle: dragging it to an edge
+  // opens the Investigation window docked there (same drag-to-dock the window's own
+  // title bar uses, wired via ctl.addDragHandle). Hidden while the window is open
+  // (the window then carries its own title bar).
+  function ensureInlineTitlebar() {
+    var ws = el(HEADER_ID); if (!ws) return null;
+    var tb = el('inv-inline-titlebar');
+    if (!tb) {
+      tb = document.createElement('div');
+      tb.id = 'inv-inline-titlebar';
+      tb.className = 'vp-titlebar vp-titlebar-inline';
+      tb.innerHTML = '<span class="vp-tb-label">Investigation</span>' +
+        '<span class="vp-tb-spacer"></span>';
+      if (ws.firstChild) ws.insertBefore(tb, ws.firstChild); else ws.appendChild(tb);
+    }
+    if (ctl && ctl.addDragHandle) ctl.addDragHandle(tb);   // guards double-binding
+    return tb;
+  }
+  function setInlineTitlebar(show) {
+    var tb = ensureInlineTitlebar();
+    if (tb) tb.hidden = !show;
+  }
+
   function onOpen() {
+    setInlineTitlebar(false);   // the docked window carries its own title bar now
     if (graphIntoPanel()) {
       showEmptyHint(false);
       // The graph's own toolbar is now the panel's single bar + drag-to-dock
@@ -125,7 +246,19 @@
   }
 
   function onClose() {
+    // In the popped-out window, SETUP fires programmatic GraphPanel.close()s
+    // (page-switch / _showInvestigationWorkspace) before the user has touched
+    // anything. Those must NOT hide the graph or close the window — keep the panel
+    // open until the user actually interacts (popoutArmed, set on first input).
+    if (inPopout() && !popoutArmed) {
+      setTimeout(function () { if (ctl && !ctl.isOpen()) ctl.open(); }, 0);
+      return;   // bounce back open; don't move the graph inline
+    }
     graphToInline();
+    setInlineTitlebar(true);   // back inline → the inline drag bar reappears above the header
+    // A USER close inside the popped-out window returns the graph inline in the
+    // opener and closes this window.
+    if (initDone && inPopout()) { returnInline(); return; }
     // Back inline == the full-page graph. Clearing the manual override re-renders,
     // and the inline render re-autos the orientation (wide → LR) and runs its own
     // height auto-fill — so no explicit fit here (a fit-both would shrink a wide
@@ -150,7 +283,7 @@
     // inline. So there is no rail tab for it.
     ctl = global.VivPanelDock.make({
       panel: panel, layout: layout, mainEl: mainEl, key: 'graph',
-      label: 'Graph',
+      label: 'Investigation',
       launcher: null,
       // All four edges — the dock menu and the drag drop-zones both offer
       // left / right / bottom / top (unified). Top docks as a band (default height
@@ -169,13 +302,23 @@
         }
         return false;
       },
+      onOpen: onOpen,
       resizeHandle: 'viv-graph-resize-handle',
       // No header to drag; the hosted graph toolbar is bound as the drag handle
       // in onOpen (once it's relocated into the panel) via ctl.addDragHandle.
       dragHandles: [],
-      popout: function () { global.VivPanelDock.popout('graph'); },
+      // Carry the current investigation so the popped window renders ITS graph
+      // (a fresh popout has no investigation open, so the hosted #investigation-dag-fs
+      // would otherwise be empty — see panel-dock.js initPopout). The inline graph
+      // then VACATES the inset (a slim bar takes its place) until the popout closes.
+      popout: function () {
+        var inv = global._wsInvestigation || global._currentIset || '';
+        if (ctl && ctl.isOpen()) ctl.close();   // if docked, return the graph inline first
+        popoutWin = global.VivPanelDock.popout('graph', inv ? { investigation: inv } : null);
+        setTimeout(function () { setMainPoppedOut(true); }, 90);
+      },
       defaultDock: 'right', defaultSize: { side: 480, bottom: 340 },
-      onOpen: onOpen, onClose: onClose,
+      onClose: onClose,
       // Resize / re-dock / expand must NOT recompute the zoom — reflow the viewport
       // at the user's current zoom instead (relayout/reflow keep the scale).
       onResize: reflow,
@@ -197,6 +340,14 @@
     };
     // Used by panel-dock.js initPopout when this page is a ?popout=graph window.
     global._openGraphPanel = function () { if (ctl) ctl.open(); };
+    // Called by the popped-out window (via opener) when it closes: restore the
+    // inline graph in the inset. Also exposed so other code can bring it back.
+    global._graphReturnInline = function () { setMainPoppedOut(false); popoutWin = null; };
+    global._graphBringBack = bringBackGraph;
+    // If the user closes the popout window directly (OS chrome), restore the inset.
+    global.setInterval(function () {
+      if (popoutWin && popoutWin.closed) { setMainPoppedOut(false); popoutWin = null; }
+    }, 1500);
 
     // Default to INLINE on load: the graph lives inline below the investigation
     // overview, and the panel is opt-in (◧). Don't auto-restore a persisted
@@ -204,6 +355,25 @@
     var isPopout = false;
     try { isPopout = /(?:^|[?&])popout=graph(?:&|$)/.test(global.location.search || ''); } catch (e) { /* ignore */ }
     if (!isPopout && ctl.isOpen()) ctl.close();
+    // Create + bind the inline drag bar now (ctl exists) so the investigation always
+    // carries the slim title bar — inline above the header, or on the docked window.
+    if (!isPopout) setInlineTitlebar(!ctl.isOpen());
+
+    // In the popout, "arm" returnInline on the FIRST real user interaction — setup
+    // (page render, _showInvestigationWorkspace) is all programmatic and never fires
+    // input events, so this cleanly tells a user-close apart from a setup-close
+    // regardless of how long the async graph render takes.
+    if (isPopout) {
+      var arm = function () {
+        popoutArmed = true;
+        window.removeEventListener('pointerdown', arm, true);
+        window.removeEventListener('keydown', arm, true);
+      };
+      window.addEventListener('pointerdown', arm, true);
+      window.addEventListener('keydown', arm, true);
+    }
+
+    initDone = true;   // from here, a close inside a popout returns the graph inline
   }
 
   if (typeof document !== 'undefined') {
