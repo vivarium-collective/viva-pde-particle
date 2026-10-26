@@ -8,7 +8,7 @@
 # re-scaffolding, or by copying the current source from
 #   vivarium-collective/viva-template/template/.github/workflows/<template>
 # template: workspace-ci.yml.j2
-# sha256: 386f5ab7b152a6d9f952e47b8e96da0fea2aaf902ca360b5be0106407bbf35ea
+# sha256: 09fc4f22777659575a0ceec55a3a10e835f1eab5606dc3325e642f9fc7f3af17
 # <<< viva-template-provenance <<<
 
 name: workspace-ci
@@ -77,6 +77,9 @@ jobs:
           ls -la external/ 2>&1 || true
       - uses: actions/setup-python@v6
         with:
+          # Rendered from the workspace's pyproject.toml requires-python by
+          # template-init.sh (">=3.12" -> "3.12", otherwise "3.11"). A
+          # 3.12-only workspace must test on 3.12, not a hardcoded 3.11.
           python-version: "3.11"
       - name: Install uv
         run: pip install uv
