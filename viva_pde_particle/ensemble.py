@@ -1,40 +1,39 @@
 """Stochastic ensembles as process-bigraph documents, for batch compute such as compose-api (SLURM).
 
 A study's ensemble is thousands of short, independent trials. Running each trial as its own job would
-mean thousands of submissions. :class:`EnsembleRunner` instead runs one *trial function* over a block of
+mean thousands of submissions. An :class:`Ensemble` instead runs one *trial function* over a block of
 seeds inside a single Process, across the CPUs the job was given. A study then becomes a few dozen
 documents, one per block (:func:`ensemble_documents`).
 
-- **Trial function:** an importable callable named ``"module:function"``, called as
-  ``fn(seed, **params)`` and returning a list of floats. Example:
-  :func:`viva_pde_particle.benchmarks.fokker_planck.trial_rho`.
+- **One class per trial function:** a subclass of :class:`Ensemble` names its function in code, so a
+  document chooses a trial by its address and nothing in its config is imported. Examples:
+  :class:`FokkerPlanckEnsemble` (:func:`viva_pde_particle.benchmarks.fokker_planck.trial_rho`) and
+  :class:`ExampleEnsemble`. A new trial function needs a new subclass here.
+- **Trial function:** called as ``fn(seed, **params)``, returning a list of floats.
+- **Trial names:** callers still name a trial as ``"module:function"`` (:data:`ENSEMBLES`), which
+  :func:`ensemble_document` turns into its class's address; a name with no class is refused.
 - **Document:** a single ``ensemble`` Process writes ``seeds`` and ``values``, and a RAM emitter records
   them, so ``gather_emitter_results`` (what compose-api's runtime saves as ``results_*.pber``)
   returns them.
-- **Addresses:** fully qualified ``local:viva_pde_particle.ensemble.EnsembleRunner``, the form registry
-  checks accept. :func:`build_runner_core` registers our classes under those names.
+- **Addresses:** fully qualified, e.g. ``local:viva_pde_particle.ensemble.FokkerPlanckEnsemble``, the form
+  registry checks accept. :func:`build_runner_core` registers our classes under those names.
 """
 from __future__ import annotations
 
-import importlib
 import json
 import multiprocessing as mp
 import os
 import zipfile
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 from process_bigraph import Process
 
-ADDRESS = "local:viva_pde_particle.ensemble.EnsembleRunner"
+from viva_pde_particle.benchmarks.fokker_planck import trial_rho
 
-
-def resolve(spec: str):
-    """The callable named ``"package.module:function"``."""
-    module, _, name = spec.partition(":")
-    if not name:
-        raise ValueError(f"trial must be 'module:function', got {spec!r}")
-    return getattr(importlib.import_module(module), name)
+Trial = Callable[..., list]
+RAM_EMITTER = "process_bigraph.emitter.RAMEmitter"  # fully qualified, as registry checks require of every address
 
 
 def available_cpus() -> int:
@@ -51,38 +50,42 @@ def example_trial(seed: int, scale: float = 1.0) -> list[float]:
 
 
 def _call(args):
-    spec, seed, params = args
-    return [float(v) for v in resolve(spec)(seed, **params)]
+    fn, seed, params = args
+    return [float(v) for v in fn(seed, **params)]
 
 
-def run_trials(trial: str, params: dict, seeds, workers: int = 0) -> list[list[float]]:
-    """``trial`` for each seed, in order, on ``workers`` processes (0: every available CPU)."""
+def run_trials(trial: Trial | str, params: dict, seeds, workers: int = 0) -> list[list[float]]:
+    """``trial`` (a function, or the name of one in :data:`ENSEMBLES`) for each seed, in order, on
+    ``workers`` processes (0: every available CPU)."""
+    fn = ensemble_class(trial).trial if isinstance(trial, str) else trial
     seeds = [int(s) for s in seeds]
     workers = workers or available_cpus()
     if workers <= 1 or len(seeds) <= 1:
-        return [_call((trial, s, params)) for s in seeds]
+        return [_call((fn, s, params)) for s in seeds]
     with ProcessPoolExecutor(max_workers=min(workers, len(seeds)), mp_context=mp.get_context("spawn")) as pool:
-        return list(pool.map(_call, [(trial, s, params) for s in seeds], chunksize=max(1, len(seeds) // (4 * workers))))
+        return list(pool.map(_call, [(fn, s, params) for s in seeds], chunksize=max(1, len(seeds) // (4 * workers))))
 
 
-class EnsembleRunner(Process):
-    """Run a trial function over a block of seeds, once, at the first update.
+class Ensemble(Process):
+    """Run a subclass's trial function over a block of seeds, once, at the first update.
 
-    Config:
-    - ``trial``: ``"module:function"``.
+    A base class: each subclass sets ``trial``. Config:
     - ``params``: the function's keyword arguments, as a JSON string (any JSON value types).
     - ``seeds``: ``[first, last]``, inclusive.
     - ``workers``: process count, 0 for every CPU available.
     """
 
+    trial: Trial | None = None
+
     config_schema = {
-        "trial": "string",
         "params": {"_type": "string", "_default": "{}"},
         "seeds": "list[integer]",
         "workers": {"_type": "integer", "_default": 0},
     }
 
     def initialize(self, config):
+        if type(self).trial is None:
+            raise TypeError(f"{type(self).__name__} names no trial function; use one of {sorted(ENSEMBLES)}")
         first, last = config["seeds"]
         self.seed_list = list(range(int(first), int(last) + 1))
         self.done = False
@@ -97,20 +100,51 @@ class EnsembleRunner(Process):
         if self.done:
             return {}
         self.done = True
-        values = run_trials(self.config["trial"], json.loads(self.config["params"]), self.seed_list,
+        values = run_trials(type(self).trial, json.loads(self.config["params"]), self.seed_list,
                             self.config["workers"])
         return {"seeds": self.seed_list, "values": values}
 
 
-def ensemble_document(trial: str, params: dict, first: int, last: int, workers: int = 0) -> dict:
+class ExampleEnsemble(Ensemble):
+    """:func:`example_trial` over a block of seeds (tests and smoke runs)."""
+
+    trial = staticmethod(example_trial)
+
+
+class FokkerPlanckEnsemble(Ensemble):
+    """:func:`~viva_pde_particle.benchmarks.fokker_planck.trial_rho` over a block of seeds (Study C3)."""
+
+    trial = staticmethod(trial_rho)
+
+
+def _name(fn: Trial) -> str:
+    return f"{fn.__module__}:{fn.__name__}"
+
+
+ENSEMBLES: dict[str, type[Ensemble]] = {_name(cls.trial): cls for cls in (ExampleEnsemble, FokkerPlanckEnsemble)}
+"""Each trial function's ``"module:function"`` name, and the class that runs it."""
+
+
+def ensemble_class(trial: str | type[Ensemble]) -> type[Ensemble]:
+    """The :class:`Ensemble` subclass for a trial name (or the class itself)."""
+    if isinstance(trial, type) and issubclass(trial, Ensemble) and trial.trial is not None:
+        return trial
+    try:
+        return ENSEMBLES[trial]
+    except (KeyError, TypeError):
+        raise ValueError(f"no Ensemble runs trial {trial!r}; known: {sorted(ENSEMBLES)}") from None
+
+
+def ensemble_document(trial: str | type[Ensemble], params: dict, first: int, last: int, workers: int = 0) -> dict:
     """A composite config (``{"state": …}``) running ``trial`` for seeds ``first``…``last`` and emitting the results."""
+    cls = ensemble_class(trial)
     return {"state": {
         "seeds": [],
         "values": [],
         "ensemble": {
             "_type": "process",
-            "address": ADDRESS,
-            "config": {"trial": trial, "params": json.dumps(params), "seeds": [int(first), int(last)],
+            "address": f"local:{cls.__module__}.{cls.__name__}",
+            "config": {"params": json.dumps(params), "seeds": [int(first), int(last)],
                        "workers": int(workers)},
             "interval": 1.0,
             "inputs": {},
@@ -118,14 +152,14 @@ def ensemble_document(trial: str, params: dict, first: int, last: int, workers: 
         },
         "emitter": {
             "_type": "step",
-            "address": "local:ram-emitter",
+            "address": f"local:{RAM_EMITTER}",
             "config": {"emit": {"seeds": "list[integer]", "values": "list[list[float]]"}},
             "inputs": {"seeds": ["seeds"], "values": ["values"]},
         },
     }}
 
 
-def ensemble_documents(trial: str, params: dict, seeds: int, block: int, workers: int = 0) -> list[dict]:
+def ensemble_documents(trial: str | type[Ensemble], params: dict, seeds: int, block: int, workers: int = 0) -> list[dict]:
     """Seeds 1…``seeds`` in blocks of ``block``, one document each."""
     return [ensemble_document(trial, params, s, min(s + block - 1, seeds), workers) for s in range(1, seeds + 1, block)]
 
@@ -149,10 +183,9 @@ def build_runner_core():
         name = f"{cls.__module__}.{cls.__name__}"
         if name not in core.link_registry:
             core.register_link(name, cls)
-    if "viva_pde_particle.ensemble.EnsembleRunner" not in core.link_registry:
-        core.register_link("viva_pde_particle.ensemble.EnsembleRunner", EnsembleRunner)
-    if "ram-emitter" not in core.link_registry:
-        core.register_link("ram-emitter", RAMEmitter)
+    for name in (RAM_EMITTER, "ram-emitter"):  # the short name for documents written before the full one
+        if name not in core.link_registry:
+            core.register_link(name, RAMEmitter)
     return core
 
 

@@ -1,4 +1,4 @@
-"""Ensembles as documents (EnsembleRunner) and the compose-api runner contract (run <omex> -o <dir> -n <t>)."""
+"""Ensembles as documents (an Ensemble subclass per trial function) and the compose-api runner contract (run <omex> -o <dir> -n <t>)."""
 from __future__ import annotations
 
 import json
@@ -6,7 +6,13 @@ import json
 import pytest
 
 from viva_pde_particle import compose_runner
+from viva_pde_particle.benchmarks.fokker_planck import trial_rho
 from viva_pde_particle.ensemble import (
+    ENSEMBLES,
+    Ensemble,
+    ExampleEnsemble,
+    FokkerPlanckEnsemble,
+    build_runner_core,
     collect,
     ensemble_document,
     ensemble_documents,
@@ -19,6 +25,58 @@ def test_run_trials_in_order_serial_and_parallel():
     serial = run_trials("viva_pde_particle.ensemble:example_trial", {"scale": 2.0}, [3, 1, 2], workers=1)
     assert serial == [[6.0, 9.0], [2.0, 1.0], [4.0, 4.0]]
     assert run_trials("viva_pde_particle.ensemble:example_trial", {"scale": 2.0}, [3, 1, 2], workers=2) == serial
+
+
+def test_each_trial_function_has_its_own_class():
+    assert ENSEMBLES == {
+        "viva_pde_particle.ensemble:example_trial": ExampleEnsemble,
+        "viva_pde_particle.benchmarks.fokker_planck:trial_rho": FokkerPlanckEnsemble,
+    }
+    assert FokkerPlanckEnsemble.trial is trial_rho
+
+
+def test_the_document_names_the_trial_by_its_address_not_its_config():
+    doc = ensemble_document("viva_pde_particle.benchmarks.fokker_planck:trial_rho", {"test": "test4"}, 1, 4)
+    ensemble = doc["state"]["ensemble"]
+    assert ensemble["address"] == "local:viva_pde_particle.ensemble.FokkerPlanckEnsemble"
+    assert set(ensemble["config"]) == {"params", "seeds", "workers"}  # no function name to import
+    assert ensemble_document(FokkerPlanckEnsemble, {"test": "test4"}, 1, 4) == doc
+    assert doc["state"]["emitter"]["address"] == "local:process_bigraph.emitter.RAMEmitter"  # no short names
+
+
+@pytest.mark.parametrize("trial", ["os:system", "viva_pde_particle.ensemble:write_omex", "nonsense", Ensemble])
+def test_a_trial_with_no_class_is_refused(trial):
+    with pytest.raises(ValueError, match="no Ensemble runs trial"):
+        ensemble_document(trial, {}, 1, 2)
+    if isinstance(trial, str):
+        with pytest.raises(ValueError, match="no Ensemble runs trial"):
+            run_trials(trial, {}, [1])
+
+
+def test_the_classes_are_registered_by_their_full_names():
+    core = build_runner_core()
+    for cls in ENSEMBLES.values():
+        assert core.link_registry[f"viva_pde_particle.ensemble.{cls.__name__}"] is cls
+    assert "viva_pde_particle.ensemble.EnsembleRunner" not in core.link_registry  # the class that imported its config
+    assert core.link_registry["process_bigraph.emitter.RAMEmitter"] is core.link_registry["ram-emitter"]
+
+
+def test_a_document_with_the_short_emitter_name_still_runs(tmp_path):
+    doc = ensemble_document(ExampleEnsemble, {}, 1, 2, workers=1)
+    doc["state"]["emitter"]["address"] = "local:ram-emitter"
+    pbg = tmp_path / "experiment.pbg"
+    pbg.write_text(json.dumps(doc))
+    assert compose_runner.main(["run", str(pbg), "-o", str(tmp_path / "out"), "-n", "1"]) == 0
+    assert collect((tmp_path / "out").glob("results_*.pber"))[0] == [1, 2]
+
+
+def test_the_base_class_runs_nothing(tmp_path):
+    doc = ensemble_document(ExampleEnsemble, {}, 1, 2, workers=1)
+    doc["state"]["ensemble"]["address"] = "local:viva_pde_particle.ensemble.Ensemble"
+    pbg = tmp_path / "experiment.pbg"
+    pbg.write_text(json.dumps(doc))
+    with pytest.raises(TypeError, match="names no trial function"):
+        compose_runner.main(["run", str(pbg), "-o", str(tmp_path / "out"), "-n", "1"])
 
 
 def test_documents_cover_the_seeds_in_blocks():

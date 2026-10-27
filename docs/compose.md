@@ -39,7 +39,7 @@ only.
 
 ## Ensembles as documents
 
-A stochastic study is thousands of short trials. `viva_pde_particle.ensemble.EnsembleRunner` runs a
+A stochastic study is thousands of short trials. An `viva_pde_particle.ensemble.Ensemble` subclass runs a
 *trial function* over a block of seeds in one Process, using the CPUs the job was given (the affinity
 mask). A study is therefore a few dozen documents rather than thousands.
 
@@ -55,9 +55,14 @@ for i, d in enumerate(docs):
 seeds, values = collect(glob.glob("results/*/results_*.pber"))
 ```
 
-**Trial functions:** an importable `fn(seed, **params) -> list[float]`, for example
-`benchmarks.fokker_planck.trial_rho`. Documents use fully qualified `local:` addresses, which
-`ensemble.build_runner_core` registers.
+**Trial functions:** `fn(seed, **params) -> list[float]`, each run by its own `Ensemble` subclass, for example
+`FokkerPlanckEnsemble` for `benchmarks.fokker_planck.trial_rho`. The document names the class by its address,
+`local:viva_pde_particle.ensemble.FokkerPlanckEnsemble`, so a registry check of addresses (compose-api's) covers
+which trial runs, and nothing in a document's config is imported. Callers still name a trial `"module:function"`;
+`ensemble.ENSEMBLES` maps each name to its class, and a name with no class is refused. A new trial function needs a
+new subclass in `ensemble.py`. Documents use fully qualified `local:` addresses, the emitter's included
+(`local:process_bigraph.emitter.RAMEmitter`), which `ensemble.build_runner_core` registers; it still registers the
+short `ram-emitter` for older documents.
 
 **Block size:** a job has a 30-minute limit and 2 CPUs. At 3–7 s per Test 3 trial, 100–200 seeds per
 block fit.

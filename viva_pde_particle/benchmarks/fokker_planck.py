@@ -265,7 +265,7 @@ def channel_model(test: ChannelTest):
 def trial_rho(seed: int, test: str = "test3", dtau: float | None = None, tau: float | None = None,
               sample_times=None) -> list[float]:
     """One co-simulation trial of a test: ρ at the sample times (the channel node's cells in Tests 4–5, ρ̄ in
-    Test 3), flattened time-major. A trial function for :class:`viva_pde_particle.ensemble.EnsembleRunner`.
+    Test 3), flattened time-major. The trial function of :class:`viva_pde_particle.ensemble.FokkerPlanckEnsemble`.
 
     Defaults: the test's own Δτ and τ, sampled at τ only.
     """
