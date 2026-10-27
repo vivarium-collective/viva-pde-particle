@@ -41,6 +41,7 @@ def test_the_document_names_the_trial_by_its_address_not_its_config():
     assert ensemble["address"] == "local:viva_pde_particle.ensemble.FokkerPlanckEnsemble"
     assert set(ensemble["config"]) == {"params", "seeds", "workers"}  # no function name to import
     assert ensemble_document(FokkerPlanckEnsemble, {"test": "test4"}, 1, 4) == doc
+    assert doc["state"]["emitter"]["address"] == "local:process_bigraph.emitter.RAMEmitter"  # no short names
 
 
 @pytest.mark.parametrize("trial", ["os:system", "viva_pde_particle.ensemble:write_omex", "nonsense", Ensemble])
@@ -57,6 +58,16 @@ def test_the_classes_are_registered_by_their_full_names():
     for cls in ENSEMBLES.values():
         assert core.link_registry[f"viva_pde_particle.ensemble.{cls.__name__}"] is cls
     assert "viva_pde_particle.ensemble.EnsembleRunner" not in core.link_registry  # the class that imported its config
+    assert core.link_registry["process_bigraph.emitter.RAMEmitter"] is core.link_registry["ram-emitter"]
+
+
+def test_a_document_with_the_short_emitter_name_still_runs(tmp_path):
+    doc = ensemble_document(ExampleEnsemble, {}, 1, 2, workers=1)
+    doc["state"]["emitter"]["address"] = "local:ram-emitter"
+    pbg = tmp_path / "experiment.pbg"
+    pbg.write_text(json.dumps(doc))
+    assert compose_runner.main(["run", str(pbg), "-o", str(tmp_path / "out"), "-n", "1"]) == 0
+    assert collect((tmp_path / "out").glob("results_*.pber"))[0] == [1, 2]
 
 
 def test_the_base_class_runs_nothing(tmp_path):

@@ -60,8 +60,9 @@ seeds, values = collect(glob.glob("results/*/results_*.pber"))
 `local:viva_pde_particle.ensemble.FokkerPlanckEnsemble`, so a registry check of addresses (compose-api's) covers
 which trial runs, and nothing in a document's config is imported. Callers still name a trial `"module:function"`;
 `ensemble.ENSEMBLES` maps each name to its class, and a name with no class is refused. A new trial function needs a
-new subclass in `ensemble.py`. Documents use fully qualified `local:` addresses, which
-`ensemble.build_runner_core` registers.
+new subclass in `ensemble.py`. Documents use fully qualified `local:` addresses, the emitter's included
+(`local:process_bigraph.emitter.RAMEmitter`), which `ensemble.build_runner_core` registers; it still registers the
+short `ram-emitter` for older documents.
 
 **Block size:** a job has a 30-minute limit and 2 CPUs. At 3–7 s per Test 3 trial, 100–200 seeds per
 block fit.

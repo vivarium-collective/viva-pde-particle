@@ -33,6 +33,7 @@ from process_bigraph import Process
 from viva_pde_particle.benchmarks.fokker_planck import trial_rho
 
 Trial = Callable[..., list]
+RAM_EMITTER = "process_bigraph.emitter.RAMEmitter"  # fully qualified, as registry checks require of every address
 
 
 def available_cpus() -> int:
@@ -151,7 +152,7 @@ def ensemble_document(trial: str | type[Ensemble], params: dict, first: int, las
         },
         "emitter": {
             "_type": "step",
-            "address": "local:ram-emitter",
+            "address": f"local:{RAM_EMITTER}",
             "config": {"emit": {"seeds": "list[integer]", "values": "list[list[float]]"}},
             "inputs": {"seeds": ["seeds"], "values": ["values"]},
         },
@@ -182,8 +183,9 @@ def build_runner_core():
         name = f"{cls.__module__}.{cls.__name__}"
         if name not in core.link_registry:
             core.register_link(name, cls)
-    if "ram-emitter" not in core.link_registry:
-        core.register_link("ram-emitter", RAMEmitter)
+    for name in (RAM_EMITTER, "ram-emitter"):  # the short name for documents written before the full one
+        if name not in core.link_registry:
+            core.register_link(name, RAMEmitter)
     return core
 
 
