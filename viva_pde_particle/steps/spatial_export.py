@@ -51,7 +51,8 @@ class SpatialExport(Step):
         return {"bundles": "list[string]"}
 
     def outputs(self):
-        return {"exported": "list[map]"}
+        # overwrite: a step fired again leaves its latest records, not the earlier ones with these appended
+        return {"exported": "overwrite[list[map]]"}
 
     def update(self, state):
         return {"exported": export(state.get("bundles") or [])}

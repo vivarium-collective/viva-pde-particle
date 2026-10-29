@@ -89,6 +89,51 @@ def test_export_adds_the_extension_to_a_bundle_without_one(tmp_path):
     assert add_web_extension(path)["surfaces"]["cell"]["triangles"] == "web/cell/triangles"  # idempotent
 
 
+def test_spatial_export_fired_again_leaves_only_its_latest_records(tmp_path):
+    """compose-api's generic `step-outputs-replace` check: a step fired twice leaves its latest result."""
+    from process_bigraph import Composite, Process, allocate_core
+
+    from viva_pde_particle.steps import SpatialExport
+
+    paths = [tmp_path / "a.fenics", tmp_path / "b.fenics"]
+    for path in paths:
+        _bundle(path)
+
+    class Bundles(Process):
+        """Names a different bundle each tick, so the export step fires each time."""
+
+        config_schema = {"paths": "list[string]"}
+
+        def initialize(self, config):
+            self.ticks = 0
+
+        def inputs(self):
+            return {}
+
+        def outputs(self):
+            return {"bundles": "overwrite[list[string]]"}
+
+        def update(self, state, interval):
+            self.ticks += 1
+            return {"bundles": [self.config["paths"][self.ticks % 2]]}
+
+    core = allocate_core()
+    core.register_link("Bundles", Bundles)
+    core.register_link("SpatialExport", SpatialExport)
+    doc = {
+        "bundles": [str(paths[0])],
+        "exported": [],
+        "names": {"_type": "process", "address": "local:Bundles", "interval": 1.0,
+                  "config": {"paths": [str(p) for p in paths]}, "outputs": {"bundles": ["bundles"]}},
+        "export": {"_type": "step", "address": "local:SpatialExport",
+                   "inputs": {"bundles": ["bundles"]}, "outputs": {"exported": ["exported"]}},
+    }
+    composite = Composite({"state": doc}, core=core)
+    composite.run(2.0)
+    (record,) = composite.state["exported"]
+    assert record["path"] == str(paths[0])  # the second tick named a.fenics again
+
+
 def test_the_compose_runner_announces_a_recorded_bundle(tmp_path, monkeypatch):
     pytest.importorskip("smoldyn")
     from process_bigraph import events
