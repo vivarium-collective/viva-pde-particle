@@ -754,7 +754,8 @@ Steps (adapters):
 `RegionMean` and `RegionTotal` hand a grid field to a well-mixed model. Vᵢ is the FV control volume, the grid's
 element volume or `V_full · volume_fraction` (pass the PDE's own `domain.volume_fraction`). It is the measure the
 FV engine conserves: its diagonal is `s = V/V_full` and its diffusion operator has zero row and column sums, so
-Σ Vᵢ·cᵢ over the domain is constant under diffusion, while a plain node average is not. An empty region raises.
+Σ Vᵢ·cᵢ over the domain is constant under diffusion, while a plain node average is not. An empty region raises; the
+output stores start at NaN (`initial_state`) until the first update.
 
 Assembly:
 - **Geometry compilers:** `geometry.realize_fenics`, `geometry.vcell_fv.VCellFVRealization`.

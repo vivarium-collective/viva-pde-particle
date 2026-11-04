@@ -49,7 +49,7 @@ def test_mean_is_volume_weighted_with_a_volume_fraction():
     mask = np.zeros(g.shape, bool)
     vf = np.zeros(g.shape)
     c = np.full(g.shape, 100.0)  # outside the region
-    for (j, i), f, v in zip([(0, 0), (0, 1), (1, 1), (2, 2)], [0.25, 0.5, 1.0, 0.8], [1.0, 2.0, 3.0, 4.0]):
+    for (j, i), f, v in zip([(0, 0), (0, 1), (1, 1), (2, 2)], [0.25, 0.5, 1.0, 0.8], [1.0, 2.0, 3.0, 4.0], strict=True):
         mask[j, i], vf[j, i], c[j, i] = True, f, v
     region = {"mask": mask, "volume_fraction": vf}
     # Σ fᵢ·cᵢ = 0.25 + 1.0 + 3.0 + 3.2 = 7.45; Σ fᵢ = 2.55; V_full cancels in the mean, not in the total
@@ -80,10 +80,25 @@ def test_empty_or_inconsistent_region_raises(cls):
         _step(cls, g, {"mask": np.zeros(g.shape, bool)})
     with pytest.raises(ValueError, match="region volume must be positive"):
         _step(cls, g, {"mask": np.ones(g.shape, bool), "volume_fraction": np.zeros(g.shape)})
-    with pytest.raises(ValueError, match="region mask has 4 nodes"):
+    with pytest.raises(ValueError, match="region needs a mask"):
+        _step(cls, g, {"volume_fraction": np.ones(g.shape)})
+    with pytest.raises(ValueError, match=r"region mask has shape \(2, 2\)"):
         _step(cls, g, {"mask": np.ones((2, 2), bool)})
-    with pytest.raises(ValueError, match="region volume_fraction has 4 nodes"):
+    with pytest.raises(ValueError, match=r"region volume_fraction has shape \(2, 2\)"):
         _step(cls, g, {"mask": np.ones(g.shape, bool), "volume_fraction": np.ones((2, 2))})
+    with pytest.raises(ValueError, match="volume_fraction must be >= 0"):
+        _step(cls, g, {"mask": np.ones(g.shape, bool), "volume_fraction": np.where(np.eye(3, dtype=bool), -1.0, 1.0)})
+
+
+def test_shapes_are_checked_not_just_sizes():
+    g = CartesianGrid((0, 0), (10, 8), (11, 9))  # array shape (9, 11)
+    mask = np.zeros(g.shape, bool)
+    mask[0, :3] = True
+    with pytest.raises(ValueError, match=r"region mask has shape \(11, 9\)"):
+        _step(RegionMean, g, {"mask": mask.reshape(11, 9)})  # same size, wrong layout
+    step = _step(RegionMean, g, {"mask": mask})
+    with pytest.raises(ValueError, match=r"field 'A' has shape \(11, 9\)"):
+        step.convert({"A": np.ones((11, 9))})
 
 
 def test_composite_domain_mean_times_volume_is_the_conserved_total():
@@ -104,16 +119,18 @@ def test_composite_domain_mean_times_volume_is_the_conserved_total():
                 "inputs": {"fields": ["fields"], "external_conc": ["external_conc"]},
                 "outputs": {"fields": ["fields"]}},
     }
-    adapters = [("domain_mean", RegionMean, domain, "mean_conc", "tnf_domain_mean"),
-                ("domain_total", RegionTotal, domain, "molecules", "tnf_domain_molecules"),
-                ("cell_mean", RegionMean, {**domain, "mask": cell}, "mean_conc", "tnf_at_cell")]
-    for node, cls, region, port, store in adapters:
-        config = {"grid": g.to_config(), "species": ["TNF"], "region": region}
-        doc[node] = {"_type": "step", "address": f"local:{cls.__name__}", "config": config,
+    # the cell's region as JSON lists, the way a submitted document carries it
+    cell_region = {"mask": cell.tolist(), "volume_fraction": domain["volume_fraction"].tolist()}
+    adapters = [("domain_mean", "RegionMean", domain, "mean_conc", "tnf_domain_mean"),
+                ("domain_total", "RegionTotal", domain, "molecules", "tnf_domain_molecules"),
+                ("cell_mean", "RegionMean", cell_region, "mean_conc", "tnf_at_cell")]
+    for node, name, region, port, store in adapters:
+        doc[node] = {"_type": "step", "address": f"local:{name}",
+                     "config": {"grid": g.to_config(), "species": ["TNF"], "region": region},
                      "inputs": {"fields": ["fields"]}, "outputs": {port: [store]}}
-        # Steps do not run at initialization, and a map store only updates keys it already has
-        doc[store] = cls(config=config, core=allocate_core()).convert({"TNF": u0})
-    sim = Composite({"state": doc}, core=build_core())
+    sim = Composite({"state": doc}, core=build_core())  # output stores unseeded: the steps' initial_state fills them
+    for store in ("tnf_domain_mean", "tnf_domain_molecules", "tnf_at_cell"):
+        assert np.isnan(sim.state[store]["TNF"])  # nothing computed yet, and visibly so
 
     w = g.full_volume * domain["volume_fraction"]
     volume = float(w[domain["mask"]].sum())

@@ -27,7 +27,8 @@ node i by its FV control volume Vᵢ, the measure ``FVReactionDiffusion`` conser
 | ``RegionMean`` | ``mean_conc`` (µM) | Σᵢ Vᵢ·cᵢ / Σᵢ Vᵢ over the region |
 | ``RegionTotal`` | ``molecules`` | Σᵢ Vᵢ·cᵢ · 602.214 over the region |
 
-Seed their output store with ``convert(initial fields)``: a map store updates only the keys it already has.
+A map store updates only the keys it already has, so each declares ``initial_state()``: NaN per species until
+its first update. A builder that has the initial fields can seed the store with ``convert(...)`` instead.
 
 **Timing.** A Step runs right after the process updates of a time point are applied, before
 the next process intervals start. So the converted concentrations are exactly what the PDE
@@ -223,8 +224,8 @@ class _RegionReduction(Step):
 
     Config:
         grid: ``{origin, size, num}``.
-        species: fields to reduce; a species missing from ``fields`` gets no output.
-        region: ``{"mask"[, "volume_fraction"]}``, grid-shaped arrays, the shape of
+        species: fields to reduce; a species missing from ``fields`` gets no output (its store keeps its value).
+        region: ``{"mask"[, "volume_fraction"]}``, arrays of the grid's shape, as in
             ``FVReactionDiffusion``'s ``domain``. ``mask`` (bool) selects the nodes. ``volume_fraction``
             is the engine's own (``domain.volume_fraction``) when it has one, so node i weighs
             Vᵢ = V_full·fᵢ; without it, Vᵢ is the grid's element volume. Keep the region inside the
@@ -241,16 +242,16 @@ class _RegionReduction(Step):
         self.grid = CartesianGrid.from_config(config["grid"])
         self.species = list(config["species"])
         region = config["region"]
-        mask = np.asarray(region["mask"], dtype=bool)
-        if mask.size != self.grid.num_elements:
-            raise ValueError(f"region mask has {mask.size} nodes, the grid {self.grid.num_elements}")
+        if region.get("mask") is None:
+            raise ValueError("region needs a mask")
+        mask = self._grid_array(region["mask"], bool, "region mask")
         vf = region.get("volume_fraction")
         if vf is None:
             volumes = self.grid.element_volumes
         else:
-            vf = np.asarray(vf, dtype=float)
-            if vf.size != self.grid.num_elements:
-                raise ValueError(f"region volume_fraction has {vf.size} nodes, the grid {self.grid.num_elements}")
+            vf = self._grid_array(vf, float, "region volume_fraction")
+            if not np.all(vf >= 0):
+                raise ValueError("region volume_fraction must be >= 0")
             volumes = self.grid.full_volume * vf
         self._nodes = np.flatnonzero(mask.ravel())
         if self._nodes.size == 0:
@@ -261,13 +262,21 @@ class _RegionReduction(Step):
         if not self.volume > 0:
             raise ValueError(f"region volume must be positive, got {self.volume}")
 
+    def _grid_array(self, value, dtype, name: str) -> np.ndarray:
+        a = np.asarray(value, dtype=dtype)
+        if a.shape != self.grid.shape:
+            raise ValueError(f"{name} has shape {a.shape}, the grid {self.grid.shape}")
+        return a
+
     def inputs(self):
         return {"fields": "map[array[float]]"}
 
+    def initial_state(self):
+        return {port: {s: float("nan") for s in self.species} for port in self.outputs()}
+
     def integrals(self, fields: dict) -> dict[str, float]:
         """Σᵢ Vᵢ·cᵢ over the region (µM·µm³) for each species present in ``fields``."""
-        n = self.grid.num_elements
-        return {s: float(self._weights @ np.asarray(fields[s], dtype=float).reshape(n)[self._nodes])
+        return {s: float(self._weights @ self._grid_array(fields[s], float, f"field {s!r}").ravel()[self._nodes])
                 for s in self.species if s in fields}
 
 
