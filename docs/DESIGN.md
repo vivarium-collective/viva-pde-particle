@@ -748,6 +748,14 @@ Steps (adapters):
 | `PositionsToMeshConcentration` | `particle_positions` → `particle_conc` (µM, DOFs; exact P1 load) | `grid`, `mesh`, `species` |
 | `MeshToGridField` | `field_dofs` → `fields` (µM, grid; P·u) | `grid`, `mesh`, `species` |
 | `ExtendGridField` | `fields` → `lookup_fields` (extended into the exterior band) | `grid`, `species`, `staircase`: `fold` |
+| `RegionMean` | `fields` → `mean_conc` (µM, one per species: Σ Vᵢ·cᵢ / Σ Vᵢ over the region) | `grid`, `species`, `region`: `mask`[, `volume_fraction`] |
+| `RegionTotal` | `fields` → `molecules` (one per species: Σ Vᵢ·cᵢ · 602.214 over the region) | as `RegionMean` |
+
+`RegionMean` and `RegionTotal` hand a grid field to a well-mixed model. Vᵢ is the FV control volume, the grid's
+element volume or `V_full · volume_fraction` (pass the PDE's own `domain.volume_fraction`). It is the measure the
+FV engine conserves: its diagonal is `s = V/V_full` and its diffusion operator has zero row and column sums, so
+Σ Vᵢ·cᵢ over the domain is constant under diffusion, while a plain node average is not. An empty region raises; the
+output stores start at NaN (`initial_state`) until the first update.
 
 Assembly:
 - **Geometry compilers:** `geometry.realize_fenics`, `geometry.vcell_fv.VCellFVRealization`.
@@ -789,7 +797,7 @@ No engine imports another. The PDE engines share only `kinetics.reaction_rates`,
 | Smoldyn process | `viva_pde_particle/processes/smoldyn_hybrid.py` |
 | Splitting coordinator | `viva_pde_particle/processes/splitting.py` |
 | Coarse/phase-shifted scheduling of any process (Phase 7c) | `viva_pde_particle/processes/stepper.py` |
-| Adapter Steps, both directions (Phase 7a, 7b) | `viva_pde_particle/steps/transfer.py` |
+| Adapter Steps, both directions (Phase 7a, 7b), and region reductions for well-mixed models | `viva_pde_particle/steps/transfer.py` |
 | Bit-exact refactor regression | `scripts/component_regression.py` |
 | FEniCSx Q1 process | `viva_pde_particle/processes/fenicsx_reaction_diffusion.py` |
 | FEniCSx P1 mesh process | `viva_pde_particle/processes/fenicsx_mesh_reaction_diffusion.py` |
