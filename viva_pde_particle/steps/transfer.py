@@ -1,4 +1,4 @@
-"""Adapters between the particle and PDE engines, as Steps (Phase 7a, 7b).
+"""Adapters between the particle and PDE engines (Phase 7a, 7b), and from the PDE to well-mixed models, as Steps.
 
 **PDE → particles (7b).** ``MeshToGridField`` samples a P1 field onto the Cartesian grid that
 the particle engine's rate lookups use (u_grid = P·u). Structured engines (FV, Q1) already
@@ -17,6 +17,17 @@ engine's output:
 | ``GridCountsToConcentration`` | ``particle_counts`` (grid histogram) | the same Cartesian grid (FV, FEniCSx Q1) | count / (V_element · 602.214) |
 | ``GridCountsToMeshConcentration`` | ``particle_counts`` | P1 mesh DOFs | (Pᵀ · counts) / (M_L · 602.214) |
 | ``PositionsToMeshConcentration`` | ``particle_positions`` | P1 mesh DOFs | (Σ_p φ_j(x_p)) / (M_L,j · 602.214) |
+
+**PDE → well-mixed.** ``RegionMean`` and ``RegionTotal`` reduce grid fields over a region (a grid-shaped bool
+mask, e.g. a ``VCellFVRealization.node_mask``) to one scalar per species, for a well-mixed model to read. Both weigh
+node i by its FV control volume Vᵢ, the measure ``FVReactionDiffusion`` conserves:
+
+| Step | output | rule |
+|---|---|---|
+| ``RegionMean`` | ``mean_conc`` (µM) | Σᵢ Vᵢ·cᵢ / Σᵢ Vᵢ over the region |
+| ``RegionTotal`` | ``molecules`` | Σᵢ Vᵢ·cᵢ · 602.214 over the region |
+
+Seed their output store with ``convert(initial fields)``: a map store updates only the keys it already has.
 
 **Timing.** A Step runs right after the process updates of a time point are applied, before
 the next process intervals start. So the converted concentrations are exactly what the PDE
@@ -205,3 +216,88 @@ class MeshToGridField(Step):
 
     def update(self, state):
         return {"fields": self.convert(state.get("field_dofs") or {})}
+
+
+class _RegionReduction(Step):
+    """Grid fields → one volume-weighted integral per species over a region of the grid.
+
+    Config:
+        grid: ``{origin, size, num}``.
+        species: fields to reduce; a species missing from ``fields`` gets no output.
+        region: ``{"mask"[, "volume_fraction"]}``, grid-shaped arrays, the shape of
+            ``FVReactionDiffusion``'s ``domain``. ``mask`` (bool) selects the nodes. ``volume_fraction``
+            is the engine's own (``domain.volume_fraction``) when it has one, so node i weighs
+            Vᵢ = V_full·fᵢ; without it, Vᵢ is the grid's element volume. Keep the region inside the
+            engine's ``domain.mask``: nodes outside it are frozen, not part of the PDE.
+
+    Vᵢ is the FV control volume: the engine's diagonal is ``s_i = Vᵢ/V_full`` and its diffusion operator has
+    zero row and column sums, so diffusion conserves Σᵢ Vᵢ·cᵢ exactly. A plain node average would overweight the
+    half/quarter/eighth boundary elements and any partial volumes.
+    """
+
+    config_schema = {"grid": "map", "species": "list[string]", "region": "map"}
+
+    def initialize(self, config):
+        self.grid = CartesianGrid.from_config(config["grid"])
+        self.species = list(config["species"])
+        region = config["region"]
+        mask = np.asarray(region["mask"], dtype=bool)
+        if mask.size != self.grid.num_elements:
+            raise ValueError(f"region mask has {mask.size} nodes, the grid {self.grid.num_elements}")
+        vf = region.get("volume_fraction")
+        if vf is None:
+            volumes = self.grid.element_volumes
+        else:
+            vf = np.asarray(vf, dtype=float)
+            if vf.size != self.grid.num_elements:
+                raise ValueError(f"region volume_fraction has {vf.size} nodes, the grid {self.grid.num_elements}")
+            volumes = self.grid.full_volume * vf
+        self._nodes = np.flatnonzero(mask.ravel())
+        if self._nodes.size == 0:
+            raise ValueError("region mask selects no grid node")
+        self._weights = np.asarray(volumes, dtype=float).ravel()[self._nodes]
+        #: Σᵢ Vᵢ over the region (µm³)
+        self.volume = float(self._weights.sum())
+        if not self.volume > 0:
+            raise ValueError(f"region volume must be positive, got {self.volume}")
+
+    def inputs(self):
+        return {"fields": "map[array[float]]"}
+
+    def integrals(self, fields: dict) -> dict[str, float]:
+        """Σᵢ Vᵢ·cᵢ over the region (µM·µm³) for each species present in ``fields``."""
+        n = self.grid.num_elements
+        return {s: float(self._weights @ np.asarray(fields[s], dtype=float).reshape(n)[self._nodes])
+                for s in self.species if s in fields}
+
+
+class RegionMean(_RegionReduction):
+    """Grid fields → volume-weighted mean concentration over a region (µM): Σᵢ Vᵢ·cᵢ / Σᵢ Vᵢ.
+
+    Config as :class:`_RegionReduction` (``grid``, ``species``, ``region``).
+    """
+
+    def outputs(self):
+        return {"mean_conc": "map[overwrite[float]]"}
+
+    def convert(self, fields: dict) -> dict[str, float]:
+        return {s: v / self.volume for s, v in self.integrals(fields).items()}
+
+    def update(self, state):
+        return {"mean_conc": self.convert(state.get("fields") or {})}
+
+
+class RegionTotal(_RegionReduction):
+    """Grid fields → molecules in a region: Σᵢ Vᵢ·cᵢ · 602.214 (µM·µm³ → molecules).
+
+    Config as :class:`_RegionReduction` (``grid``, ``species``, ``region``).
+    """
+
+    def outputs(self):
+        return {"molecules": "map[overwrite[float]]"}
+
+    def convert(self, fields: dict) -> dict[str, float]:
+        return {s: v * MOLECULES_PER_UM3_PER_UM for s, v in self.integrals(fields).items()}
+
+    def update(self, state):
+        return {"molecules": self.convert(state.get("fields") or {})}
