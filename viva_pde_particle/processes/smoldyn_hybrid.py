@@ -76,6 +76,10 @@ class SmoldynHybrid(Process):
         dt: PDE time step (s).
         step_multiplier: k; the Smoldyn time step is k·dt (vcell-fvsolver
             ``SMOLDYN_STEP_MULTIPLIER``) and must match ``config_text``.
+        emit_positions: also report molecule positions on the ``particle_positions`` port.
+            The port is always declared (the interface does not depend on config); the flag only
+            decides whether the ``(n, dim)`` arrays are copied out each tick, so a composite that
+            does not wire the port pays nothing.
     """
 
     config_schema = {
@@ -117,13 +121,11 @@ class SmoldynHybrid(Process):
         return {"fields": "map[array[float]]"}
 
     def outputs(self):
-        out = {
+        return {
             "particle_counts": "map[overwrite[array[float]]]",
             "particle_totals": "map[overwrite[float]]",
+            "particle_positions": "map[overwrite[array[float]]]",
         }
-        if self.config["emit_positions"]:
-            out["particle_positions"] = "map[overwrite[array[float]]]"
-        return out
 
     def counts(self) -> dict[str, np.ndarray]:
         return {

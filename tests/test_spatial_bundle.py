@@ -1,4 +1,4 @@
-"""Phase 8a: spatial results bundles (vcell-fenics format) and the SpatialRecorder."""
+"""Phase 8a: spatial results bundles (vcell-fenics format) and the recorders."""
 from __future__ import annotations
 
 import numpy as np

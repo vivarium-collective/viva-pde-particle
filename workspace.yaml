@@ -6,7 +6,7 @@ package_path: viva_pde_particle
 
 # Workbench run history: the xarray/zarr emitter (the workbench default). It records scalar
 # stores such as particle_totals. Spatial fields and particle positions go to vcell-fenics
-# results bundles instead (viva_pde_particle.viz3d: attach_recorder / SpatialRecorder).
+# results bundles instead (viva_pde_particle.viz3d: attach_recorder / GridRecorder, MeshRecorder).
 runtime:
   default_emitter: xarray
 

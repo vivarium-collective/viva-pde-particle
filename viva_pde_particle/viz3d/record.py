@@ -12,7 +12,8 @@ Each membrane (name → (m, 3, 3) triangles) gets every field, sampled at its ve
 ``<field>_<membrane>`` (VCell's convention): trilinear interpolation on the grid, the coincident DOF on
 a mesh. Particle positions are recorded when given.
 
-:func:`attach_recorder` adds a :class:`~viva_pde_particle.processes.recorder.SpatialRecorder` to a
+:func:`attach_recorder` adds a :class:`~viva_pde_particle.processes.recorder.GridRecorder` or
+:class:`~viva_pde_particle.processes.recorder.MeshRecorder` to a
 hybrid document; :func:`write_native_bundle` writes a native VCell trajectory.
 """
 from __future__ import annotations
@@ -114,7 +115,7 @@ def _smoldyn_config(node: dict) -> dict:
 
 def attach_recorder(doc: dict, out_dir, output_dt: float, *, membranes: dict | None = None, region: str = "cell",
                     particles: bool = True, source: str = "") -> dict:
-    """Add a ``recorder`` (SpatialRecorder) to a hybrid document, recording every ``output_dt``.
+    """Add a ``recorder`` (GridRecorder or MeshRecorder, by layout) to a hybrid document, recording every ``output_dt``.
 
     Works for the grid, mesh, VCell-geometry and splitting documents of ``composites.hybrid``.
     With ``particles``, the particle engine also emits positions, recorded into the bundle.
@@ -124,6 +125,7 @@ def attach_recorder(doc: dict, out_dir, output_dt: float, *, membranes: dict | N
     if "mesh" in cfg:
         layout = {"kind": "mesh", "mesh": cfg["mesh"]}
         port = "field_dofs"
+        address = "local:MeshRecorder"
     else:
         layout = {"kind": "grid", "grid": cfg["grid"]}
         mask = (cfg.get("domain") or {}).get("mask")
@@ -134,6 +136,7 @@ def attach_recorder(doc: dict, out_dir, output_dt: float, *, membranes: dict | N
             if "staircase" in lookup:
                 layout["fold"] = np.asarray(lookup["staircase"]["fold"])
         port = "fields"
+        address = "local:GridRecorder"
     intervals = [n["interval"] for n in doc.values() if isinstance(n, dict) and n.get("_type") == "process"]
     base = min(intervals)
     every = int(round(output_dt / base))
@@ -150,7 +153,7 @@ def attach_recorder(doc: dict, out_dir, output_dt: float, *, membranes: dict | N
         inputs["particle_positions"] = ["particle_positions"]
     doc["recorder"] = {
         "_type": "process",
-        "address": "local:SpatialRecorder",
+        "address": address,
         "config": {"out_dir": str(out_dir), "base_dt": base, "every": every, "layout": layout,
                    "species": list(cfg["pde"]["species"]), "particle_species": pspecies,
                    "membranes": {k: np.asarray(v, dtype=float) for k, v in (membranes or {}).items()},
