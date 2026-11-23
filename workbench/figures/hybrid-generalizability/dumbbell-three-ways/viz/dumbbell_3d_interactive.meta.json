@@ -1,0 +1,7 @@
+{
+  "title": "Interactive: four solver paths",
+  "caption": "Time slider, run selector, membrane clipping, slices and particles (three.js).",
+  "simulations": "One seed per path, conversion (20,000 A \u2192 B, k = 0.5), recorded every 0.25 s to 2 s into vcell-fenics results bundles (sims/render_3d.py); the native bundle has fields only.",
+  "interpretation": "Explore any path at any recorded time.",
+  "source_run_id": "55d6093988df442ca4d11e3ca5cae26c"
+}

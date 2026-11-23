@@ -16,17 +16,34 @@
 </head>
 <body>
 <main class="study-page">
+
+
 <header class="study-header">
-  <div style="display:flex; align-items:center; gap:14px; justify-content:space-between;">
+  <div style="display:flex; align-items:flex-start; gap:14px; justify-content:space-between;">
+  <div class="study-head-main" style="min-width:0; flex:1 1 auto">
   <div style="display:flex; align-items:center; gap:12px; min-width:0; flex-wrap:wrap">
   <h1 class="study-title" style="margin:0">
-    <span class="study-name" id="study-name" data-slug="coupling-interval-convergence" data-study-kind="computational" title="coupling-interval-convergence">Coupling error vs Smoldyn step multiplier, co-simulation (two schemes) and native VCell</span>
+    <span class="study-name" id="study-name" data-slug="coupling-interval-convergence" data-study-kind="computational" title="coupling-interval-convergence" data-edit-kind="study" data-edit-field="title" data-edit-value="Coupling error vs Smoldyn step multiplier, co-simulation (two schemes) and native VCell" data-edit-label="Title">Coupling error vs Smoldyn step multiplier, co-simulation (two schemes) and native VCell</span>
     
   </h1>
+  </div>
+  <p id="study-question-headline" class="study-question-headline" title="How does the error of the lagged explicit coupling grow with the coupling interval
+k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
+fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
+(&#34;start-of-interval&#34;) do better or worse?
+" data-edit-kind="study" data-edit-field="question" data-edit-value="How does the error of the lagged explicit coupling grow with the coupling interval
+k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
+fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
+(&#34;start-of-interval&#34;) do better or worse?
+" data-edit-multiline data-edit-label="Question"><span class="q-glyph">Q</span> <span class="study-question-headline-text">How does the error of the lagged explicit coupling grow with the coupling interval
+k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
+fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
+(&#34;start-of-interval&#34;) do better or worse?
+</span></p>
+  </div>
+  <span class="study-header-actions" style="display:inline-flex; gap:10px; flex-shrink:0; align-items:center;">
     
     <span id="study-axis-markers" data-slug="coupling-interval-convergence" style="display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap"></span>
-  </div>
-  <span class="study-header-actions" style="display:inline-flex; gap:6px; flex-shrink:0; align-items:center;">
     
     
     
@@ -49,12 +66,6 @@
 
 
 
-
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> How does the error of the lagged explicit coupling grow with the coupling interval
-k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
-fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
-(&#34;start-of-interval&#34;) do better or worse?
-</p>
 
 <nav class="study-tabs" aria-label="Study sections">
   
@@ -84,10 +95,18 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
   </button>
   
   <span class="study-dl study-export-wrap" style="margin-left:auto; align-self:center; position:relative; display:inline-flex">
-    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Download this study's figures or a runnable notebook">↓ Export ▾</button>
-    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:200px;padding:4px">
-      <button type="button" id="study-dl-figures" role="menuitem" class="study-jump-item" onclick="window._vivStudyFiguresFromCard(event, 'coupling-interval-convergence')">Download figures</button>
-      <button type="button" id="study-dl-notebook" role="menuitem" class="study-jump-item" onclick="window._vivStudyNotebookFromCard(event, 'coupling-interval-convergence', 'cosim-vs-embedded-hybrid')">Download notebook</button>
+    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Shortcuts — open in the browser or download (report, notebook, figures)">Shortcuts ▾</button>
+    
+    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:190px;padding:4px">
+      <div class="study-export-sec">Report</div>
+      <button type="button" id="study-report-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportOpen(event, 'coupling-interval-convergence')">Open in browser</button>
+      <button type="button" id="study-report-dl" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportDownload(event, 'coupling-interval-convergence')">Download HTML</button>
+      <div class="study-export-sec">Notebook</div>
+      <button type="button" id="study-nb-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookOpen(event, 'coupling-interval-convergence')">Open in browser</button>
+      <button type="button" id="study-dl-notebook" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookFromCard(event, 'coupling-interval-convergence', 'cosim-vs-embedded-hybrid')">Download .ipynb</button>
+      <div class="study-export-sec">Figures</div>
+      <button type="button" id="study-fig-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresOpen(event, 'coupling-interval-convergence')">Open in browser</button>
+      <button type="button" id="study-dl-figures" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresFromCard(event, 'coupling-interval-convergence')">Download (zip)</button>
     </div>
   </span>
 </nav>
@@ -100,8 +119,18 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 .study-kind-tag.study-kind-biological{background:#ecfdf5;color:#065f46}
 .study-kind-tag.study-kind-computational{background:#eff6ff;color:#1e40af}
 .study-kind-tag.study-kind-theoretical{background:#faf5ff;color:#6b21a8}
-.study-question-headline{margin:6px 0 0 0;font-size:1.05em;line-height:1.5;color:#1e293b;font-family:Georgia,"Times New Roman",serif}
+.study-question-headline{margin:2px 0 0 0;font-size:0.85em;line-height:1.35;color:#475569;font-family:Georgia,"Times New Roman",serif;padding-right:40px}
+/* Park the inline-edit ✎ in a reserved right gutter so it never lands over the
+   question text (the pencil is an absolutely-positioned child of the editable). */
+.study-question-headline>.ie-pencil{right:6px;top:1px}
+h1.study-title .study-name.ie-editable{padding-right:36px}
+h1.study-title .study-name>.ie-pencil{right:4px;top:6px}
 .study-question-headline .q-glyph{display:inline-block;font-size:0.78em;font-weight:700;font-family:ui-monospace,monospace;color:#64748b;background:#f1f5f9;padding:1px 7px;border-radius:4px;margin-right:6px;vertical-align:middle}
+/* Study Export menu — styled to match the investigation-level ↓ Export menu
+   exactly: grey uppercase section labels + full-width, left-aligned, stacked
+   text-link items (not inline pills). Mirrors walkthrough.js `_sec` + `_mi`. */
+.study-export-sec{padding:6px 8px 2px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8}
+.study-export-item{display:block;width:100%;text-align:left;border:none;background:transparent}
 .status-detail-panel{margin:0;padding:2px 0;background:transparent;border:none;border-radius:0;font-size:0.92em}
 .status-detail-row{display:flex;align-items:center;gap:8px;padding:3px 0}
 .status-detail-axis{min-width:140px;color:#475569;font-size:0.9em}
@@ -239,6 +268,9 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 /* findings */
 .findings-section{padding:14px 16px;background:#fafbff;border:1px solid #c7d2fe;border-radius:8px}
 .finding-card{padding:12px 14px;margin:10px 0;border:1px solid #e2e8f0;border-left:5px solid #6366f1;border-radius:6px;background:#fff}
+/* Brief highlight when an item is reached via a ?ev= evidence deep-link. */
+.ev-flash{animation:ev-flash-kf 1.9s ease-out;scroll-margin-top:12px}
+@keyframes ev-flash-kf{0%{box-shadow:0 0 0 3px #fbbf24}70%{box-shadow:0 0 0 3px rgba(251,191,36,0.45)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}
 .finding-card.finding-status-confirms{border-left-color:#10b981}
 .finding-card.finding-status-partial{border-left-color:#f59e0b}
 .finding-card.finding-status-contradicts{border-left-color:#dc2626}
@@ -547,7 +579,7 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">How does the error of the lagged explicit coupling grow with the coupling interval
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="claim" data-edit-value="" data-edit-multiline data-edit-label="Claim">How does the error of the lagged explicit coupling grow with the coupling interval
 k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
 fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 (&#34;start-of-interval&#34;) do better or worse?
@@ -559,12 +591,20 @@ fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Background</h2>
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item">How does the error of the lagged explicit coupling grow with the coupling interval
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="question" data-edit-value="How does the error of the lagged explicit coupling grow with the coupling interval
+k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
+fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
+(&#34;start-of-interval&#34;) do better or worse?
+" data-edit-multiline data-edit-label="Question">How does the error of the lagged explicit coupling grow with the coupling interval
 k·Δt (Smoldyn steps once per k PDE steps)? Does the co-simulation reproduce
 fvsolver&#39;s coupling error, and does process-bigraph&#39;s plain scheduling
 (&#34;start-of-interval&#34;) do better or worse?
 </span></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item">Explicit lagged coupling is first order in k·Δt. The co-sim &#34;fvsolver&#34; mode applies the
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="hypothesis" data-edit-value="Explicit lagged coupling is first order in k·Δt. The co-sim &#34;fvsolver&#34; mode applies the
+same lag as the embedded solver, so it has the same error. &#34;start-of-interval&#34; reads
+the field at the start of the Smoldyn step instead of at T+(k−1)Δt, so its error
+differs; its sign and size are to be measured.
+" data-edit-multiline data-edit-label="Hypothesis">Explicit lagged coupling is first order in k·Δt. The co-sim &#34;fvsolver&#34; mode applies the
 same lag as the embedded solver, so it has the same error. &#34;start-of-interval&#34; reads
 the field at the start of the Smoldyn step instead of at T+(k−1)Δt, so its error
 differs; its sign and size are to be measured.
@@ -575,7 +615,12 @@ differs; its sign and size are to be measured.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Model &amp; approach</h2>
-      <p class="ctr-text">A4 model with k = 2/(µM·s), 20,000 A, Δt = 0.005, t = 1.6 s, 64 seeds per
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="objective" data-edit-value="A4 model with k = 2/(µM·s), 20,000 A, Δt = 0.005, t = 1.6 s, 64 seeds per
+configuration, step multiplier k ∈ {1, 2, 4, 8, 16, 32}.
+The error is the max over time of |mean surviving fraction − continuum limit|
+(A continuous, Δt/10). The order is fitted for k ≥ 4, above the sampling floor
+(~5·10⁻⁴).
+" data-edit-multiline data-edit-label="Objective">A4 model with k = 2/(µM·s), 20,000 A, Δt = 0.005, t = 1.6 s, 64 seeds per
 configuration, step multiplier k ∈ {1, 2, 4, 8, 16, 32}.
 The error is the max over time of |mean surviving fraction − continuum limit|
 (A continuous, Δt/10). The order is fitted for k ≥ 4, above the sampling floor
@@ -596,7 +641,8 @@ The error is the max over time of |mean surviving fraction − continuum limit|
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Result</h2>
-      <p class="ctr-text">The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
+      
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="result" data-edit-value="" data-edit-multiline data-edit-label="Result">The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
 </p>
       
       
@@ -632,11 +678,12 @@ The error is the max over time of |mean surviving fraction − continuum limit|
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-01">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-01].statement" data-edit-value="The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
+" data-edit-multiline data-edit-label="Finding F-01">The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
 </span>
             
             <span class="finding-chip">via <code>cosim-fvsolver-mode-first-order</code></span>
@@ -660,10 +707,13 @@ The error is the max over time of |mean surviving fraction − continuum limit|
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -687,11 +737,12 @@ The error is the max over time of |mean surviving fraction − continuum limit|
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-02">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">The co-simulation reproduces the embedded solver&#39;s coupling error, not just its results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-02].statement" data-edit-value="The co-simulation reproduces the embedded solver&#39;s coupling error, not just its results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
+" data-edit-multiline data-edit-label="Finding F-02">The co-simulation reproduces the embedded solver&#39;s coupling error, not just its results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
 </span>
             
             <span class="finding-chip">via <code>cosim-reproduces-native-coupling-error</code></span>
@@ -715,10 +766,13 @@ The error is the max over time of |mean surviving fraction − continuum limit|
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -742,11 +796,12 @@ The error is the max over time of |mean surviving fraction − continuum limit|
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-03">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">Plain process-bigraph &#34;start-of-interval&#34; scheduling roughly halves the coupling error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver mode; fitted order 0.80), because reading the field at the start of the particle step partly cancels the PDE side&#39;s lag. vcell-fvsolver&#39;s fixed ordering cannot use this without changing the solver.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-03].statement" data-edit-value="Plain process-bigraph &#34;start-of-interval&#34; scheduling roughly halves the coupling error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver mode; fitted order 0.80), because reading the field at the start of the particle step partly cancels the PDE side&#39;s lag. vcell-fvsolver&#39;s fixed ordering cannot use this without changing the solver.
+" data-edit-multiline data-edit-label="Finding F-03">Plain process-bigraph &#34;start-of-interval&#34; scheduling roughly halves the coupling error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver mode; fitted order 0.80), because reading the field at the start of the particle step partly cancels the PDE side&#39;s lag. vcell-fvsolver&#39;s fixed ordering cannot use this without changing the solver.
 </span>
             
             <span class="finding-chip">via <code>cosim-fvsolver-mode-first-order</code></span>
@@ -770,10 +825,13 @@ The error is the max over time of |mean surviving fraction − continuum limit|
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -840,12 +898,23 @@ The error is the max over time of |mean surviving fraction − continuum limit|
 
 
 <section class="study-tab-panel" data-kind="compose" id="panel-compose" hidden>
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
-    <h2 class="overview-label" style="margin:0">Model composition</h2>
-    
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'coupling-interval-convergence', 'cosim-vs-embedded-hybrid')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+  
+  <div class="model-subtabs" role="tablist" aria-label="Model sections">
+    <button type="button" class="model-subtab active" data-modelsub="composition" role="tab" aria-selected="true" onclick="_setModelSubtab('composition')">Composition</button>
+    <button type="button" class="model-subtab" data-modelsub="loom" role="tab" aria-selected="false" onclick="_setModelSubtab('loom')">Loom</button>
+    <button type="button" class="model-subtab" data-modelsub="variants" role="tab" aria-selected="false" onclick="_setModelSubtab('variants')">Variants <span class="model-subtab-count">1</span></button>
+    <button type="button" class="model-subtab" data-modelsub="interventions" role="tab" aria-selected="false" onclick="_setModelSubtab('interventions')">Interventions</button>
+    <button type="button" class="model-subtab" data-modelsub="readouts" role="tab" aria-selected="false" onclick="_setModelSubtab('readouts')">Readouts</button>
   </div>
 
+  
+  <div class="model-subpanel" data-modelsubpanel="loom" hidden>
+    <div id="model-loom-mount" class="model-loom-mount">
+      <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading the interactive model diagram…</span></div>
+    </div>
+  </div>
+
+  <div class="model-subpanel active" data-modelsubpanel="composition">
   
   
   <div id="model-composite-cards" class="model-composite-cards" data-study="coupling-interval-convergence"
@@ -926,68 +995,104 @@ The error is the max over time of |mean surviving fraction − continuum limit|
 
   
   
-  <div class="overview-section" id="conditions-section">
-    <h3>Conditions <span class="muted" style="font-size:0.85em;font-weight:normal">— what we set up to test it</span></h3>
-    <p class="muted" style="font-size:0.88em">The experimental knobs: how variants perturb the baseline, and which model settings still need a human-set value.</p>
+  
 
+  
+
+  
+  
+  
+  
+  </div>
+
+  
+  <div class="model-subpanel" data-modelsubpanel="variants" hidden>
+  <div class="overview-section" id="study-variants-section">
+    <p class="msub-intro">A <strong>variant</strong> is a copy of a baseline model with a few parameters changed, run and compared against the baseline. Everything else stays fixed.</p>
     
-    <div class="cond-block">
-      <div class="cond-block-title">Variants <span class="muted" style="font-weight:normal;font-size:0.85em">(2)</span></div>
-      <table class="cond-table">
-        <thead><tr><th>Variant</th><th>Composite / base</th><th>Parameter overrides</th><th>Notes</th></tr></thead>
-        <tbody>
+    <div class="var-list">
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">step-multiplier-sweep</code>
+            <span class="var-base">based on the baseline</span>
+          </div>
           
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>step-multiplier-sweep</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>native-vcell-arm</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-        </tbody>
-      </table>
+          <div class="var-overrides">
+            <span class="ovr-chip"><span class="ovr-k">k</span><span class="ovr-eq">=</span><span class="ovr-v">2.0</span></span><span class="ovr-chip"><span class="ovr-k">dt</span><span class="ovr-eq">=</span><span class="ovr-v">0.005</span></span><span class="ovr-chip"><span class="ovr-k">step_multiplier</span><span class="ovr-eq">=</span><span class="ovr-v">16</span></span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="step-multiplier-sweep" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="step-multiplier-sweep" title="Delete variant" aria-label="Delete variant step-multiplier-sweep">✕</button>
+        </div>
+      </div>
+      
     </div>
     
-
+    
+    <form class="study-variant-add-form msub-addcard" onsubmit="return _submitStudyVariantAdd(this)">
+      <div class="msub-addcard-title">Add a variant</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="hi-dnaa" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field">
+          <span class="msub-lbl">Based on</span>
+          <select name="base_composite" class="msub-input">
+            <option value="bimolecular-k2">bimolecular-k2</option>
+          </select>
+          <span class="msub-hint">the baseline this variant perturbs</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Parameter overrides</span>
+          <input name="overrides" placeholder='{"k_synth": 2.0}' class="msub-input mono">
+          <span class="msub-hint">JSON object of parameter → value; leave blank for none</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add variant</button>
+        <span class="study-variant-add-status msub-status"></span>
+      </div>
+    </form>
     
   </div>
-  
+  </div>
 
   
+  <div class="model-subpanel" data-modelsubpanel="interventions" hidden>
+  <div class="overview-section" id="study-interventions-section">
+    <p class="msub-intro">An <strong>intervention</strong> is a named, described perturbation applied in this study (e.g. a knockout) — the conceptual change you are testing, documented alongside the model.</p>
+    
+    <div class="msub-empty">No interventions yet. Add one below.</div>
+    
+    <form class="study-intervention-add-form msub-addcard" onsubmit="return _submitStudyInterventionAdd(this)">
+      <div class="msub-addcard-title">Add an intervention</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="knockout-dnaA" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Description</span>
+          <input name="description" placeholder="what the intervention does" class="msub-input">
+          <span class="msub-hint">a short, human-readable summary</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add intervention</button>
+        <span class="study-intervention-add-status msub-status"></span>
+      </div>
+    </form>
+  </div>
+  </div>
 
   
-  
-  
-  
-
-
-
-  
+  <div class="model-subpanel" data-modelsubpanel="readouts" hidden>
   <div class="overview-section" id="model-readouts-section">
     <h3>Readouts</h3>
 
@@ -1005,6 +1110,7 @@ The error is the max over time of |mean surviving fraction − continuum limit|
     </div>
 
     
+  </div>
   </div>
   </div>
 
@@ -1026,7 +1132,6 @@ The error is the max over time of |mean surviving fraction − continuum limit|
   <button type="button" id="study-run-current-spec" class="action-btn" title="Run this study's CURRENT baseline spec (POST /api/study-run-baseline) as a brand-new run">▶ Run current spec</button>
   <button type="button" id="study-reproduce" class="btn-mini" title="Replay this study's most recent run's RECORDED manifest verbatim (POST /api/study-reproduce) — ignores any study.yaml edits made since">↻ Reproduce</button>
   
-  <button type="button" id="study-run-composite" class="btn-mini" title="Dispatch a specific process-bigraph composite_id to the remote compute backend (pbg-native multi_node/mbp, or the Nextflow campaign path) — advanced, independent of this study's own pinned baseline">⚙ Dispatch composite</button>
 </div>
 
 <div class="overview-section" id="simulations-section">
@@ -1041,6 +1146,12 @@ The error is the max over time of |mean surviving fraction − continuum limit|
 <div class="overview-section" id="results-section">
   
   <div id="results-summary" data-study="coupling-interval-convergence" style="margin:0 0 16px"></div>
+
+  
+  <div id="gate-results-section" data-study="coupling-interval-convergence" style="margin:0 0 22px" hidden>
+    <h4>Gate results <span class="muted" style="font-size:0.8em;font-weight:normal">— each acceptance test's value, graded from run data</span></h4>
+    <div id="gate-results"></div>
+  </div>
 
   <h4>Latest run preview <span class="muted" style="font-size:0.8em;font-weight:normal">— downsampled sparkline + first/last/min/max per store</span></h4>
   <div id="results-preview" data-study="coupling-interval-convergence">
@@ -1471,7 +1582,21 @@ pass_if: {"high": 1.25, "low": 0.8, "op": "range", "provenance": {"kind": "theor
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5" data-edit-kind="study" data-edit-field="conclusion" data-edit-value="Results (results/metrics.json, 2026-10-03):
+- **Both fvsolver-semantics solvers are first order** in the coupling interval:
+  fitted order 1.23 (co-sim fvsolver mode) and 1.07 (native).
+- **Their errors match:** at k = 16 (0.08 s) the co-sim error is 0.0110 and native
+  0.0104 (ratio 1.05). The co-simulation reproduces the embedded solver&#39;s coupling
+  error, not only its results.
+- **&#34;start-of-interval&#34; coupling** (plain process-bigraph scheduling) roughly halves the
+  error at large k: 0.0049 at k = 16 and 0.0110 at k = 32, against 0.0110 and 0.0218 for
+  fvsolver mode. Reading the field at the start of the particle step appears to partly
+  cancel the PDE side&#39;s lag. vcell-fvsolver&#39;s hybrid loop fixes one ordering, so that
+  choice is not available there without changing the solver;
+  higher-order splitting is Investigation B.
+- **Native crash:** VCell&#39;s native solver crashed at k = 32 (Smoldyn step 0.16 s, equal to
+  the output interval), so native results stop at k = 16.
+" data-edit-multiline data-edit-label="Conclusion"><p>Results (results/metrics.json, 2026-10-03):</p>
 <ul>
 <li><strong>Both fvsolver-semantics solvers are first order</strong> in the coupling interval:
 fitted order 1.23 (co-sim fvsolver mode) and 1.07 (native).</li>
@@ -1530,6 +1655,51 @@ the output interval), so native results stop at k = 16.</li>
   </div>
 
   
+  <div class="overview-section" id="study-findings-authoring">
+    <h2 class="overview-label">Record a finding</h2>
+    
+    <ul class="synthesis-list" style="margin:0 0 12px">
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-01" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The lagged explicit coupling is first order in the coupling interval k·Δt on both fvsolver-semantics solvers: fitted order (k ≥ 4) is 1.23 (co-sim fvsolver mode) and 1.07 (native), both inside the theoretical [0.7, 1.5] band.
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-02" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The co-simulation reproduces the embedded solver&#39;s coupling error, not just its results: at k = 16 (0.08 s) the co-sim fvsolver-mode error is 0.0110 and the native error 0.0104, a ratio of 1.05 (band [0.8, 1.25]).
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-03" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>Plain process-bigraph &#34;start-of-interval&#34; scheduling roughly halves the coupling error at large k (0.0049 at k=16, 0.0110 at k=32 vs 0.0110 and 0.0218 for fvsolver mode; fitted order 0.80), because reading the field at the start of the particle step partly cancels the PDE side&#39;s lag. vcell-fvsolver&#39;s fixed ordering cannot use this without changing the solver.
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+    </ul>
+    
+    <form class="study-finding-add-form" onsubmit="return _submitStudyFindingAdd(this)" style="display:flex;flex-direction:column;gap:8px;max-width:680px">
+      <textarea name="statement" required rows="2" placeholder="What did this study show? (one sentence)"
+                style="font-size:0.9em;padding:6px 8px;resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="font-size:0.78em;color:#475569">Status<br>
+          <select name="status" style="font-size:0.82em;padding:3px 6px">
+            <option value="novel">novel</option>
+            <option value="confirms">confirms literature</option>
+            <option value="partial">partial</option>
+            <option value="contradicts">contradicts</option>
+          </select></label>
+        <label style="font-size:0.78em;color:#475569;flex:1;min-width:200px">Why / mechanism (optional)<br>
+          <input name="explanation" style="width:100%;font-size:0.82em;padding:3px 6px"></label>
+        <button type="submit" class="action-btn" style="font-size:0.82em">+ Add finding</button>
+      </div>
+    </form>
+    <div class="study-finding-add-status muted" style="font-size:0.8em;margin-top:4px"></div>
+  </div>
+
+  
   <div class="overview-section"><h2 class="overview-label">Follow-ups &amp; decisions</h2>
 
     
@@ -1551,11 +1721,13 @@ the output interval), so native results stop at k = 16.</li>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "ef2a5d2960f7fc840037cd9989cba0754faf7334", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/ef2a5d2960f7fc840037cd9989cba0754faf7334", "branch": "main", "lockfile": "uv.lock@ef37c826fcee", "generated_at": "2026-10-28 01:28 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main/workspace", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "58b8ad470c52a0d462189961da09e39bc924b02d", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/58b8ad470c52a0d462189961da09e39bc924b02d", "branch": "main", "lockfile": "uv.lock@3377ebfb521f", "generated_at": "2026-11-23 01:02 UTC"} };</script>
 <script src="/viva-pde-particle/workbench/assets/data-source.js"></script>
+<script src="/viva-pde-particle/workbench/assets/backend-features.js"></script>
 <script src="/viva-pde-particle/workbench/assets/toast.js"></script>
 <script>
 window._studyName = "coupling-interval-convergence";
+window.__STUDY_INVESTIGATION__ = "cosim-vs-embedded-hybrid";  // owning investigation (feedback save routing)
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
@@ -1683,7 +1855,14 @@ window._seedFollowupProposal = _seedFollowupProposal;
 <script src="/viva-pde-particle/workbench/assets/checklist-select.js"></script>
 <script src="/viva-pde-particle/workbench/assets/progress-track.js"></script>
 <script src="/viva-pde-particle/workbench/assets/comparison-view.js"></script>
+<!-- The backend launch plugin's script (remote-pinned dispatch + the
+     "Dispatch composite" panel), quarantined out of study-detail.js. Loaded
+     BEFORE it: study-detail.js calls window.SmsLaunch.mount() while it loads,
+     and runs local-only when the file is absent. -->
+<script src="/viva-pde-particle/workbench/assets/sms-launch.js"></script>
 <script src="/viva-pde-particle/workbench/assets/study-detail.js"></script>
+<script src="/viva-pde-particle/workbench/assets/study-feedback.js"></script>
+<script src="/viva-pde-particle/workbench/assets/inline-edit.js"></script>
 <script>
 // Re-assert the refresh-aware seed handlers AFTER study-detail.js (which
 // defines its own navigate-away _seedFollowupStudy). The embedded
@@ -1693,7 +1872,7 @@ window._seedFollowupProposal = _seedFollowupProposal;
 </script>
 <script>
 (function () {
-  // Task 8: the Configure & Run mount and the remote-run (smsvpctest) panel
+  // Task 8: the Configure & Run mount and the remote-run panel
   // were both removed from the Simulate tab — launching now lives entirely
   // in the header buttons (Reproduce / Run current spec). This block used
   // to also mount ConfigureRun into the (now-deleted) mount div and, in an

@@ -16,17 +16,37 @@
 </head>
 <body>
 <main class="study-page">
+
+
 <header class="study-header">
-  <div style="display:flex; align-items:center; gap:14px; justify-content:space-between;">
+  <div style="display:flex; align-items:flex-start; gap:14px; justify-content:space-between;">
+  <div class="study-head-main" style="min-width:0; flex:1 1 auto">
   <div style="display:flex; align-items:center; gap:12px; min-width:0; flex-wrap:wrap">
   <h1 class="study-title" style="margin:0">
-    <span class="study-name" id="study-name" data-slug="sphere-cosim-vs-native" data-study-kind="computational" title="sphere-cosim-vs-native">Same ball, two discretizations: native VCell (Cartesian + membrane numerics) vs co-simulation (body-fitted P1)</span>
+    <span class="study-name" id="study-name" data-slug="sphere-cosim-vs-native" data-study-kind="computational" title="sphere-cosim-vs-native" data-edit-kind="study" data-edit-field="title" data-edit-value="Same ball, two discretizations: native VCell (Cartesian + membrane numerics) vs co-simulation (body-fitted P1)" data-edit-label="Title">Same ball, two discretizations: native VCell (Cartesian + membrane numerics) vs co-simulation (body-fitted P1)</span>
     
   </h1>
+  </div>
+  <p id="study-question-headline" class="study-question-headline" title="On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+- Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
+  staircase geometrically, but numerically uses local tangent-plane projections and
+  Voronoi neighbours.
+- The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
+" data-edit-kind="study" data-edit-field="question" data-edit-value="On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+- Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
+  staircase geometrically, but numerically uses local tangent-plane projections and
+  Voronoi neighbours.
+- The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
+" data-edit-multiline data-edit-label="Question"><span class="q-glyph">Q</span> <span class="study-question-headline-text">On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+- Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
+  staircase geometrically, but numerically uses local tangent-plane projections and
+  Voronoi neighbours.
+- The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
+</span></p>
+  </div>
+  <span class="study-header-actions" style="display:inline-flex; gap:10px; flex-shrink:0; align-items:center;">
     
     <span id="study-axis-markers" data-slug="sphere-cosim-vs-native" style="display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap"></span>
-  </div>
-  <span class="study-header-actions" style="display:inline-flex; gap:6px; flex-shrink:0; align-items:center;">
     
     
     
@@ -49,13 +69,6 @@
 
 
 
-
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
-- Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
-  staircase geometrically, but numerically uses local tangent-plane projections and
-  Voronoi neighbours.
-- The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
-</p>
 
 <nav class="study-tabs" aria-label="Study sections">
   
@@ -85,10 +98,18 @@
   </button>
   
   <span class="study-dl study-export-wrap" style="margin-left:auto; align-self:center; position:relative; display:inline-flex">
-    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Download this study's figures or a runnable notebook">↓ Export ▾</button>
-    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:200px;padding:4px">
-      <button type="button" id="study-dl-figures" role="menuitem" class="study-jump-item" onclick="window._vivStudyFiguresFromCard(event, 'sphere-cosim-vs-native')">Download figures</button>
-      <button type="button" id="study-dl-notebook" role="menuitem" class="study-jump-item" onclick="window._vivStudyNotebookFromCard(event, 'sphere-cosim-vs-native', 'hybrid-generalizability')">Download notebook</button>
+    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Shortcuts — open in the browser or download (report, notebook, figures)">Shortcuts ▾</button>
+    
+    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:190px;padding:4px">
+      <div class="study-export-sec">Report</div>
+      <button type="button" id="study-report-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportOpen(event, 'sphere-cosim-vs-native')">Open in browser</button>
+      <button type="button" id="study-report-dl" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportDownload(event, 'sphere-cosim-vs-native')">Download HTML</button>
+      <div class="study-export-sec">Notebook</div>
+      <button type="button" id="study-nb-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookOpen(event, 'sphere-cosim-vs-native')">Open in browser</button>
+      <button type="button" id="study-dl-notebook" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookFromCard(event, 'sphere-cosim-vs-native', 'hybrid-generalizability')">Download .ipynb</button>
+      <div class="study-export-sec">Figures</div>
+      <button type="button" id="study-fig-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresOpen(event, 'sphere-cosim-vs-native')">Open in browser</button>
+      <button type="button" id="study-dl-figures" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresFromCard(event, 'sphere-cosim-vs-native')">Download (zip)</button>
     </div>
   </span>
 </nav>
@@ -101,8 +122,18 @@
 .study-kind-tag.study-kind-biological{background:#ecfdf5;color:#065f46}
 .study-kind-tag.study-kind-computational{background:#eff6ff;color:#1e40af}
 .study-kind-tag.study-kind-theoretical{background:#faf5ff;color:#6b21a8}
-.study-question-headline{margin:6px 0 0 0;font-size:1.05em;line-height:1.5;color:#1e293b;font-family:Georgia,"Times New Roman",serif}
+.study-question-headline{margin:2px 0 0 0;font-size:0.85em;line-height:1.35;color:#475569;font-family:Georgia,"Times New Roman",serif;padding-right:40px}
+/* Park the inline-edit ✎ in a reserved right gutter so it never lands over the
+   question text (the pencil is an absolutely-positioned child of the editable). */
+.study-question-headline>.ie-pencil{right:6px;top:1px}
+h1.study-title .study-name.ie-editable{padding-right:36px}
+h1.study-title .study-name>.ie-pencil{right:4px;top:6px}
 .study-question-headline .q-glyph{display:inline-block;font-size:0.78em;font-weight:700;font-family:ui-monospace,monospace;color:#64748b;background:#f1f5f9;padding:1px 7px;border-radius:4px;margin-right:6px;vertical-align:middle}
+/* Study Export menu — styled to match the investigation-level ↓ Export menu
+   exactly: grey uppercase section labels + full-width, left-aligned, stacked
+   text-link items (not inline pills). Mirrors walkthrough.js `_sec` + `_mi`. */
+.study-export-sec{padding:6px 8px 2px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8}
+.study-export-item{display:block;width:100%;text-align:left;border:none;background:transparent}
 .status-detail-panel{margin:0;padding:2px 0;background:transparent;border:none;border-radius:0;font-size:0.92em}
 .status-detail-row{display:flex;align-items:center;gap:8px;padding:3px 0}
 .status-detail-axis{min-width:140px;color:#475569;font-size:0.9em}
@@ -240,6 +271,9 @@
 /* findings */
 .findings-section{padding:14px 16px;background:#fafbff;border:1px solid #c7d2fe;border-radius:8px}
 .finding-card{padding:12px 14px;margin:10px 0;border:1px solid #e2e8f0;border-left:5px solid #6366f1;border-radius:6px;background:#fff}
+/* Brief highlight when an item is reached via a ?ev= evidence deep-link. */
+.ev-flash{animation:ev-flash-kf 1.9s ease-out;scroll-margin-top:12px}
+@keyframes ev-flash-kf{0%{box-shadow:0 0 0 3px #fbbf24}70%{box-shadow:0 0 0 3px rgba(251,191,36,0.45)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}
 .finding-card.finding-status-confirms{border-left-color:#10b981}
 .finding-card.finding-status-partial{border-left-color:#f59e0b}
 .finding-card.finding-status-contradicts{border-left-color:#dc2626}
@@ -548,7 +582,7 @@
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="claim" data-edit-value="" data-edit-multiline data-edit-label="Claim">On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
 - Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
   staircase geometrically, but numerically uses local tangent-plane projections and
   Voronoi neighbours.
@@ -561,13 +595,22 @@
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Background</h2>
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item">On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="question" data-edit-value="On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
+- Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
+  staircase geometrically, but numerically uses local tangent-plane projections and
+  Voronoi neighbours.
+- The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
+" data-edit-multiline data-edit-label="Question">On a curved domain (a ball), how do the native VCell hybrid and the co-simulation compare?
 - Native VCell uses analytic geometry on its Cartesian volume grid: the membrane is a
   staircase geometrically, but numerically uses local tangent-plane projections and
   Voronoi neighbours.
 - The co-simulation uses a body-fitted P1 mesh coupled through a background grid.
 </span></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item">Both are consistent discretizations of the same problem, so they should agree to within
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="hypothesis" data-edit-value="Both are consistent discretizations of the same problem, so they should agree to within
+sampling plus discretization error. VCell&#39;s geometry handling is mature, and the
+comparison measures which discretization represents this geometry and coupling better at
+comparable resolution.
+" data-edit-multiline data-edit-label="Hypothesis">Both are consistent discretizations of the same problem, so they should agree to within
 sampling plus discretization error. VCell&#39;s geometry handling is mature, and the
 comparison measures which discretization represents this geometry and coupling better at
 comparable resolution.
@@ -578,7 +621,12 @@ comparable resolution.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Model &amp; approach</h2>
-      <p class="ctr-text">Box [0, 9]³ with Δ = 0.25 µm (37³). Ball centre (4.5, 4.5, 4.5), R = 4 µm, 0.5 µm clear of
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="objective" data-edit-value="Box [0, 9]³ with Δ = 0.25 µm (37³). Ball centre (4.5, 4.5, 4.5), R = 4 µm, 0.5 µm clear of
+the box walls, so the box-wall creation defect (vcell-fvsolver#24) cannot act.
+Co-sim mesh h = 0.8 µm. 8 seeds per solver.
+- Conversion A_p → B_f (k = 0.5 /s, 20,000 A).
+- Exchange A_p ⇌ B_f with field-dependent creation in the cell (k1 = 1, k2 = 0.5, B₀ = 0.2 µM).
+" data-edit-multiline data-edit-label="Objective">Box [0, 9]³ with Δ = 0.25 µm (37³). Ball centre (4.5, 4.5, 4.5), R = 4 µm, 0.5 µm clear of
 the box walls, so the box-wall creation defect (vcell-fvsolver#24) cannot act.
 Co-sim mesh h = 0.8 µm. 8 seeds per solver.
 - Conversion A_p → B_f (k = 0.5 /s, 20,000 A).
@@ -599,7 +647,8 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Result</h2>
-      <p class="ctr-text">At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
+      
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="result" data-edit-value="" data-edit-multiline data-edit-label="Result">At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
 </p>
       
       
@@ -640,11 +689,12 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-01">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-01].statement" data-edit-value="At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
+" data-edit-multiline data-edit-label="Finding F-01">At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
 </span>
             
             <span class="finding-chip">via <code>native-represents-ball-volume</code></span>
@@ -668,10 +718,13 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -695,11 +748,12 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-02">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">For the conversion case the two discretizations agree: surviving A matches to max two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers conserving A + B to under 1%.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-02].statement" data-edit-value="For the conversion case the two discretizations agree: surviving A matches to max two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers conserving A + B to under 1%.
+" data-edit-multiline data-edit-label="Finding F-02">For the conversion case the two discretizations agree: surviving A matches to max two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers conserving A + B to under 1%.
 </span>
             
             <span class="finding-chip">via <code>conversion-agrees</code></span>
@@ -723,10 +777,13 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -750,11 +807,12 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-contradicts">
+      <div class="finding-card finding-kind-computational finding-status-contradicts" id="finding-F-03">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✗</span>
-            <span class="finding-claim finding-statement">The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1 (b2b_exchange_a_totals_max_z, band &lt; 4.0), with native A ending 8.1% below the co-sim (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim&#39;s +0.51%. Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac = 0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn&#39;s centre-inside test skips cells that partly overlap the curved compartment). Native fixes: re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in every overlapping cell.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-03].statement" data-edit-value="The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1 (b2b_exchange_a_totals_max_z, band &lt; 4.0), with native A ending 8.1% below the co-sim (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim&#39;s +0.51%. Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac = 0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn&#39;s centre-inside test skips cells that partly overlap the curved compartment). Native fixes: re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in every overlapping cell.
+" data-edit-multiline data-edit-label="Finding F-03">The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1 (b2b_exchange_a_totals_max_z, band &lt; 4.0), with native A ending 8.1% below the co-sim (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim&#39;s +0.51%. Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac = 0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn&#39;s centre-inside test skips cells that partly overlap the curved compartment). Native fixes: re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in every overlapping cell.
 </span>
             
             <span class="finding-chip">via <code>exchange-agrees</code></span>
@@ -778,10 +836,13 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -848,12 +909,23 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
 
 
 <section class="study-tab-panel" data-kind="compose" id="panel-compose" hidden>
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
-    <h2 class="overview-label" style="margin:0">Model composition</h2>
-    
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'sphere-cosim-vs-native', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+  
+  <div class="model-subtabs" role="tablist" aria-label="Model sections">
+    <button type="button" class="model-subtab active" data-modelsub="composition" role="tab" aria-selected="true" onclick="_setModelSubtab('composition')">Composition</button>
+    <button type="button" class="model-subtab" data-modelsub="loom" role="tab" aria-selected="false" onclick="_setModelSubtab('loom')">Loom</button>
+    <button type="button" class="model-subtab" data-modelsub="variants" role="tab" aria-selected="false" onclick="_setModelSubtab('variants')">Variants <span class="model-subtab-count">2</span></button>
+    <button type="button" class="model-subtab" data-modelsub="interventions" role="tab" aria-selected="false" onclick="_setModelSubtab('interventions')">Interventions</button>
+    <button type="button" class="model-subtab" data-modelsub="readouts" role="tab" aria-selected="false" onclick="_setModelSubtab('readouts')">Readouts</button>
   </div>
 
+  
+  <div class="model-subpanel" data-modelsubpanel="loom" hidden>
+    <div id="model-loom-mount" class="model-loom-mount">
+      <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading the interactive model diagram…</span></div>
+    </div>
+  </div>
+
+  <div class="model-subpanel active" data-modelsubpanel="composition">
   
   
   <div id="model-composite-cards" class="model-composite-cards" data-study="sphere-cosim-vs-native"
@@ -928,68 +1000,121 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
 
   
   
-  <div class="overview-section" id="conditions-section">
-    <h3>Conditions <span class="muted" style="font-size:0.85em;font-weight:normal">— what we set up to test it</span></h3>
-    <p class="muted" style="font-size:0.88em">The experimental knobs: how variants perturb the baseline, and which model settings still need a human-set value.</p>
+  
 
+  
+
+  
+  
+  
+  
+  </div>
+
+  
+  <div class="model-subpanel" data-modelsubpanel="variants" hidden>
+  <div class="overview-section" id="study-variants-section">
+    <p class="msub-intro">A <strong>variant</strong> is a copy of a baseline model with a few parameters changed, run and compared against the baseline. Everything else stays fixed.</p>
     
-    <div class="cond-block">
-      <div class="cond-block-title">Variants <span class="muted" style="font-weight:normal;font-size:0.85em">(2)</span></div>
-      <table class="cond-table">
-        <thead><tr><th>Variant</th><th>Composite / base</th><th>Parameter overrides</th><th>Notes</th></tr></thead>
-        <tbody>
+    <div class="var-list">
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">native-cartesian-arm</code>
+            <span class="var-base">based on <code>sphere-cosim-vs-native</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="native-cartesian-arm" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="native-cartesian-arm" title="Delete variant" aria-label="Delete variant native-cartesian-arm">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">cosim-body-fitted-arm</code>
+            <span class="var-base">based on <code>sphere-cosim-vs-native</code></span>
+          </div>
           
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>native-cartesian-arm</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>cosim-body-fitted-arm</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-        </tbody>
-      </table>
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="cosim-body-fitted-arm" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="cosim-body-fitted-arm" title="Delete variant" aria-label="Delete variant cosim-body-fitted-arm">✕</button>
+        </div>
+      </div>
+      
     </div>
     
-
+    
+    <form class="study-variant-add-form msub-addcard" onsubmit="return _submitStudyVariantAdd(this)">
+      <div class="msub-addcard-title">Add a variant</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="hi-dnaa" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field">
+          <span class="msub-lbl">Based on</span>
+          <select name="base_composite" class="msub-input">
+            <option value="ball-both-solvers">ball-both-solvers</option>
+          </select>
+          <span class="msub-hint">the baseline this variant perturbs</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Parameter overrides</span>
+          <input name="overrides" placeholder='{"k_synth": 2.0}' class="msub-input mono">
+          <span class="msub-hint">JSON object of parameter → value; leave blank for none</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add variant</button>
+        <span class="study-variant-add-status msub-status"></span>
+      </div>
+    </form>
     
   </div>
-  
+  </div>
 
   
+  <div class="model-subpanel" data-modelsubpanel="interventions" hidden>
+  <div class="overview-section" id="study-interventions-section">
+    <p class="msub-intro">An <strong>intervention</strong> is a named, described perturbation applied in this study (e.g. a knockout) — the conceptual change you are testing, documented alongside the model.</p>
+    
+    <div class="msub-empty">No interventions yet. Add one below.</div>
+    
+    <form class="study-intervention-add-form msub-addcard" onsubmit="return _submitStudyInterventionAdd(this)">
+      <div class="msub-addcard-title">Add an intervention</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="knockout-dnaA" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Description</span>
+          <input name="description" placeholder="what the intervention does" class="msub-input">
+          <span class="msub-hint">a short, human-readable summary</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add intervention</button>
+        <span class="study-intervention-add-status msub-status"></span>
+      </div>
+    </form>
+  </div>
+  </div>
 
   
-  
-  
-  
-
-
-
-  
+  <div class="model-subpanel" data-modelsubpanel="readouts" hidden>
   <div class="overview-section" id="model-readouts-section">
     <h3>Readouts</h3>
 
@@ -1007,6 +1132,7 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
     </div>
 
     
+  </div>
   </div>
   </div>
 
@@ -1028,7 +1154,6 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
   <button type="button" id="study-run-current-spec" class="action-btn" title="Run this study's CURRENT baseline spec (POST /api/study-run-baseline) as a brand-new run">▶ Run current spec</button>
   <button type="button" id="study-reproduce" class="btn-mini" title="Replay this study's most recent run's RECORDED manifest verbatim (POST /api/study-reproduce) — ignores any study.yaml edits made since">↻ Reproduce</button>
   
-  <button type="button" id="study-run-composite" class="btn-mini" title="Dispatch a specific process-bigraph composite_id to the remote compute backend (pbg-native multi_node/mbp, or the Nextflow campaign path) — advanced, independent of this study's own pinned baseline">⚙ Dispatch composite</button>
 </div>
 
 <div class="overview-section" id="simulations-section">
@@ -1043,6 +1168,12 @@ Co-sim mesh h = 0.8 µm. 8 seeds per solver.
 <div class="overview-section" id="results-section">
   
   <div id="results-summary" data-study="sphere-cosim-vs-native" style="margin:0 0 16px"></div>
+
+  
+  <div id="gate-results-section" data-study="sphere-cosim-vs-native" style="margin:0 0 22px" hidden>
+    <h4>Gate results <span class="muted" style="font-size:0.8em;font-weight:normal">— each acceptance test's value, graded from run data</span></h4>
+    <div id="gate-results"></div>
+  </div>
 
   <h4>Latest run preview <span class="muted" style="font-size:0.8em;font-weight:normal">— downsampled sparkline + first/last/min/max per store</span></h4>
   <div id="results-preview" data-study="sphere-cosim-vs-native">
@@ -1520,7 +1651,45 @@ pass_if: {"op": "\u003c", "provenance": {"kind": "theory", "note": "Kept so the 
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03). Re-run after Study B2d with:</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5" data-edit-kind="study" data-edit-field="conclusion" data-edit-value="Results (results/metrics.json, 2026-10-03). Re-run after Study B2d with:
+- the co-sim default membrane=&#34;mesh&#34; (Smoldyn confined by the PDE mesh&#39;s boundary
+  triangles);
+- the Smoldyn-fork fix for field-dependent creation in curved compartments.
+The native results are unchanged.
+
+**Geometry.** VCell&#39;s representation of the ball is more accurate at this resolution:
+−0.47% volume error, against −1.4% for the co-sim mesh at h = 0.8 µm.
+
+**Conversion: the solvers agree.** Both decay as exp(−kt) (|z| ≤ 1.5) and conserve
+A + B to under 1% (native −0.57%, co-sim +0.66%). Survival agrees (|z| = 1.5), and the
+final radial B profiles agree to 3.3%.
+
+**Exchange: the native solver loses molecules at the curved membrane.**
+- Signed mass balance at t = 5 s: native −6.8%; co-sim +0.51%, its first-order coupling
+  error and within the box-domain level.
+- Native total A ends 8.1% below the co-sim (|z| = 12).
+- An earlier version of this study read the unsigned deviation as growth; that was wrong.
+- Two native mechanisms account for the loss. Their rough budget, about −1.6% plus
+  −5 to −6%, matches the observed −6.8%:
+  1. **Exterior binning:**
+     - 1.2% of native A is binned to grid nodes outside the voxelized cell, where B is not
+       solved, so their PDE source k1·[A] is dropped.
+     - B2c localizes this as a −2.3% outer-shell depletion.
+     - In vcell-fvsolver, VCellSmoldynOutput::computeHistogram bins to the nearest node.
+       Its same-compartment correction is commented out.
+  2. **Creation deficit:**
+     - Field-dependent creation in the cell runs at 0.960 of the exact expectation.
+     - Study B2d found the mechanism in Smoldyn&#39;s hybrid zeroreact: it draws only in grid
+       cells whose centre is inside the compartment, so cells that partly overlap a curved
+       compartment never create. Monte Carlo on this geometry gives 0.976 for that rule.
+     - Our Smoldyn fork now draws in every cell and thins exactly. VCell&#39;s vendored
+       Smoldyn 2.38 still has the centre test.
+- The co-sim had both effects before B2d (creation 0.974, exchange −1.2%); with the fixes,
+  neither remains.
+- These are hybrid-coupling details at curved membranes, not a limitation of VCell&#39;s
+  geometry or PDE numerics. Native-side fixes: re-enable the same-compartment binning
+  correction, and draw creation in every cell overlapping the compartment.
+" data-edit-multiline data-edit-label="Conclusion"><p>Results (results/metrics.json, 2026-10-03). Re-run after Study B2d with:</p>
 <ul>
 <li>the co-sim default membrane=&quot;mesh&quot; (Smoldyn confined by the PDE mesh's boundary
 triangles);</li>
@@ -1611,6 +1780,51 @@ correction, and draw creation in every cell overlapping the compartment.</li>
   </div>
 
   
+  <div class="overview-section" id="study-findings-authoring">
+    <h2 class="overview-label">Record a finding</h2>
+    
+    <ul class="synthesis-list" style="margin:0 0 12px">
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-01" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>At this resolution VCell&#39;s Cartesian representation of the ball is the more accurate geometry: −0.47% volume error (b2b_native_staircase_volume_rel_err = −0.0047) against −1.4% for the co-sim body-fitted mesh at h = 0.8 µm (b2b_cosim_mesh_volume_rel_err = −0.0139).
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-02" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>For the conversion case the two discretizations agree: surviving A matches to max two-sample |z| = 1.47 (b2b_conversion_survival_max_z) and the final radial B profiles agree to 3.3% (b2b_final_radial_b_rel_diff = 0.0330, under the 5% band), with both solvers conserving A + B to under 1%.
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-03" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The exchange case diverges and fails its band: total A differs at max two-sample |z| = 12.1 (b2b_exchange_a_totals_max_z, band &lt; 4.0), with native A ending 8.1% below the co-sim (b2b_exchange_native_minus_cosim_a_final_rel = −0.0808) and native signed mass balance at −6.8% (b2b_native_exchange_mass_balance_final_signed = −0.0681) against the co-sim&#39;s +0.51%. Two native mechanisms at the curved membrane account for it: exterior binning (1.2% of A binned to nodes outside the voxelized cell, b2b_native_exchange_a_binned_outside_cell_frac = 0.0118, so their PDE source is dropped) and a field-dependent creation deficit (Smoldyn&#39;s centre-inside test skips cells that partly overlap the curved compartment). Native fixes: re-enable the same-compartment binning correction (vcell-fvsolver#25) and draw creation in every overlapping cell.
+ <span class="muted small">(contradicts)</span></span>
+      </li>
+      
+    </ul>
+    
+    <form class="study-finding-add-form" onsubmit="return _submitStudyFindingAdd(this)" style="display:flex;flex-direction:column;gap:8px;max-width:680px">
+      <textarea name="statement" required rows="2" placeholder="What did this study show? (one sentence)"
+                style="font-size:0.9em;padding:6px 8px;resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="font-size:0.78em;color:#475569">Status<br>
+          <select name="status" style="font-size:0.82em;padding:3px 6px">
+            <option value="novel">novel</option>
+            <option value="confirms">confirms literature</option>
+            <option value="partial">partial</option>
+            <option value="contradicts">contradicts</option>
+          </select></label>
+        <label style="font-size:0.78em;color:#475569;flex:1;min-width:200px">Why / mechanism (optional)<br>
+          <input name="explanation" style="width:100%;font-size:0.82em;padding:3px 6px"></label>
+        <button type="submit" class="action-btn" style="font-size:0.82em">+ Add finding</button>
+      </div>
+    </form>
+    <div class="study-finding-add-status muted" style="font-size:0.8em;margin-top:4px"></div>
+  </div>
+
+  
   <div class="overview-section"><h2 class="overview-label">Follow-ups &amp; decisions</h2>
 
     
@@ -1632,11 +1846,13 @@ correction, and draw creation in every cell overlapping the compartment.</li>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "ef2a5d2960f7fc840037cd9989cba0754faf7334", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/ef2a5d2960f7fc840037cd9989cba0754faf7334", "branch": "main", "lockfile": "uv.lock@ef37c826fcee", "generated_at": "2026-10-28 01:28 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main/workspace", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "58b8ad470c52a0d462189961da09e39bc924b02d", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/58b8ad470c52a0d462189961da09e39bc924b02d", "branch": "main", "lockfile": "uv.lock@3377ebfb521f", "generated_at": "2026-11-23 01:02 UTC"} };</script>
 <script src="/viva-pde-particle/workbench/assets/data-source.js"></script>
+<script src="/viva-pde-particle/workbench/assets/backend-features.js"></script>
 <script src="/viva-pde-particle/workbench/assets/toast.js"></script>
 <script>
 window._studyName = "sphere-cosim-vs-native";
+window.__STUDY_INVESTIGATION__ = "hybrid-generalizability";  // owning investigation (feedback save routing)
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
@@ -1764,7 +1980,14 @@ window._seedFollowupProposal = _seedFollowupProposal;
 <script src="/viva-pde-particle/workbench/assets/checklist-select.js"></script>
 <script src="/viva-pde-particle/workbench/assets/progress-track.js"></script>
 <script src="/viva-pde-particle/workbench/assets/comparison-view.js"></script>
+<!-- The backend launch plugin's script (remote-pinned dispatch + the
+     "Dispatch composite" panel), quarantined out of study-detail.js. Loaded
+     BEFORE it: study-detail.js calls window.SmsLaunch.mount() while it loads,
+     and runs local-only when the file is absent. -->
+<script src="/viva-pde-particle/workbench/assets/sms-launch.js"></script>
 <script src="/viva-pde-particle/workbench/assets/study-detail.js"></script>
+<script src="/viva-pde-particle/workbench/assets/study-feedback.js"></script>
+<script src="/viva-pde-particle/workbench/assets/inline-edit.js"></script>
 <script>
 // Re-assert the refresh-aware seed handlers AFTER study-detail.js (which
 // defines its own navigate-away _seedFollowupStudy). The embedded
@@ -1774,7 +1997,7 @@ window._seedFollowupProposal = _seedFollowupProposal;
 </script>
 <script>
 (function () {
-  // Task 8: the Configure & Run mount and the remote-run (smsvpctest) panel
+  // Task 8: the Configure & Run mount and the remote-run panel
   // were both removed from the Simulate tab — launching now lives entirely
   // in the header buttons (Reproduce / Run current spec). This block used
   // to also mount ConfigureRun into the (now-deleted) mount div and, in an

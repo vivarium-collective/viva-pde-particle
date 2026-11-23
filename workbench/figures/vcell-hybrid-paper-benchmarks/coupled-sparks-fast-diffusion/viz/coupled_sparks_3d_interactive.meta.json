@@ -1,0 +1,7 @@
+{
+  "title": "Interactive: coupled sparks, both solvers",
+  "caption": "Time slider, solver selector, slices and channels (three.js).",
+  "simulations": "One trial (seed 1) of Test 2 per solver, \u0394t = 0.0002 s, recorded every 0.05 s to 3 s into results bundles (sims/render_3d.py). Native channel states come from VCell's per-node counts (exact: channels sit on nodes).",
+  "interpretation": "Explore either trial at any recorded time.",
+  "source_run_id": "765bf6d15f664e9296640cef27356de3"
+}

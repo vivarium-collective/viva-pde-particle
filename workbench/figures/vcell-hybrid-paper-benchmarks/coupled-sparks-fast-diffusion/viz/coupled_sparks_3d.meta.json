@@ -1,0 +1,7 @@
+{
+  "title": "Coupled channels, fast diffusion: U in the channel plane",
+  "caption": "U at z = 0 at the three recorded times with the most open channels, per solver; channels closed (blue) or open (green).",
+  "simulations": "One trial (seed 1) of Test 2 per solver, \u0394t = 0.0002 s, recorded every 0.05 s to 3 s into results bundles (sims/render_3d.py). Native channel states come from VCell's per-node counts (exact: channels sit on nodes).",
+  "interpretation": "With D = 1000 \u00b5m\u00b2/s calcium from an open channel spreads over the slab within milliseconds, so U is almost uniform (spread < 0.2 \u00b5M at ~10 \u00b5M): the well-mixed limit, where the hybrid is compared with the exact piecewise-deterministic process. Opening speeds up with U, so openings run away into bursts in which most channels are open at once. The two trials are independent samples; their distributions agree (see the Fig 2 comparison).",
+  "source_run_id": "765bf6d15f664e9296640cef27356de3"
+}

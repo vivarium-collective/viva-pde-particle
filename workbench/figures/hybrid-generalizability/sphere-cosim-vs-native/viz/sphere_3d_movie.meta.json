@@ -1,0 +1,7 @@
+{
+  "title": "Co-sim exchange over time",
+  "caption": "Mid-plane slice of B, membrane, A particles created from B.",
+  "simulations": "One seed per solver and case, recorded every 0.25 s into results bundles (sims/render_3d.py): conversion to 2 s, exchange to 5 s. Native particles are placed at their nodes from VCell's per-node counts; its membrane is VCell's smooth surface.",
+  "interpretation": "A appears uniformly from B and relaxes to the steady ratio.",
+  "source_run_id": "22d627ea79a34d59b3ad4a55784a3c4f"
+}

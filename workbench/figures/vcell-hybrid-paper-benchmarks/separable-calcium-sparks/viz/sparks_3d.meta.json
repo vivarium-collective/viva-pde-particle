@@ -1,0 +1,7 @@
+{
+  "title": "Calcium sparks in the channel plane",
+  "caption": "U at z = 0 (log colour scale) at 1, 2 and 3 s; channels closed (blue) or open (green). Co-sim channels sit inside their node's voxel (Smoldyn places them there; D = 0), native ones at the node (from VCell's per-node counts).",
+  "simulations": "One trial (seed 1) of Test 1 per solver, \u0394t = 0.005, recorded every 0.1 s to 3 s into results bundles (sims/render_3d.py). Native channel states come from VCell's per-node counts (exact: channels sit on nodes).",
+  "interpretation": "Each open channel drives a local calcium spark that decays by diffusion and pumping once it closes. Trials are independent samples, so co-sim and native differ channel by channel; their statistics agree (see the \u03b5(N) figure).",
+  "source_run_id": "c5c6d81b81da4e94bf9be1654f02cc82"
+}

@@ -16,17 +16,40 @@
 </head>
 <body>
 <main class="study-page">
+
+
 <header class="study-header">
-  <div style="display:flex; align-items:center; gap:14px; justify-content:space-between;">
+  <div style="display:flex; align-items:flex-start; gap:14px; justify-content:space-between;">
+  <div class="study-head-main" style="min-width:0; flex:1 1 auto">
   <div style="display:flex; align-items:center; gap:12px; min-width:0; flex-wrap:wrap">
   <h1 class="study-title" style="margin:0">
-    <span class="study-name" id="study-name" data-slug="cosim-boundary-transfer" data-study-kind="computational" title="cosim-boundary-transfer">Removing the co-simulation&#39;s boundary artifact: particle transfer, membrane geometry and curved-compartment creation</span>
+    <span class="study-name" id="study-name" data-slug="cosim-boundary-transfer" data-study-kind="computational" title="cosim-boundary-transfer" data-edit-kind="study" data-edit-field="title" data-edit-value="Removing the co-simulation&#39;s boundary artifact: particle transfer, membrane geometry and curved-compartment creation" data-edit-label="Title">Removing the co-simulation&#39;s boundary artifact: particle transfer, membrane geometry and curved-compartment creation</span>
     
   </h1>
+  </div>
+  <p id="study-question-headline" class="study-question-headline" title="B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
+" data-edit-kind="study" data-edit-field="question" data-edit-value="B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
+" data-edit-multiline data-edit-label="Question"><span class="q-glyph">Q</span> <span class="study-question-headline-text">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
+</span></p>
+  </div>
+  <span class="study-header-actions" style="display:inline-flex; gap:10px; flex-shrink:0; align-items:center;">
     
     <span id="study-axis-markers" data-slug="cosim-boundary-transfer" style="display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap"></span>
-  </div>
-  <span class="study-header-actions" style="display:inline-flex; gap:6px; flex-shrink:0; align-items:center;">
     
     
     
@@ -49,14 +72,6 @@
 
 
 
-
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
-Two causes were candidates:
-- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
-- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
-  inscribed P1 mesh.
-Which is it, and what does removing it cost?
-</p>
 
 <nav class="study-tabs" aria-label="Study sections">
   
@@ -86,10 +101,18 @@ Which is it, and what does removing it cost?
   </button>
   
   <span class="study-dl study-export-wrap" style="margin-left:auto; align-self:center; position:relative; display:inline-flex">
-    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Download this study's figures or a runnable notebook">↓ Export ▾</button>
-    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:200px;padding:4px">
-      <button type="button" id="study-dl-figures" role="menuitem" class="study-jump-item" onclick="window._vivStudyFiguresFromCard(event, 'cosim-boundary-transfer')">Download figures</button>
-      <button type="button" id="study-dl-notebook" role="menuitem" class="study-jump-item" onclick="window._vivStudyNotebookFromCard(event, 'cosim-boundary-transfer', 'hybrid-generalizability')">Download notebook</button>
+    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Shortcuts — open in the browser or download (report, notebook, figures)">Shortcuts ▾</button>
+    
+    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:190px;padding:4px">
+      <div class="study-export-sec">Report</div>
+      <button type="button" id="study-report-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportOpen(event, 'cosim-boundary-transfer')">Open in browser</button>
+      <button type="button" id="study-report-dl" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportDownload(event, 'cosim-boundary-transfer')">Download HTML</button>
+      <div class="study-export-sec">Notebook</div>
+      <button type="button" id="study-nb-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookOpen(event, 'cosim-boundary-transfer')">Open in browser</button>
+      <button type="button" id="study-dl-notebook" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookFromCard(event, 'cosim-boundary-transfer', 'hybrid-generalizability')">Download .ipynb</button>
+      <div class="study-export-sec">Figures</div>
+      <button type="button" id="study-fig-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresOpen(event, 'cosim-boundary-transfer')">Open in browser</button>
+      <button type="button" id="study-dl-figures" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresFromCard(event, 'cosim-boundary-transfer')">Download (zip)</button>
     </div>
   </span>
 </nav>
@@ -102,8 +125,18 @@ Which is it, and what does removing it cost?
 .study-kind-tag.study-kind-biological{background:#ecfdf5;color:#065f46}
 .study-kind-tag.study-kind-computational{background:#eff6ff;color:#1e40af}
 .study-kind-tag.study-kind-theoretical{background:#faf5ff;color:#6b21a8}
-.study-question-headline{margin:6px 0 0 0;font-size:1.05em;line-height:1.5;color:#1e293b;font-family:Georgia,"Times New Roman",serif}
+.study-question-headline{margin:2px 0 0 0;font-size:0.85em;line-height:1.35;color:#475569;font-family:Georgia,"Times New Roman",serif;padding-right:40px}
+/* Park the inline-edit ✎ in a reserved right gutter so it never lands over the
+   question text (the pencil is an absolutely-positioned child of the editable). */
+.study-question-headline>.ie-pencil{right:6px;top:1px}
+h1.study-title .study-name.ie-editable{padding-right:36px}
+h1.study-title .study-name>.ie-pencil{right:4px;top:6px}
 .study-question-headline .q-glyph{display:inline-block;font-size:0.78em;font-weight:700;font-family:ui-monospace,monospace;color:#64748b;background:#f1f5f9;padding:1px 7px;border-radius:4px;margin-right:6px;vertical-align:middle}
+/* Study Export menu — styled to match the investigation-level ↓ Export menu
+   exactly: grey uppercase section labels + full-width, left-aligned, stacked
+   text-link items (not inline pills). Mirrors walkthrough.js `_sec` + `_mi`. */
+.study-export-sec{padding:6px 8px 2px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8}
+.study-export-item{display:block;width:100%;text-align:left;border:none;background:transparent}
 .status-detail-panel{margin:0;padding:2px 0;background:transparent;border:none;border-radius:0;font-size:0.92em}
 .status-detail-row{display:flex;align-items:center;gap:8px;padding:3px 0}
 .status-detail-axis{min-width:140px;color:#475569;font-size:0.9em}
@@ -241,6 +274,9 @@ Which is it, and what does removing it cost?
 /* findings */
 .findings-section{padding:14px 16px;background:#fafbff;border:1px solid #c7d2fe;border-radius:8px}
 .finding-card{padding:12px 14px;margin:10px 0;border:1px solid #e2e8f0;border-left:5px solid #6366f1;border-radius:6px;background:#fff}
+/* Brief highlight when an item is reached via a ?ev= evidence deep-link. */
+.ev-flash{animation:ev-flash-kf 1.9s ease-out;scroll-margin-top:12px}
+@keyframes ev-flash-kf{0%{box-shadow:0 0 0 3px #fbbf24}70%{box-shadow:0 0 0 3px rgba(251,191,36,0.45)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}
 .finding-card.finding-status-confirms{border-left-color:#10b981}
 .finding-card.finding-status-partial{border-left-color:#f59e0b}
 .finding-card.finding-status-contradicts{border-left-color:#dc2626}
@@ -549,7 +585,7 @@ Which is it, and what does removing it cost?
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="claim" data-edit-value="" data-edit-multiline data-edit-label="Claim">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
 Two causes were candidates:
 - the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
 - the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
@@ -563,14 +599,22 @@ Which is it, and what does removing it cost?
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Background</h2>
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="question" data-edit-value="B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
+Two causes were candidates:
+- the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
+- the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
+  inscribed P1 mesh.
+Which is it, and what does removing it cost?
+" data-edit-multiline data-edit-label="Question">B2c found the co-simulation&#39;s ensemble-mean B 1.3% too high in the outer shell of the ball.
 Two causes were candidates:
 - the two-stage particle transfer (nearest grid node, then Pᵀ to mesh DOFs);
 - the domain mismatch: Smoldyn&#39;s exact sphere holds about 1.4% more volume than the
   inscribed P1 mesh.
 Which is it, and what does removing it cost?
 </span></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item">B2c attributed the bias to the transfer, so the exact P1 load from molecule positions
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="hypothesis" data-edit-value="B2c attributed the bias to the transfer, so the exact P1 load from molecule positions
+should remove it.
+" data-edit-multiline data-edit-label="Hypothesis">B2c attributed the bias to the transfer, so the exact P1 load from molecule positions
 should remove it.
 </span></div>
       </div>
@@ -579,7 +623,18 @@ should remove it.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Model &amp; approach</h2>
-      <p class="ctr-text">Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="objective" data-edit-value="Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
+Variants (particle_transfer / membrane):
+- grid / sphere (B2b/B2c);
+- positions / sphere;
+- grid / mesh;
+- positions / mesh.
+Cases and measures:
+- Conversion (uniform A, so E[B] is uniform): interior level against
+  E[B] = A₀(1 − e^(−kt))/(V_mesh·N_A), and the outer-shell bias (r &gt; R − 2Δ vs r &lt; R/2).
+- Exchange with field-dependent creation in the cell: final mass balance and steady ratio.
+- Wall time per simulated second.
+" data-edit-multiline data-edit-label="Objective">Same ball, background grid, mesh and model as B2b/B2c; 32 seeds per variant.
 Variants (particle_transfer / membrane):
 - grid / sphere (B2b/B2c);
 - positions / sphere;
@@ -606,7 +661,8 @@ Cases and measures:
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Result</h2>
-      <p class="ctr-text">The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
+      
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="result" data-edit-value="" data-edit-multiline data-edit-label="Result">The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
 </p>
       
       
@@ -642,11 +698,12 @@ Cases and measures:
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-contradicts">
+      <div class="finding-card finding-kind-computational finding-status-contradicts" id="finding-F-01">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✗</span>
-            <span class="finding-claim finding-statement">The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-01].statement" data-edit-value="The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
+" data-edit-multiline data-edit-label="Finding F-01">The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
 </span>
             
             <span class="finding-chip">via <code>mesh-membrane-removes-shell-bias</code></span>
@@ -670,10 +727,13 @@ Cases and measures:
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -697,11 +757,12 @@ Cases and measures:
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-contradicts">
+      <div class="finding-card finding-kind-computational finding-status-contradicts" id="finding-F-02">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✗</span>
-            <span class="finding-claim finding-statement">The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching grid→positions transfer under the sphere membrane leaves the shell bias at +1.24% (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact sphere and the inscribed P1 mesh.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-02].statement" data-edit-value="The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching grid→positions transfer under the sphere membrane leaves the shell bias at +1.24% (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact sphere and the inscribed P1 mesh.
+" data-edit-multiline data-edit-label="Finding F-02">The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching grid→positions transfer under the sphere membrane leaves the shell bias at +1.24% (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact sphere and the inscribed P1 mesh.
 </span>
             
             <span class="finding-chip">via <code>sphere-membrane-shell-bias</code></span>
@@ -725,10 +786,13 @@ Cases and measures:
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -752,11 +816,12 @@ Cases and measures:
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-03">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5% band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once the domains match. The sphere membrane leaves it at +2.9%.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-03].statement" data-edit-value="With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5% band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once the domains match. The sphere membrane leaves it at +2.9%.
+" data-edit-multiline data-edit-label="Finding F-03">With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5% band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once the domains match. The sphere membrane leaves it at +2.9%.
 </span>
             
             <span class="finding-chip">via <code>mesh-membrane-exchange-balance</code></span>
@@ -780,10 +845,13 @@ Cases and measures:
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -849,12 +917,23 @@ Cases and measures:
 
 
 <section class="study-tab-panel" data-kind="compose" id="panel-compose" hidden>
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
-    <h2 class="overview-label" style="margin:0">Model composition</h2>
-    
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'cosim-boundary-transfer', 'hybrid-generalizability')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+  
+  <div class="model-subtabs" role="tablist" aria-label="Model sections">
+    <button type="button" class="model-subtab active" data-modelsub="composition" role="tab" aria-selected="true" onclick="_setModelSubtab('composition')">Composition</button>
+    <button type="button" class="model-subtab" data-modelsub="loom" role="tab" aria-selected="false" onclick="_setModelSubtab('loom')">Loom</button>
+    <button type="button" class="model-subtab" data-modelsub="variants" role="tab" aria-selected="false" onclick="_setModelSubtab('variants')">Variants <span class="model-subtab-count">4</span></button>
+    <button type="button" class="model-subtab" data-modelsub="interventions" role="tab" aria-selected="false" onclick="_setModelSubtab('interventions')">Interventions</button>
+    <button type="button" class="model-subtab" data-modelsub="readouts" role="tab" aria-selected="false" onclick="_setModelSubtab('readouts')">Readouts</button>
   </div>
 
+  
+  <div class="model-subpanel" data-modelsubpanel="loom" hidden>
+    <div id="model-loom-mount" class="model-loom-mount">
+      <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading the interactive model diagram…</span></div>
+    </div>
+  </div>
+
+  <div class="model-subpanel active" data-modelsubpanel="composition">
   
   
   <div id="model-composite-cards" class="model-composite-cards" data-study="cosim-boundary-transfer"
@@ -929,100 +1008,155 @@ Cases and measures:
 
   
   
-  <div class="overview-section" id="conditions-section">
-    <h3>Conditions <span class="muted" style="font-size:0.85em;font-weight:normal">— what we set up to test it</span></h3>
-    <p class="muted" style="font-size:0.88em">The experimental knobs: how variants perturb the baseline, and which model settings still need a human-set value.</p>
+  
 
+  
+
+  
+  
+  
+  
+  </div>
+
+  
+  <div class="model-subpanel" data-modelsubpanel="variants" hidden>
+  <div class="overview-section" id="study-variants-section">
+    <p class="msub-intro">A <strong>variant</strong> is a copy of a baseline model with a few parameters changed, run and compared against the baseline. Everything else stays fixed.</p>
     
-    <div class="cond-block">
-      <div class="cond-block-title">Variants <span class="muted" style="font-weight:normal;font-size:0.85em">(4)</span></div>
-      <table class="cond-table">
-        <thead><tr><th>Variant</th><th>Composite / base</th><th>Parameter overrides</th><th>Notes</th></tr></thead>
-        <tbody>
+    <div class="var-list">
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">grid-sphere</code>
+            <span class="var-base">based on <code>cosim-boundary-transfer</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="grid-sphere" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="grid-sphere" title="Delete variant" aria-label="Delete variant grid-sphere">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">positions-sphere</code>
+            <span class="var-base">based on <code>cosim-boundary-transfer</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="positions-sphere" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="positions-sphere" title="Delete variant" aria-label="Delete variant positions-sphere">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">grid-mesh</code>
+            <span class="var-base">based on <code>cosim-boundary-transfer</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="grid-mesh" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="grid-mesh" title="Delete variant" aria-label="Delete variant grid-mesh">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">positions-mesh</code>
+            <span class="var-base">based on <code>cosim-boundary-transfer</code></span>
+          </div>
           
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>grid-sphere</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>positions-sphere</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>grid-mesh</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>positions-mesh</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-        </tbody>
-      </table>
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="positions-mesh" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="positions-mesh" title="Delete variant" aria-label="Delete variant positions-mesh">✕</button>
+        </div>
+      </div>
+      
     </div>
     
-
+    
+    <form class="study-variant-add-form msub-addcard" onsubmit="return _submitStudyVariantAdd(this)">
+      <div class="msub-addcard-title">Add a variant</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="hi-dnaa" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field">
+          <span class="msub-lbl">Based on</span>
+          <select name="base_composite" class="msub-input">
+            <option value="ball-transfer-variants">ball-transfer-variants</option>
+          </select>
+          <span class="msub-hint">the baseline this variant perturbs</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Parameter overrides</span>
+          <input name="overrides" placeholder='{"k_synth": 2.0}' class="msub-input mono">
+          <span class="msub-hint">JSON object of parameter → value; leave blank for none</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add variant</button>
+        <span class="study-variant-add-status msub-status"></span>
+      </div>
+    </form>
     
   </div>
-  
+  </div>
 
   
+  <div class="model-subpanel" data-modelsubpanel="interventions" hidden>
+  <div class="overview-section" id="study-interventions-section">
+    <p class="msub-intro">An <strong>intervention</strong> is a named, described perturbation applied in this study (e.g. a knockout) — the conceptual change you are testing, documented alongside the model.</p>
+    
+    <div class="msub-empty">No interventions yet. Add one below.</div>
+    
+    <form class="study-intervention-add-form msub-addcard" onsubmit="return _submitStudyInterventionAdd(this)">
+      <div class="msub-addcard-title">Add an intervention</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="knockout-dnaA" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Description</span>
+          <input name="description" placeholder="what the intervention does" class="msub-input">
+          <span class="msub-hint">a short, human-readable summary</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add intervention</button>
+        <span class="study-intervention-add-status msub-status"></span>
+      </div>
+    </form>
+  </div>
+  </div>
 
   
-  
-  
-  
-
-
-
-  
+  <div class="model-subpanel" data-modelsubpanel="readouts" hidden>
   <div class="overview-section" id="model-readouts-section">
     <h3>Readouts</h3>
 
@@ -1040,6 +1174,7 @@ Cases and measures:
     </div>
 
     
+  </div>
   </div>
   </div>
 
@@ -1061,7 +1196,6 @@ Cases and measures:
   <button type="button" id="study-run-current-spec" class="action-btn" title="Run this study's CURRENT baseline spec (POST /api/study-run-baseline) as a brand-new run">▶ Run current spec</button>
   <button type="button" id="study-reproduce" class="btn-mini" title="Replay this study's most recent run's RECORDED manifest verbatim (POST /api/study-reproduce) — ignores any study.yaml edits made since">↻ Reproduce</button>
   
-  <button type="button" id="study-run-composite" class="btn-mini" title="Dispatch a specific process-bigraph composite_id to the remote compute backend (pbg-native multi_node/mbp, or the Nextflow campaign path) — advanced, independent of this study's own pinned baseline">⚙ Dispatch composite</button>
 </div>
 
 <div class="overview-section" id="simulations-section">
@@ -1076,6 +1210,12 @@ Cases and measures:
 <div class="overview-section" id="results-section">
   
   <div id="results-summary" data-study="cosim-boundary-transfer" style="margin:0 0 16px"></div>
+
+  
+  <div id="gate-results-section" data-study="cosim-boundary-transfer" style="margin:0 0 22px" hidden>
+    <h4>Gate results <span class="muted" style="font-size:0.8em;font-weight:normal">— each acceptance test's value, graded from run data</span></h4>
+    <div id="gate-results"></div>
+  </div>
 
   <h4>Latest run preview <span class="muted" style="font-size:0.8em;font-weight:normal">— downsampled sparkline + first/last/min/max per store</span></h4>
   <div id="results-preview" data-study="cosim-boundary-transfer">
@@ -1506,7 +1646,55 @@ pass_if: {"high": 0.005, "low": -0.005, "op": "range", "provenance": {"kind": "t
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-03; 32 seeds per variant; Smoldyn with the creation fix):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5" data-edit-kind="study" data-edit-field="conclusion" data-edit-value="Results (results/metrics.json, 2026-10-03; 32 seeds per variant; Smoldyn with the creation fix):
+
+| transfer / membrane | shell bias (z) | interior vs E[B] | exchange balance | wall s per sim s |
+|---|---|---|---|---|
+| grid / sphere | +1.27% (10.3) | −0.37% | +2.9% | 0.71 |
+| positions / sphere | +1.24% (10.0) | −0.36% | +2.9% | 2.98 |
+| grid / mesh | +0.12% (1.2) | +0.25% | +0.69% | 1.07 |
+| positions / mesh | +0.07% (0.7) | +0.27% | +1.0% | 3.56 |
+
+**The hypothesis was wrong: the membrane matters, not the transfer.**
+- With the sphere membrane, the exact P1 load leaves the shell bias unchanged.
+- The cause is the domain mismatch. Particles in the ~1.4% sliver between the sphere and the
+  inscribed mesh are projected onto the boundary DOFs.
+- Confining Smoldyn by the mesh&#39;s own boundary triangles removes the bias, with either
+  transfer. VCell does the same with its geometry&#39;s surface triangulation; see below.
+- With the mesh membrane, exchange mass balance is at the box-domain level (A3: 1.2%), so
+  the curved geometry adds nothing.
+- With the sphere membrane, the PDE removes B over the smaller mesh while creation covers
+  the full sphere, so the balance is +2.9%.
+
+**Credit: VCell already does this.** Its Smoldyn input confines particles by `panel tri` surfaces taken from its own
+geometry (B2b ball: 9,516 triangles enclosing 261.8 µm³), so the co-sim&#39;s mesh membrane follows VCell&#39;s practice.
+- **Co-sim:** the triangles are the PDE mesh boundary itself, so the domains are identical.
+- **Native:** the triangulation is a smoothed surface, while the PDE domain is the voxel staircase (266.7 µm³). The
+  particle compartment is therefore 1.8% smaller than the PDE&#39;s cell. Times the centre-only creation factor (0.976),
+  that predicts a native creation rate of 0.958, matching the measured 0.960. Particles near the smooth membrane can
+  also be nearest to exterior voxel nodes (exterior binning).
+
+**Creation fix (Smoldyn fork).** Before it, the sphere variants showed −1.2 to −1.4%
+exchange balance. That was two errors cancelling: a creation deficit of about −2.4% and
+the sphere&#39;s extra +1.4% of volume. The mesh membrane exposed the deficit (−3.2%); the fix
+removes it.
+
+**Cost.**
+- The wall times in the table are for the conversion case.
+- Positions transfer costs about 4× (locating 20k particles every step), and buys nothing
+  here once the membrane matches.
+- Follow-up: exchange with the mesh membrane was much slower, about 23× the sphere.
+  - Smoldyn sized its virtual boxes from the initial molecule count (zero A), giving one
+    box, so every molecule tested all 806 triangles every step (N×M).
+  - The Smoldyn config now always sets boxsize, which gives 10×.
+  - It also writes VCell&#39;s highResVolumeSamples compartment map (fork e86d552 enables its
+    parsing under OPTION_VCELL), a further 1.8×, with identical results.
+  - Mesh-membrane exchange now runs at 0.25 s per simulated s, against 0.21 for the sphere;
+    see DESIGN.md §11.
+
+**Default changed:** build_mesh_hybrid_document now uses membrane=&#34;mesh&#34; with grid
+transfer. B2, B2b and B2c are re-run with it.
+" data-edit-multiline data-edit-label="Conclusion"><p>Results (results/metrics.json, 2026-10-03; 32 seeds per variant; Smoldyn with the creation fix):</p>
 <p>| transfer / membrane | shell bias (z) | interior vs E[B] | exchange balance | wall s per sim s |
 |---|---|---|---|---|
 | grid / sphere | +1.27% (10.3) | −0.37% | +2.9% | 0.71 |
@@ -1600,6 +1788,51 @@ transfer. B2, B2b and B2c are re-run with it.</p>
   </div>
 
   
+  <div class="overview-section" id="study-findings-authoring">
+    <h2 class="overview-label">Record a finding</h2>
+    
+    <ul class="synthesis-list" style="margin:0 0 12px">
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-01" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The mesh-boundary membrane removes the outer-shell bias: with grid transfer and the mesh membrane the shell bias is +0.12% (z = 1.2), inside the ±0.5% band, down from +1.27% (z = 10.3) with the exact-sphere membrane.
+ <span class="muted small">(contradicts)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-02" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The hypothesis was wrong: the membrane, not the transfer, drives the bias. Switching grid→positions transfer under the sphere membrane leaves the shell bias at +1.24% (z = 10.0), essentially unchanged from +1.27%; only confining Smoldyn by the mesh boundary triangles removes it. The cause is the ~1.4% domain mismatch between the exact sphere and the inscribed P1 mesh.
+ <span class="muted small">(contradicts)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-03" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>With the mesh membrane the exchange mass balance is +0.69% (signed), inside the ±1.5% band and at the box-domain level (A3: 1.2%), so the curved geometry adds nothing once the domains match. The sphere membrane leaves it at +2.9%.
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+    </ul>
+    
+    <form class="study-finding-add-form" onsubmit="return _submitStudyFindingAdd(this)" style="display:flex;flex-direction:column;gap:8px;max-width:680px">
+      <textarea name="statement" required rows="2" placeholder="What did this study show? (one sentence)"
+                style="font-size:0.9em;padding:6px 8px;resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="font-size:0.78em;color:#475569">Status<br>
+          <select name="status" style="font-size:0.82em;padding:3px 6px">
+            <option value="novel">novel</option>
+            <option value="confirms">confirms literature</option>
+            <option value="partial">partial</option>
+            <option value="contradicts">contradicts</option>
+          </select></label>
+        <label style="font-size:0.78em;color:#475569;flex:1;min-width:200px">Why / mechanism (optional)<br>
+          <input name="explanation" style="width:100%;font-size:0.82em;padding:3px 6px"></label>
+        <button type="submit" class="action-btn" style="font-size:0.82em">+ Add finding</button>
+      </div>
+    </form>
+    <div class="study-finding-add-status muted" style="font-size:0.8em;margin-top:4px"></div>
+  </div>
+
+  
   <div class="overview-section"><h2 class="overview-label">Follow-ups &amp; decisions</h2>
 
     
@@ -1621,11 +1854,13 @@ transfer. B2, B2b and B2c are re-run with it.</p>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "ef2a5d2960f7fc840037cd9989cba0754faf7334", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/ef2a5d2960f7fc840037cd9989cba0754faf7334", "branch": "main", "lockfile": "uv.lock@ef37c826fcee", "generated_at": "2026-10-28 01:28 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main/workspace", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "58b8ad470c52a0d462189961da09e39bc924b02d", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/58b8ad470c52a0d462189961da09e39bc924b02d", "branch": "main", "lockfile": "uv.lock@3377ebfb521f", "generated_at": "2026-11-23 01:02 UTC"} };</script>
 <script src="/viva-pde-particle/workbench/assets/data-source.js"></script>
+<script src="/viva-pde-particle/workbench/assets/backend-features.js"></script>
 <script src="/viva-pde-particle/workbench/assets/toast.js"></script>
 <script>
 window._studyName = "cosim-boundary-transfer";
+window.__STUDY_INVESTIGATION__ = "hybrid-generalizability";  // owning investigation (feedback save routing)
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
@@ -1753,7 +1988,14 @@ window._seedFollowupProposal = _seedFollowupProposal;
 <script src="/viva-pde-particle/workbench/assets/checklist-select.js"></script>
 <script src="/viva-pde-particle/workbench/assets/progress-track.js"></script>
 <script src="/viva-pde-particle/workbench/assets/comparison-view.js"></script>
+<!-- The backend launch plugin's script (remote-pinned dispatch + the
+     "Dispatch composite" panel), quarantined out of study-detail.js. Loaded
+     BEFORE it: study-detail.js calls window.SmsLaunch.mount() while it loads,
+     and runs local-only when the file is absent. -->
+<script src="/viva-pde-particle/workbench/assets/sms-launch.js"></script>
 <script src="/viva-pde-particle/workbench/assets/study-detail.js"></script>
+<script src="/viva-pde-particle/workbench/assets/study-feedback.js"></script>
+<script src="/viva-pde-particle/workbench/assets/inline-edit.js"></script>
 <script>
 // Re-assert the refresh-aware seed handlers AFTER study-detail.js (which
 // defines its own navigate-away _seedFollowupStudy). The embedded
@@ -1763,7 +2005,7 @@ window._seedFollowupProposal = _seedFollowupProposal;
 </script>
 <script>
 (function () {
-  // Task 8: the Configure & Run mount and the remote-run (smsvpctest) panel
+  // Task 8: the Configure & Run mount and the remote-run panel
   // were both removed from the Simulate tab — launching now lives entirely
   // in the header buttons (Reproduce / Run current spec). This block used
   // to also mount ConfigureRun into the (now-deleted) mount div and, in an

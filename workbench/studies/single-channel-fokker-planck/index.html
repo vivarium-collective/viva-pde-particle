@@ -16,17 +16,34 @@
 </head>
 <body>
 <main class="study-page">
+
+
 <header class="study-header">
-  <div style="display:flex; align-items:center; gap:14px; justify-content:space-between;">
+  <div style="display:flex; align-items:flex-start; gap:14px; justify-content:space-between;">
+  <div class="study-head-main" style="min-width:0; flex:1 1 auto">
   <div style="display:flex; align-items:center; gap:12px; min-width:0; flex-wrap:wrap">
   <h1 class="study-title" style="margin:0">
-    <span class="study-name" id="study-name" data-slug="single-channel-fokker-planck" data-study-kind="computational" title="single-channel-fokker-planck">Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions</span>
+    <span class="study-name" id="study-name" data-slug="single-channel-fokker-planck" data-study-kind="computational" title="single-channel-fokker-planck" data-edit-kind="study" data-edit-field="title" data-edit-value="Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions" data-edit-label="Title">Schaff et al. 2016, Tests 3–5 / Figs 4–6: a coupled single channel against direct Fokker–Planck solutions</span>
     
   </h1>
+  </div>
+  <p id="study-question-headline" class="study-question-headline" title="With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+" data-edit-kind="study" data-edit-field="question" data-edit-value="With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+" data-edit-multiline data-edit-label="Question"><span class="q-glyph">Q</span> <span class="study-question-headline-text">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+</span></p>
+  </div>
+  <span class="study-header-actions" style="display:inline-flex; gap:10px; flex-shrink:0; align-items:center;">
     
     <span id="study-axis-markers" data-slug="single-channel-fokker-planck" style="display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap"></span>
-  </div>
-  <span class="study-header-actions" style="display:inline-flex; gap:6px; flex-shrink:0; align-items:center;">
     
     
     
@@ -49,12 +66,6 @@
 
 
 
-
-<p id="study-question-headline" class="study-question-headline"><span class="q-glyph">Q</span> With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
-co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
-solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
-finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
-</p>
 
 <nav class="study-tabs" aria-label="Study sections">
   
@@ -84,10 +95,18 @@ finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
   </button>
   
   <span class="study-dl study-export-wrap" style="margin-left:auto; align-self:center; position:relative; display:inline-flex">
-    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Download this study's figures or a runnable notebook">↓ Export ▾</button>
-    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:200px;padding:4px">
-      <button type="button" id="study-dl-figures" role="menuitem" class="study-jump-item" onclick="window._vivStudyFiguresFromCard(event, 'single-channel-fokker-planck')">Download figures</button>
-      <button type="button" id="study-dl-notebook" role="menuitem" class="study-jump-item" onclick="window._vivStudyNotebookFromCard(event, 'single-channel-fokker-planck', 'vcell-hybrid-paper-benchmarks')">Download notebook</button>
+    <button type="button" id="study-export-btn" class="btn-mini" aria-haspopup="true" aria-expanded="false" title="Shortcuts — open in the browser or download (report, notebook, figures)">Shortcuts ▾</button>
+    
+    <div id="study-export-menu" role="menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.14);z-index:70;min-width:190px;padding:4px">
+      <div class="study-export-sec">Report</div>
+      <button type="button" id="study-report-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportOpen(event, 'single-channel-fokker-planck')">Open in browser</button>
+      <button type="button" id="study-report-dl" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyReportDownload(event, 'single-channel-fokker-planck')">Download HTML</button>
+      <div class="study-export-sec">Notebook</div>
+      <button type="button" id="study-nb-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookOpen(event, 'single-channel-fokker-planck')">Open in browser</button>
+      <button type="button" id="study-dl-notebook" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyNotebookFromCard(event, 'single-channel-fokker-planck', 'vcell-hybrid-paper-benchmarks')">Download .ipynb</button>
+      <div class="study-export-sec">Figures</div>
+      <button type="button" id="study-fig-open" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresOpen(event, 'single-channel-fokker-planck')">Open in browser</button>
+      <button type="button" id="study-dl-figures" role="menuitem" class="btn-mini study-export-item" onclick="window._vivStudyFiguresFromCard(event, 'single-channel-fokker-planck')">Download (zip)</button>
     </div>
   </span>
 </nav>
@@ -100,8 +119,18 @@ finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 .study-kind-tag.study-kind-biological{background:#ecfdf5;color:#065f46}
 .study-kind-tag.study-kind-computational{background:#eff6ff;color:#1e40af}
 .study-kind-tag.study-kind-theoretical{background:#faf5ff;color:#6b21a8}
-.study-question-headline{margin:6px 0 0 0;font-size:1.05em;line-height:1.5;color:#1e293b;font-family:Georgia,"Times New Roman",serif}
+.study-question-headline{margin:2px 0 0 0;font-size:0.85em;line-height:1.35;color:#475569;font-family:Georgia,"Times New Roman",serif;padding-right:40px}
+/* Park the inline-edit ✎ in a reserved right gutter so it never lands over the
+   question text (the pencil is an absolutely-positioned child of the editable). */
+.study-question-headline>.ie-pencil{right:6px;top:1px}
+h1.study-title .study-name.ie-editable{padding-right:36px}
+h1.study-title .study-name>.ie-pencil{right:4px;top:6px}
 .study-question-headline .q-glyph{display:inline-block;font-size:0.78em;font-weight:700;font-family:ui-monospace,monospace;color:#64748b;background:#f1f5f9;padding:1px 7px;border-radius:4px;margin-right:6px;vertical-align:middle}
+/* Study Export menu — styled to match the investigation-level ↓ Export menu
+   exactly: grey uppercase section labels + full-width, left-aligned, stacked
+   text-link items (not inline pills). Mirrors walkthrough.js `_sec` + `_mi`. */
+.study-export-sec{padding:6px 8px 2px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8}
+.study-export-item{display:block;width:100%;text-align:left;border:none;background:transparent}
 .status-detail-panel{margin:0;padding:2px 0;background:transparent;border:none;border-radius:0;font-size:0.92em}
 .status-detail-row{display:flex;align-items:center;gap:8px;padding:3px 0}
 .status-detail-axis{min-width:140px;color:#475569;font-size:0.9em}
@@ -239,6 +268,9 @@ finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 /* findings */
 .findings-section{padding:14px 16px;background:#fafbff;border:1px solid #c7d2fe;border-radius:8px}
 .finding-card{padding:12px 14px;margin:10px 0;border:1px solid #e2e8f0;border-left:5px solid #6366f1;border-radius:6px;background:#fff}
+/* Brief highlight when an item is reached via a ?ev= evidence deep-link. */
+.ev-flash{animation:ev-flash-kf 1.9s ease-out;scroll-margin-top:12px}
+@keyframes ev-flash-kf{0%{box-shadow:0 0 0 3px #fbbf24}70%{box-shadow:0 0 0 3px rgba(251,191,36,0.45)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}
 .finding-card.finding-status-confirms{border-left-color:#10b981}
 .finding-card.finding-status-partial{border-left-color:#f59e0b}
 .finding-card.finding-status-contradicts{border-left-color:#dc2626}
@@ -547,7 +579,7 @@ finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Claim</h2>
-      <p class="ctr-text">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="claim" data-edit-value="" data-edit-multiline data-edit-label="Claim">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
 co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
 solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
 finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
@@ -559,12 +591,19 @@ finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Background</h2>
       <div class="ctr-meta">
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Question</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="question" data-edit-value="With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
+co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
+solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
+finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
+" data-edit-multiline data-edit-label="Question">With a single channel whose opening is coupled to calcium (rate αβ(ρ(0) + 1)), does the hybrid
 co-simulation reproduce the probability densities of calcium given by direct, Monte-Carlo-free
 solutions of the Fokker–Planck equations? Two regimes: fast diffusion (well mixed, Test 3) and
 finite diffusion on coarse grids (Tests 4–5), as in Figs 4–6 of the paper.
 </span></div>
-        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item">The hybrid samples the same piecewise-deterministic process the Fokker–Planck equations
+        <div class="ctr-meta-row"><span class="ctr-meta-k">Hypothesis</span> <span class="ctr-meta-item" data-edit-kind="study" data-edit-field="hypothesis" data-edit-value="The hybrid samples the same piecewise-deterministic process the Fokker–Planck equations
+describe, so its histograms should match them to within sampling noise (reduced χ² ≈ 1). The
+paper reports L2 differences of 1–3% of the maximum.
+" data-edit-multiline data-edit-label="Hypothesis">The hybrid samples the same piecewise-deterministic process the Fokker–Planck equations
 describe, so its histograms should match them to within sampling noise (reduced χ² ≈ 1). The
 paper reports L2 differences of 1–3% of the maximum.
 </span></div>
@@ -574,7 +613,27 @@ paper reports L2 differences of 1–3% of the maximum.
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Model &amp; approach</h2>
-      <p class="ctr-text">Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="objective" data-edit-value="Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
+at α; it starts closed, with ρ = 0.
+
+- **Test 3:** α = β = 1, a = 24, d = 10⁴, 3D cube of side 1 (Δx = 0.1, channel at the centre),
+  Δτ = 0.002.
+  - Compared: p(ρ̄) at τ = 30.
+  - Reference: Eq 4, solved in time and checked against its exact steady state.
+  - Ensembles: 10,000 co-sim trials, and the same on native VCell.
+- **Test 4:** α = 10, β = 1, a = 20/3, d = 1, two cells with Δx = 2, Δτ = 10⁻⁴.
+  - Compared: p(ρᵢ) at τ = 1.
+  - Reference: the S2-Text master equation (Eq T2.1) at Δρ = 2.5, 1.2 and 0.6 × 10⁻³, extrapolated
+    to Δρ → 0.
+  - Ensembles: 12,500 trials.
+- **Test 5:** α = 20, β = 0.5, a = 20, d = 50, three cells.
+  - Reference: four Δρ, extrapolated as in the paper.
+  - Ensembles: 12,500 trials at Δτ = 10⁻⁴.
+
+Densities are 20-bin histograms on [0, ρ_max(i)] (40 bins on [0, 24] for Test 3), compared with the
+reference averaged over the same bins. Reported: the relative L2 (RMS over bins / reference
+maximum), the absolute L2, and the reduced χ² against multinomial sampling noise.
+" data-edit-multiline data-edit-label="Objective">Dimensionless model: ∂τρ = d·∂²ₓρ + a·δ(x)·ξ − ρ. The channel opens at αβ(ρ(0) + 1) and closes
 at α; it starts closed, with ρ = 0.
 
 - **Test 3:** α = β = 1, a = 24, d = 10⁴, 3D cube of side 1 (Δx = 0.1, channel at the centre),
@@ -625,7 +684,8 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
 
     <div class="ctr-block">
       <h2 class="overview-label ctr-h">Result</h2>
-      <p class="ctr-text">Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
+      
+      <p class="ctr-text" data-edit-kind="study" data-edit-field="result" data-edit-value="" data-edit-multiline data-edit-label="Result">Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
 </p>
       
       
@@ -671,11 +731,12 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-confirms">
+      <div class="finding-card finding-kind-computational finding-status-confirms" id="finding-F-01">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✓</span>
-            <span class="finding-claim finding-statement">Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-01].statement" data-edit-value="Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
+" data-edit-multiline data-edit-label="Finding F-01">Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
 </span>
             
             <span class="finding-chip">via <code>test4-cosim-matches-fokker-planck</code></span>
@@ -699,10 +760,13 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -726,11 +790,12 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-partial">
+      <div class="finding-card finding-kind-computational finding-status-partial" id="finding-F-02">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">◐</span>
-            <span class="finding-claim finding-statement">DIVERGENCE (failed primary): in the fast-diffusion regime (Test 3) the co-simulation&#39;s reduced χ² against Eq 4 is 2.48, just over the [0, 2] band, so test3-cosim-matches-fokker-planck FAILS. The native VCell arm sits just under at 1.82 (passes). Both solvers share the same small 0.58% relative-L2 bias (about twice the 0.30% sampling noise), so the gap belongs to the spatial hybrid at Δτ = 0.002, not to the co-simulation.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-02].statement" data-edit-value="DIVERGENCE (failed primary): in the fast-diffusion regime (Test 3) the co-simulation&#39;s reduced χ² against Eq 4 is 2.48, just over the [0, 2] band, so test3-cosim-matches-fokker-planck FAILS. The native VCell arm sits just under at 1.82 (passes). Both solvers share the same small 0.58% relative-L2 bias (about twice the 0.30% sampling noise), so the gap belongs to the spatial hybrid at Δτ = 0.002, not to the co-simulation.
+" data-edit-multiline data-edit-label="Finding F-02">DIVERGENCE (failed primary): in the fast-diffusion regime (Test 3) the co-simulation&#39;s reduced χ² against Eq 4 is 2.48, just over the [0, 2] band, so test3-cosim-matches-fokker-planck FAILS. The native VCell arm sits just under at 1.82 (passes). Both solvers share the same small 0.58% relative-L2 bias (about twice the 0.30% sampling noise), so the gap belongs to the spatial hybrid at Δτ = 0.002, not to the co-simulation.
 </span>
             
             <span class="finding-chip">via <code>test3-cosim-matches-fokker-planck</code></span>
@@ -754,10 +819,13 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -782,11 +850,12 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
       
       
       
-      <div class="finding-card finding-kind-computational finding-status-contradicts">
+      <div class="finding-card finding-kind-computational finding-status-contradicts" id="finding-F-03">
         <details class="finding-details">
           <summary class="finding-row">
             <span class="finding-status-glyph">✗</span>
-            <span class="finding-claim finding-statement">The Test 3 gap is a first-order time-discretization error, not a model error: the mean-bias fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.044% ± 0.027%, consistent with zero (passes [−0.001, 0.001]). Native VCell at Δτ = 0.002 matches the fit&#39;s prediction, confirming the bias scales with Δτ and vanishes as Δτ → 0.
+            <span class="finding-claim finding-statement" data-edit-kind="study" data-edit-field="findings[F-03].statement" data-edit-value="The Test 3 gap is a first-order time-discretization error, not a model error: the mean-bias fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.044% ± 0.027%, consistent with zero (passes [−0.001, 0.001]). Native VCell at Δτ = 0.002 matches the fit&#39;s prediction, confirming the bias scales with Δτ and vanishes as Δτ → 0.
+" data-edit-multiline data-edit-label="Finding F-03">The Test 3 gap is a first-order time-discretization error, not a model error: the mean-bias fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.044% ± 0.027%, consistent with zero (passes [−0.001, 0.001]). Native VCell at Δτ = 0.002 matches the fit&#39;s prediction, confirming the bias scales with Δτ and vanishes as Δτ → 0.
 </span>
             
             <span class="finding-chip">via <code>test3-bias-is-first-order-in-dtau</code></span>
@@ -810,10 +879,13 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
             </div>
             
             
+            
+            
             <div class="finding-traceability" style="font-size:0.84em;color:#475569;padding:4px 10px;margin:4px 0">
               
               
               runs: <a href="#run-default"><code>default</code></a>
+              
             </div>
             
             
@@ -879,12 +951,23 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
 
 
 <section class="study-tab-panel" data-kind="compose" id="panel-compose" hidden>
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
-    <h2 class="overview-label" style="margin:0">Model composition</h2>
-    
-    <button type="button" class="btn-mini" onclick="window._vivStudyNotebookFromCard(event, 'single-channel-fokker-planck', 'vcell-hybrid-paper-benchmarks')" title="Download a runnable Jupyter notebook for THIS study — its composite + editable parameters + figures">↓ notebook</button>
+  
+  <div class="model-subtabs" role="tablist" aria-label="Model sections">
+    <button type="button" class="model-subtab active" data-modelsub="composition" role="tab" aria-selected="true" onclick="_setModelSubtab('composition')">Composition</button>
+    <button type="button" class="model-subtab" data-modelsub="loom" role="tab" aria-selected="false" onclick="_setModelSubtab('loom')">Loom</button>
+    <button type="button" class="model-subtab" data-modelsub="variants" role="tab" aria-selected="false" onclick="_setModelSubtab('variants')">Variants <span class="model-subtab-count">4</span></button>
+    <button type="button" class="model-subtab" data-modelsub="interventions" role="tab" aria-selected="false" onclick="_setModelSubtab('interventions')">Interventions</button>
+    <button type="button" class="model-subtab" data-modelsub="readouts" role="tab" aria-selected="false" onclick="_setModelSubtab('readouts')">Readouts</button>
   </div>
 
+  
+  <div class="model-subpanel" data-modelsubpanel="loom" hidden>
+    <div id="model-loom-mount" class="model-loom-mount">
+      <div class="viv-loading"><span class="viv-loading-spin" aria-hidden="true"></span><span>Loading the interactive model diagram…</span></div>
+    </div>
+  </div>
+
+  <div class="model-subpanel active" data-modelsubpanel="composition">
   
   
   <div id="model-composite-cards" class="model-composite-cards" data-study="single-channel-fokker-planck"
@@ -959,100 +1042,155 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
 
   
   
-  <div class="overview-section" id="conditions-section">
-    <h3>Conditions <span class="muted" style="font-size:0.85em;font-weight:normal">— what we set up to test it</span></h3>
-    <p class="muted" style="font-size:0.88em">The experimental knobs: how variants perturb the baseline, and which model settings still need a human-set value.</p>
+  
 
+  
+
+  
+  
+  
+  
+  </div>
+
+  
+  <div class="model-subpanel" data-modelsubpanel="variants" hidden>
+  <div class="overview-section" id="study-variants-section">
+    <p class="msub-intro">A <strong>variant</strong> is a copy of a baseline model with a few parameters changed, run and compared against the baseline. Everything else stays fixed.</p>
     
-    <div class="cond-block">
-      <div class="cond-block-title">Variants <span class="muted" style="font-weight:normal;font-size:0.85em">(4)</span></div>
-      <table class="cond-table">
-        <thead><tr><th>Variant</th><th>Composite / base</th><th>Parameter overrides</th><th>Notes</th></tr></thead>
-        <tbody>
+    <div class="var-list">
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">test3-fast-diffusion</code>
+            <span class="var-base">based on <code>single-channel-fokker-planck</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="test3-fast-diffusion" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="test3-fast-diffusion" title="Delete variant" aria-label="Delete variant test3-fast-diffusion">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">test4-finite-diffusion</code>
+            <span class="var-base">based on <code>single-channel-fokker-planck</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="test4-finite-diffusion" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="test4-finite-diffusion" title="Delete variant" aria-label="Delete variant test4-finite-diffusion">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">test5-finite-diffusion</code>
+            <span class="var-base">based on <code>single-channel-fokker-planck</code></span>
+          </div>
           
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="test5-finite-diffusion" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="test5-finite-diffusion" title="Delete variant" aria-label="Delete variant test5-finite-diffusion">✕</button>
+        </div>
+      </div>
+      
+      <div class="var-card">
+        <div class="var-card-main">
+          <div class="var-card-head">
+            <code class="var-name">dtau-sweep</code>
+            <span class="var-base">based on <code>single-channel-fokker-planck</code></span>
+          </div>
           
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>test3-fast-diffusion</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>test4-finite-diffusion</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>test5-finite-diffusion</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-          
-          
-          
-          <tr data-model-composite="" data-model-overrides='{}'>
-            <td><code>dtau-sweep</code></td>
-            <td>
-              <em class="muted">(inherits baseline)</em>
-            </td>
-            <td>
-              
-                <em class="muted">(no overrides)</em>
-              
-            </td>
-            <td></td>
-          </tr>
-          
-        </tbody>
-      </table>
+          <div class="var-overrides">
+            <span class="var-nochange">no overrides — identical to the baseline</span>
+          </div>
+        </div>
+        <div class="var-card-actions">
+          <button type="button" class="action-btn study-variant-run" data-variant="dtau-sweep" title="Run this variant">▶ Run</button>
+          <button type="button" class="icon-btn study-variant-del" data-variant="dtau-sweep" title="Delete variant" aria-label="Delete variant dtau-sweep">✕</button>
+        </div>
+      </div>
+      
     </div>
     
-
+    
+    <form class="study-variant-add-form msub-addcard" onsubmit="return _submitStudyVariantAdd(this)">
+      <div class="msub-addcard-title">Add a variant</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="hi-dnaa" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field">
+          <span class="msub-lbl">Based on</span>
+          <select name="base_composite" class="msub-input">
+            <option value="single-channel">single-channel</option>
+          </select>
+          <span class="msub-hint">the baseline this variant perturbs</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Parameter overrides</span>
+          <input name="overrides" placeholder='{"k_synth": 2.0}' class="msub-input mono">
+          <span class="msub-hint">JSON object of parameter → value; leave blank for none</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add variant</button>
+        <span class="study-variant-add-status msub-status"></span>
+      </div>
+    </form>
     
   </div>
-  
+  </div>
 
   
+  <div class="model-subpanel" data-modelsubpanel="interventions" hidden>
+  <div class="overview-section" id="study-interventions-section">
+    <p class="msub-intro">An <strong>intervention</strong> is a named, described perturbation applied in this study (e.g. a knockout) — the conceptual change you are testing, documented alongside the model.</p>
+    
+    <div class="msub-empty">No interventions yet. Add one below.</div>
+    
+    <form class="study-intervention-add-form msub-addcard" onsubmit="return _submitStudyInterventionAdd(this)">
+      <div class="msub-addcard-title">Add an intervention</div>
+      <div class="msub-field-grid">
+        <label class="msub-field">
+          <span class="msub-lbl">Name</span>
+          <input name="name" required pattern="[a-zA-Z0-9_-]+" placeholder="knockout-dnaA" class="msub-input mono">
+          <span class="msub-hint">letters, numbers, - and _</span>
+        </label>
+        <label class="msub-field msub-field-wide">
+          <span class="msub-lbl">Description</span>
+          <input name="description" placeholder="what the intervention does" class="msub-input">
+          <span class="msub-hint">a short, human-readable summary</span>
+        </label>
+      </div>
+      <div class="msub-addcard-foot">
+        <button type="submit" class="action-btn primary">+ Add intervention</button>
+        <span class="study-intervention-add-status msub-status"></span>
+      </div>
+    </form>
+  </div>
+  </div>
 
   
-  
-  
-  
-
-
-
-  
+  <div class="model-subpanel" data-modelsubpanel="readouts" hidden>
   <div class="overview-section" id="model-readouts-section">
     <h3>Readouts</h3>
 
@@ -1070,6 +1208,7 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
     </div>
 
     
+  </div>
   </div>
   </div>
 
@@ -1091,7 +1230,6 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
   <button type="button" id="study-run-current-spec" class="action-btn" title="Run this study's CURRENT baseline spec (POST /api/study-run-baseline) as a brand-new run">▶ Run current spec</button>
   <button type="button" id="study-reproduce" class="btn-mini" title="Replay this study's most recent run's RECORDED manifest verbatim (POST /api/study-reproduce) — ignores any study.yaml edits made since">↻ Reproduce</button>
   
-  <button type="button" id="study-run-composite" class="btn-mini" title="Dispatch a specific process-bigraph composite_id to the remote compute backend (pbg-native multi_node/mbp, or the Nextflow campaign path) — advanced, independent of this study's own pinned baseline">⚙ Dispatch composite</button>
 </div>
 
 <div class="overview-section" id="simulations-section">
@@ -1106,6 +1244,12 @@ maximum), the absolute L2, and the reduced χ² against multinomial sampling noi
 <div class="overview-section" id="results-section">
   
   <div id="results-summary" data-study="single-channel-fokker-planck" style="margin:0 0 16px"></div>
+
+  
+  <div id="gate-results-section" data-study="single-channel-fokker-planck" style="margin:0 0 22px" hidden>
+    <h4>Gate results <span class="muted" style="font-size:0.8em;font-weight:normal">— each acceptance test's value, graded from run data</span></h4>
+    <div id="gate-results"></div>
+  </div>
 
   <h4>Latest run preview <span class="muted" style="font-size:0.8em;font-weight:normal">— downsampled sparkline + first/last/min/max per store</span></h4>
   <div id="results-preview" data-study="single-channel-fokker-planck">
@@ -1637,7 +1781,46 @@ cites:   ["schaff2016hybrid"]</pre>
     
     <div class="decide-section" style="margin-top:18px">
       <h3 class="overview-label">Conclusion</h3>
-      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5"><p>Results (results/metrics.json, 2026-10-05; relative L2 = RMS over bins / reference maximum):</p>
+      <div class="conclusion-md" style="background:#f8fafc;padding:12px;border-left:3px solid #94a3b8;border-radius:3px;font-size:0.9em;line-height:1.5" data-edit-kind="study" data-edit-field="conclusion" data-edit-value="Results (results/metrics.json, 2026-10-05; relative L2 = RMS over bins / reference maximum):
+
+| test | solver, trials | rel. L2 | sampling noise | reduced χ² | paper |
+|---|---|---|---|---|---|
+| 3 (d = 10⁴), ρ̄ at τ = 30 | co-sim, 10,000 | 0.58% | 0.30% | 2.48 | abs. L2 0.0137 (ours 0.021) |
+| 3 | native VCell, 10,000 | 0.58% | 0.30% | 1.82 | |
+| 4 (d = 1), ρ(x₀) / ρ(x₁) at τ = 1 | co-sim, 12,500 | 1.0% / 1.6% | 1.5% / 1.7% | 0.54 / 0.80 | 1.9% / 3.3% |
+| 5 (d = 50), ρ(x₀) / ρ(x₁) / ρ(x₂) | co-sim, 12,500 | 0.9% / 1.2% / 1.4% | ≈ 1.4% | 0.80 / 0.89 / 0.86 | 1.3% / 1.3% / 1.5% |
+
+- **Finite diffusion (Tests 4–5):** the co-simulation matches the functional Fokker–Planck solutions to within
+  sampling noise in every cell (reduced χ² 0.54–0.89), with smaller differences than the paper reports.
+  - Extrapolating the reference to Δρ → 0 matters: it shifts the Test 5 reference by about 4% of its maximum and
+    Test 4&#39;s cell 1 by 1.7%. These are the size of the discrepancies the paper attributes to under-resolved
+    Δρ.
+- **Fast diffusion (Test 3):** the reference itself is exact. Eq 4 at τ = 30 agrees with its closed-form steady
+  state to 0.03%.
+  - Both hybrid solvers differ from it by the same 0.58%, about twice the sampling noise. Native VCell&#39;s
+    reduced χ² (1.82) sits just under the threshold, and the co-sim&#39;s (2.48) just over it.
+  - Since the two solvers share the same small bias, it belongs to the spatial hybrid at Δτ = 0.002, not to the
+    co-simulation.
+- **Δτ check (2026-10-08; `dtau` stage, viz/dtau.html):** the Test 3 gap is a first-order time-discretization
+  error.
+  - 4,000 co-sim trials per Δτ, each sampled at τ = 10, 15, …, 30 (stationary; lag-5 correlation ≈ 0.01).
+    SEs are bootstrapped over trials.
+
+    | Δτ | mean bias | SD bias | reduced χ² |
+    |---|---|---|---|
+    | 0.008 | −0.45% ± 0.03% | +4.4% ± 1.0% | 28.0 |
+    | 0.004 | −0.25% ± 0.03% | +2.1% ± 1.0% | 10.6 |
+    | 0.002 | −0.12% ± 0.03% | +1.9% ± 1.1% | 2.28 |
+    | 0.001 | −0.12% ± 0.03% | +3.6% ± 1.9% | 2.74 |
+
+  - **Mean:** the fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 (−0.10% at Δτ = 0.002) and an offset of
+    −0.04% ± 0.03%, consistent with zero (reduced χ² 0.71). Native VCell at Δτ = 0.002 (−0.10% ± 0.04%)
+    matches the slope&#39;s prediction.
+  - **SD:** only Δτ = 0.008 is clearly off. The others are within about 2σ. The skewed density (∝ e^ρ) makes
+    the SD&#39;s sampling error 2–4× the normal-theory value.
+  - The reduced χ² stays above 2 down to Δτ = 0.001. With 20,000 samples, the histogram resolves a 0.1% shift
+    of a density that is steep near ρ = a.
+" data-edit-multiline data-edit-label="Conclusion"><p>Results (results/metrics.json, 2026-10-05; relative L2 = RMS over bins / reference maximum):</p>
 <p>| test | solver, trials | rel. L2 | sampling noise | reduced χ² | paper |
 |---|---|---|---|---|---|
 | 3 (d = 10⁴), ρ̄ at τ = 30 | co-sim, 10,000 | 0.58% | 0.30% | 2.48 | abs. L2 0.0137 (ours 0.021) |
@@ -1734,6 +1917,51 @@ of a density that is steep near ρ = a.</p>
   </div>
 
   
+  <div class="overview-section" id="study-findings-authoring">
+    <h2 class="overview-label">Record a finding</h2>
+    
+    <ul class="synthesis-list" style="margin:0 0 12px">
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-01" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>Finite diffusion (Tests 4–5): the co-simulation matches the direct Fokker–Planck solutions to within sampling noise in every cell — reduced χ² = 0.54 (Test 4, x₀), 0.80 (Test 4, x₁) and 0.80 / 0.89 / 0.86 (Test 5, x₀/x₁/x₂), all inside [0, 2]. Relative L2 differences (1.0–1.6%) are smaller than the paper&#39;s (1.9% / 3.3% for Test 4).
+ <span class="muted small">(confirms)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-02" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>DIVERGENCE (failed primary): in the fast-diffusion regime (Test 3) the co-simulation&#39;s reduced χ² against Eq 4 is 2.48, just over the [0, 2] band, so test3-cosim-matches-fokker-planck FAILS. The native VCell arm sits just under at 1.82 (passes). Both solvers share the same small 0.58% relative-L2 bias (about twice the 0.30% sampling noise), so the gap belongs to the spatial hybrid at Δτ = 0.002, not to the co-simulation.
+ <span class="muted small">(partial)</span></span>
+      </li>
+      
+      <li style="display:flex;align-items:flex-start;gap:8px">
+        <button type="button" class="action-btn study-finding-del" data-id="F-03" title="Delete finding" style="font-size:0.72em;line-height:1;padding:2px 6px">✕</button>
+        <span>The Test 3 gap is a first-order time-discretization error, not a model error: the mean-bias fit offset + slope·Δτ gives a slope of −0.51 ± 0.06 and an offset of −0.044% ± 0.027%, consistent with zero (passes [−0.001, 0.001]). Native VCell at Δτ = 0.002 matches the fit&#39;s prediction, confirming the bias scales with Δτ and vanishes as Δτ → 0.
+ <span class="muted small">(contradicts)</span></span>
+      </li>
+      
+    </ul>
+    
+    <form class="study-finding-add-form" onsubmit="return _submitStudyFindingAdd(this)" style="display:flex;flex-direction:column;gap:8px;max-width:680px">
+      <textarea name="statement" required rows="2" placeholder="What did this study show? (one sentence)"
+                style="font-size:0.9em;padding:6px 8px;resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="font-size:0.78em;color:#475569">Status<br>
+          <select name="status" style="font-size:0.82em;padding:3px 6px">
+            <option value="novel">novel</option>
+            <option value="confirms">confirms literature</option>
+            <option value="partial">partial</option>
+            <option value="contradicts">contradicts</option>
+          </select></label>
+        <label style="font-size:0.78em;color:#475569;flex:1;min-width:200px">Why / mechanism (optional)<br>
+          <input name="explanation" style="width:100%;font-size:0.82em;padding:3px 6px"></label>
+        <button type="submit" class="action-btn" style="font-size:0.82em">+ Add finding</button>
+      </div>
+    </form>
+    <div class="study-finding-add-status muted" style="font-size:0.8em;margin-top:4px"></div>
+  </div>
+
+  
   <div class="overview-section"><h2 class="overview-label">Follow-ups &amp; decisions</h2>
 
     
@@ -1755,11 +1983,13 @@ of a density that is steep near ρ = a.</p>
 </section>
 
 </main>
-<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "ef2a5d2960f7fc840037cd9989cba0754faf7334", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/ef2a5d2960f7fc840037cd9989cba0754faf7334", "branch": "main", "lockfile": "uv.lock@ef37c826fcee", "generated_at": "2026-10-28 01:28 UTC"} };</script>
+<script>window.__DASH_CONFIG__ = { mode: "snapshot", interactiveUrl: "https://github.com/vivarium-collective/viva-pde-particle", basePath: "/viva-pde-particle/workbench", inputsDownloadBase: "https://github.com/vivarium-collective/viva-pde-particle/raw/main/workspace", provenance: {"repo_slug": "vivarium-collective/viva-pde-particle", "repo_url": "https://github.com/vivarium-collective/viva-pde-particle", "commit": "58b8ad470c52a0d462189961da09e39bc924b02d", "commit_url": "https://github.com/vivarium-collective/viva-pde-particle/commit/58b8ad470c52a0d462189961da09e39bc924b02d", "branch": "main", "lockfile": "uv.lock@3377ebfb521f", "generated_at": "2026-11-23 01:02 UTC"} };</script>
 <script src="/viva-pde-particle/workbench/assets/data-source.js"></script>
+<script src="/viva-pde-particle/workbench/assets/backend-features.js"></script>
 <script src="/viva-pde-particle/workbench/assets/toast.js"></script>
 <script>
 window._studyName = "single-channel-fokker-planck";
+window.__STUDY_INVESTIGATION__ = "vcell-hybrid-paper-benchmarks";  // owning investigation (feedback save routing)
 window._study = null;  // populated by _bootstrapStudy() in study-detail.js
 
 // Save handler for the Conditions → Model settings editable rows.
@@ -1887,7 +2117,14 @@ window._seedFollowupProposal = _seedFollowupProposal;
 <script src="/viva-pde-particle/workbench/assets/checklist-select.js"></script>
 <script src="/viva-pde-particle/workbench/assets/progress-track.js"></script>
 <script src="/viva-pde-particle/workbench/assets/comparison-view.js"></script>
+<!-- The backend launch plugin's script (remote-pinned dispatch + the
+     "Dispatch composite" panel), quarantined out of study-detail.js. Loaded
+     BEFORE it: study-detail.js calls window.SmsLaunch.mount() while it loads,
+     and runs local-only when the file is absent. -->
+<script src="/viva-pde-particle/workbench/assets/sms-launch.js"></script>
 <script src="/viva-pde-particle/workbench/assets/study-detail.js"></script>
+<script src="/viva-pde-particle/workbench/assets/study-feedback.js"></script>
+<script src="/viva-pde-particle/workbench/assets/inline-edit.js"></script>
 <script>
 // Re-assert the refresh-aware seed handlers AFTER study-detail.js (which
 // defines its own navigate-away _seedFollowupStudy). The embedded
@@ -1897,7 +2134,7 @@ window._seedFollowupProposal = _seedFollowupProposal;
 </script>
 <script>
 (function () {
-  // Task 8: the Configure & Run mount and the remote-run (smsvpctest) panel
+  // Task 8: the Configure & Run mount and the remote-run panel
   // were both removed from the Simulate tab — launching now lives entirely
   // in the header buttons (Reproduce / Run current spec). This block used
   // to also mount ConfigureRun into the (now-deleted) mount div and, in an
