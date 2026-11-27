@@ -21,6 +21,13 @@ dependencies = [
     "plotly",
     "numpy",
     "scipy",
+    # The Smoldyn particle engine is reused from the canonical wrapper rather than
+    # vendored: SmoldynHybrid subclasses viva_smoldyn.SmoldynHybridProcess. Importing
+    # viva_smoldyn does NOT import smoldyn (the engine import is lazy), and smoldyn's
+    # own build comes from external/Smoldyn (the pyhybrid fork) via pixi; the light uv
+    # install just resolves viva-smoldyn + its PyPI deps, and the hybrid tests
+    # importorskip the engine.
+    "viva-smoldyn",
 ]
 
 [project.optional-dependencies]
@@ -56,3 +63,4 @@ packages = ["viva_pde_particle"]
 
 [tool.uv.sources]
 vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-workbench.git", branch = "main" }
+viva-smoldyn = { git = "https://github.com/vivarium-collective/viva-smoldyn.git", branch = "main" }
