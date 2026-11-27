@@ -1,33 +1,29 @@
-"""Smoldyn particle process with field-dependent rates (virtualcell/Smoldyn ``pyhybrid``).
+"""Coupling glue for the hybrid model's particle side.
 
-Each update copies the continuous fields into a ``smoldyn.HybridGrid``. Reaction
-rates written ``k*B;`` then read them at each molecule, or at each grid node for
-0th-order creation. Smoldyn advances, and the process returns per-node particle
-counts binned on the same grid.
+The field-coupled Smoldyn process itself now lives in **viva-smoldyn** as
+:class:`viva_smoldyn.SmoldynHybridProcess` — the Smoldyn ``HybridGrid`` engine
+logic (copy fields in, field-dependent rates, per-node grid-binned counts out) is
+pure Smoldyn and belongs in the wrapper, not vendored here. This module keeps only
+pde-particle's COUPLING glue: the scheduling helper the composite uses, and a thin
+:class:`SmoldynHybrid` alias so the ``local:SmoldynHybrid`` address and every
+composite/study/test that references it keep working unchanged.
 
-The engine has no notion of the PDE clock. Each update reads the fields at its start and
-advances Smoldyn by the update's interval (whole Smoldyn steps of ``step_multiplier·dt``).
+The engine has no notion of the PDE clock; each update reads the fields at its
+start and advances Smoldyn by the update's interval. **Scheduling is the
+composite's job:**
 
-**Scheduling is the composite's job.**
-- ``coupling="start-of-interval"``: the composite gives the engine interval k·dt, so a step
-  over [T, T+k·dt] reads the field at T.
-- ``coupling="fvsolver"``: vcell-fvsolver's exact timing (the step reads the field at
-  T+(k−1)·dt, see docs/fvsolver-hybrid-notes.md). The composite wraps the engine in a
-  :class:`~viva_pde_particle.processes.stepper.Stepper` that ticks every dt and runs it on every
-  k-th tick with interval k·dt.
+- ``coupling="start-of-interval"``: the composite gives the engine interval k·dt,
+  so a step over [T, T+k·dt] reads the field at T.
+- ``coupling="fvsolver"``: vcell-fvsolver's exact timing (the step reads the field
+  at T+(k−1)·dt, see docs/fvsolver-hybrid-notes.md). The composite wraps the
+  engine in a :class:`~viva_pde_particle.processes.stepper.Stepper` that ticks
+  every dt and runs it on every k-th tick with interval k·dt.
 
 :func:`interval_for` gives the particle node's interval for each mode.
 """
 from __future__ import annotations
 
-import contextlib
-import os
-import tempfile
-
-import numpy as np
-from process_bigraph import Process
-
-from viva_pde_particle.grid import CartesianGrid
+from viva_smoldyn import SmoldynHybridProcess
 
 COUPLING_MODES = ("fvsolver", "start-of-interval")
 
@@ -40,127 +36,12 @@ def interval_for(coupling: str, dt: float, step_multiplier: int) -> float:
     raise ValueError(f"coupling must be one of {COUPLING_MODES}, got {coupling!r}")
 
 
-@contextlib.contextmanager
-def _quiet_stdout():
-    """Silence Smoldyn's C-level log output on stdout and stderr (it bypasses sys.stdout).
+class SmoldynHybrid(SmoldynHybridProcess):
+    """pde-particle's binding of viva-smoldyn's field-coupled Smoldyn process.
 
-    Errors still surface: a failed load or run raises a Python exception after the
-    file descriptors are restored.
+    A thin subclass so the class is *defined in this package*: that keeps the
+    ``local:SmoldynHybrid`` link (registered by ``build_core``'s own-package scan)
+    and every composite / study / test that addresses it working unchanged, while
+    the engine implementation is reused from viva-smoldyn rather than vendored.
+    The config, ports and behavior are exactly viva-smoldyn's ``SmoldynHybridProcess``.
     """
-    try:
-        saved = [os.dup(1), os.dup(2)]
-    except OSError:
-        yield
-        return
-    devnull = os.open(os.devnull, os.O_WRONLY)
-    try:
-        os.dup2(devnull, 1)
-        os.dup2(devnull, 2)
-        yield
-    finally:
-        os.dup2(saved[0], 1)
-        os.dup2(saved[1], 2)
-        for fd in (*saved, devnull):
-            os.close(fd)
-
-
-class SmoldynHybrid(Process):
-    """Particle half of a hybrid model.
-
-    Config:
-        grid: ``{origin, size, num}`` shared with the PDE process.
-        config_text: Smoldyn configuration text (e.g. from
-            :func:`viva_pde_particle.model.write_smoldyn_config`), with ``time_step`` = k·dt.
-        particle_species: species whose per-node counts are reported.
-        field_species: continuous species referenced by rate expressions.
-        dt: PDE time step (s).
-        step_multiplier: k; the Smoldyn time step is k·dt (vcell-fvsolver
-            ``SMOLDYN_STEP_MULTIPLIER``) and must match ``config_text``.
-        emit_positions: also report molecule positions on the ``particle_positions`` port.
-            The port is always declared (the interface does not depend on config); the flag only
-            decides whether the ``(n, dim)`` arrays are copied out each tick, so a composite that
-            does not wire the port pays nothing.
-    """
-
-    config_schema = {
-        "grid": "map",
-        "config_text": "string",
-        "particle_species": "list[string]",
-        "field_species": {"_type": "list[string]", "_default": []},
-        "dt": {"_type": "float", "_default": 0.01},
-        "step_multiplier": {"_type": "integer", "_default": 1},
-        "quiet": {"_type": "boolean", "_default": True},
-        "emit_positions": {"_type": "boolean", "_default": False},
-    }
-
-    def initialize(self, config):
-        import smoldyn._smoldyn as _smoldyn
-
-        self.grid = CartesianGrid.from_config(config["grid"])
-        self.k = int(config["step_multiplier"])
-        self.dt = float(config["dt"])
-        self.smoldyn_dt = self.k * self.dt
-        self.particle_species = list(config["particle_species"])
-        self.field_species = list(config["field_species"])
-        self.time = 0.0
-
-        g = self.grid
-        self.hybrid_grid = _smoldyn.HybridGrid(list(g.origin), list(g.size), list(g.num))
-        self._workdir = tempfile.TemporaryDirectory(prefix="smoldyn-hybrid-")
-        path = os.path.join(self._workdir.name, "model.txt")
-        with open(path, "w") as f:
-            f.write(config["config_text"])
-        quiet = _quiet_stdout() if config["quiet"] else contextlib.nullcontext()
-        with quiet:
-            self.sim = _smoldyn.Simulation(path, "q", self.hybrid_grid)
-        missing = set(self.hybrid_grid.requiredFields()) - set(self.field_species)
-        if missing:
-            raise ValueError(f"rate expressions reference fields not in field_species: {sorted(missing)}")
-
-    def inputs(self):
-        return {"fields": "map[array[float]]"}
-
-    def outputs(self):
-        return {
-            "particle_counts": "map[overwrite[array[float]]]",
-            "particle_totals": "map[overwrite[float]]",
-            "particle_positions": "map[overwrite[array[float]]]",
-        }
-
-    def counts(self) -> dict[str, np.ndarray]:
-        return {
-            s: self.sim.getMoleculeHistogram(s, self.hybrid_grid).astype(float)
-            for s in self.particle_species
-        }
-
-    def positions(self) -> dict[str, np.ndarray]:
-        """Molecule positions (n, dim) per particle species (copies, not views)."""
-        return {s: np.array(self.sim.getMoleculePositions(s), dtype=float) for s in self.particle_species}
-
-    def _report(self) -> dict:
-        counts = self.counts()
-        out = {
-            "particle_counts": counts,
-            "particle_totals": {s: float(c.sum()) for s, c in counts.items()},
-        }
-        if self.config["emit_positions"]:
-            out["particle_positions"] = self.positions()
-        return out
-
-    def initial_state(self):
-        return self._report()
-
-    def _run(self, fields, n_steps: int):
-        for name in self.field_species:
-            self.hybrid_grid.setField(name, np.asarray(fields[name], dtype=float))
-        # exactly n Smoldyn steps: a step is taken while time < breaktime
-        breaktime = self.time + (n_steps - 0.5) * self.smoldyn_dt
-        quiet = _quiet_stdout() if self.config["quiet"] else contextlib.nullcontext()
-        with quiet:
-            self.sim.runUntil(breaktime, self.smoldyn_dt, False)
-        self.time += n_steps * self.smoldyn_dt
-
-    def update(self, state, interval):
-        n_steps = max(1, int(round(interval / self.smoldyn_dt)))
-        self._run(state.get("fields", {}), n_steps)
-        return self._report()

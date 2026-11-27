@@ -79,6 +79,10 @@ viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpow
 viva-workspace = { git = "https://github.com/vivarium-collective/viva-workspace.git", branch = "main" }
 viva-catalog = { git = "https://github.com/vivarium-collective/viva-marketplace.git", branch = "main" }
 viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basic-processes.git", branch = "main" }
+# The canonical Smoldyn wrapper — SmoldynHybrid reuses its SmoldynHybridProcess (pixi
+# does not read [tool.uv.sources], so the git source is declared here too). Importing
+# viva_smoldyn does not import smoldyn; the engine is the external/Smoldyn pyhybrid build.
+viva-smoldyn = { git = "https://github.com/vivarium-collective/viva-smoldyn.git", branch = "main" }
 investigation-contracts = { git = "https://github.com/vivarium-collective/investigation-contracts.git", rev = "65c793fd231d952e49a9cfe4244797dadde1bedc" }
 # GeometryDescription (VCell-style geometry formalism) and its Netgen realization (Phase 7e).
 # rev: vcell-fenics main, merge of #211 (lazy backend imports, so realize() needs no solver-only deps such

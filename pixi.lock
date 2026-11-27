@@ -1,7 +1,17 @@
 version: 7
 platforms:
 - name: linux-64
-- name: osx-arm64
+  virtual-packages:
+  - __unix=0=0
+  - __linux=4.18
+  - __glibc=2.28
+  - __archspec=0=x86_64
+- name: osx-arm64-macos-15-0
+  subdir: osx-arm64
+  virtual-packages:
+  - __osx=15.0
+  - __unix=0=0
+  - __archspec=0=m1
 environments:
   compose:
     channels:
@@ -404,11 +414,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wayland-protocols-1.49-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wslink-2.5.7-pyhd8ed1ab_0.conda
-      - pypi: .
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: https://files.pythonhosted.org/packages/01/4f/83454fafd628e1e7e1726d74e44fb2332be5969d04c6182ca1fecb6c580e/filelock-4.0.9-py3-none-any.whl
@@ -433,6 +444,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6d/c6/6b726ddf4c3ac5a123f285c3650fa8268902c28ea541a0282867f1336e65/zarr-3.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/73/ca/b784745f189a12ccef60517c0c8526d579b40f35da4463c30c07a4677366/numcodecs-0.17.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/76/311f70d5b01b2c70ebf9924f188c666fb6343b885c5107c329c6650afb60/smoldyn-2.76-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/55/e5326141505c5d5e34c5e0935d2908a74e4561eca44108fbfb9c13d2911a/isoduration-20.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/71/44ce230e1b7fadd372515a97e32a83011f906ddded8d03e3c6aafbdedbb7/rfc3987_syntax-1.1.0-py3-none-any.whl
@@ -458,7 +470,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f9/bc/8737e8d54cf51106118039b83f485a4783112fab49ea9d044b234978a46e/tzdata-2026.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
-      osx-arm64:
+      osx-arm64-macos-15-0:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.7.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiosignal-1.4.0-pyhd8ed1ab_0.conda
@@ -803,11 +815,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.2-h8088a28_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-h31dac16_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-      - pypi: .
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: https://files.pythonhosted.org/packages/01/4f/83454fafd628e1e7e1726d74e44fb2332be5969d04c6182ca1fecb6c580e/filelock-4.0.9-py3-none-any.whl
@@ -840,6 +853,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/96/59/1cde6df2f9baa26a1a21c36ac10312062acace29e5c95e029d8da9cf7c3d/numcodecs-0.17.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/9e/51/17023c0f8f1869d8806b979a2bffa3f861f26a3f1a66b094288323fba52f/rfc3986_validator-0.1.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/6a/a83720e953b1682d2d109d3c2dbb0bc9bf28cc1cbc205be4ef4be5da709d/jsonpointer-3.1.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a1/ac/cf525e7164f412e18defece9552112f4e7217f4c1af1296a4ab0d0560243/smoldyn-2.76-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/f0/d6613774d86fbf6d145751d43c59875e47a6f9f17daee0aef173bd36d90e/markupsafe-3.0.4-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a4/73/319dfa745dd668efe89309141ded489126461fcecd2b8f3a3cda185129b6/rpds_py-2026.6.3-cp312-cp312-macosx_11_0_arm64.whl
@@ -1258,11 +1272,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wayland-protocols-1.49-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wslink-2.5.7-pyhd8ed1ab_0.conda
-      - pypi: .
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: git+https://github.com/vivarium-collective/vivarium-workbench.git?branch=main#0e4e79fbb087806b5e7db2d851ea6d754851f587
@@ -1302,6 +1317,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/73/ca/b784745f189a12ccef60517c0c8526d579b40f35da4463c30c07a4677366/numcodecs-0.17.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/74/e4/7e88c40e9f61888e12dac0de41a5fddc2bcd1c3992d9b28e17d915cce0df/boto3-1.43.108-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7a/0b/4670b7e23914b5cc357be5ca45fae503b57d98ecff4b3eabea70412809fd/botocore-1.43.108-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/76/311f70d5b01b2c70ebf9924f188c666fb6343b885c5107c329c6650afb60/smoldyn-2.76-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/55/e5326141505c5d5e34c5e0935d2908a74e4561eca44108fbfb9c13d2911a/isoduration-20.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/71/44ce230e1b7fadd372515a97e32a83011f906ddded8d03e3c6aafbdedbb7/rfc3987_syntax-1.1.0-py3-none-any.whl
@@ -1334,7 +1350,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
-      osx-arm64:
+      osx-arm64-macos-15-0:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.7.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiosignal-1.4.0-pyhd8ed1ab_0.conda
@@ -1679,11 +1695,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.2-h8088a28_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-h31dac16_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-      - pypi: .
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: git+https://github.com/vivarium-collective/vivarium-workbench.git?branch=main#0e4e79fbb087806b5e7db2d851ea6d754851f587
@@ -1733,6 +1750,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/9e/51/17023c0f8f1869d8806b979a2bffa3f861f26a3f1a66b094288323fba52f/rfc3986_validator-0.1.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/6a/a83720e953b1682d2d109d3c2dbb0bc9bf28cc1cbc205be4ef4be5da709d/jsonpointer-3.1.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/b6/78aaf9141fb46742928c113f3cf6ef2259d538cb02b604b7656c1dc9883c/fastapi-0.142.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a1/ac/cf525e7164f412e18defece9552112f4e7217f4c1af1296a4ab0d0560243/smoldyn-2.76-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/f0/d6613774d86fbf6d145751d43c59875e47a6f9f17daee0aef173bd36d90e/markupsafe-3.0.4-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a4/73/319dfa745dd668efe89309141ded489126461fcecd2b8f3a3cda185129b6/rpds_py-2026.6.3-cp312-cp312-macosx_11_0_arm64.whl
@@ -2156,12 +2174,13 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wayland-protocols-1.49-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wslink-2.5.7-pyhd8ed1ab_0.conda
-      - pypi: .
       - pypi: ../pyvcell
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: git+https://github.com/vivarium-collective/vivarium-workbench.git?branch=main#0e4e79fbb087806b5e7db2d851ea6d754851f587
@@ -2200,6 +2219,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/73/ca/b784745f189a12ccef60517c0c8526d579b40f35da4463c30c07a4677366/numcodecs-0.17.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/74/e4/7e88c40e9f61888e12dac0de41a5fddc2bcd1c3992d9b28e17d915cce0df/boto3-1.43.108-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7a/0b/4670b7e23914b5cc357be5ca45fae503b57d98ecff4b3eabea70412809fd/botocore-1.43.108-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/76/311f70d5b01b2c70ebf9924f188c666fb6343b885c5107c329c6650afb60/smoldyn-2.76-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/55/e5326141505c5d5e34c5e0935d2908a74e4561eca44108fbfb9c13d2911a/isoduration-20.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/71/44ce230e1b7fadd372515a97e32a83011f906ddded8d03e3c6aafbdedbb7/rfc3987_syntax-1.1.0-py3-none-any.whl
@@ -2212,7 +2232,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a0/b6/78aaf9141fb46742928c113f3cf6ef2259d538cb02b604b7656c1dc9883c/fastapi-0.142.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/af/0b/324ad794141ed819fa0a498e5dd1ac706c1dcd71881f860deaf8165857b0/libvcell-0.0.19-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/aa/33/fa42652f64b4599b3fbf33320857ddff7f40e71a6c4bb0808a20d4d0c660/libvcell-0.0.26-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b5/d4/e7bbea08f4c0f0bab819d38c1a613da5f194fba7b19aae3e2b3a27e78886/bottleneck-1.6.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/c3/d8793642ce7d29ea15cc39c10185ef126a27fcb8ea230154978221deb4b2/plum_dispatch-2.10.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -2232,7 +2252,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fe/d7/55db6802144da14ef8bbc5bc1f7b6b32aa19c5e909f2da92aeb4ef91c260/viva_emitters-0.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ff/a7/0d0685be80d222f1dcd32d687960e9dba1a2b7f77ea2d6dfc79290de4892/Unum-4.2.1.tar.gz
-      osx-arm64:
+      osx-arm64-macos-15-0:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.7.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiosignal-1.4.0-pyhd8ed1ab_0.conda
@@ -2577,19 +2597,19 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.2-h8088a28_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-h31dac16_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-      - pypi: .
       - pypi: ../pyvcell
+      - pypi: ./
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
+      - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
       - pypi: git+https://github.com/vivarium-collective/viva-workspace.git?branch=main#248eb235dff283a40dec18cbe4957b8cbb717fe1
       - pypi: git+https://github.com/vivarium-collective/vivarium-workbench.git?branch=main#0e4e79fbb087806b5e7db2d851ea6d754851f587
       - pypi: https://files.pythonhosted.org/packages/01/4f/83454fafd628e1e7e1726d74e44fb2332be5969d04c6182ca1fecb6c580e/filelock-4.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/10/93/33332bad7ddb0ff5920d9bd1ae8efd67d3aca0d394c36d363558d5c2f2d7/libvcell-0.0.19-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/15/d5/a8f9149b97cced9e1f4bff92ff0b6206120e2c853ae774d7020d6ecd8fa8/fqdn-1.6.0-py3-none-any.whl
@@ -2604,6 +2624,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/40/b5/1b84b2c784db76d69442334bc8b8748c840f13ca53be086f4f250ad4a0bc/narwhals-2.26.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/44/26/f6851f7b8c430b21e0f593aad3e1e8971ef08453621d9f8553a5c4e90095/libvcell-0.0.26-py3-none-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/44/b9/040d1a1c7836922828e6480cd2366bb8fe0ebf75b413d2bb51a9b0e7f78f/opentelemetry_api-1.45.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/ca/69528f16860eafee020efa0ff0a5017c60d9c13189da2f02548197336f35/bigraph_schema-1.8.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/48/9b/f36c3b3dfb3bb3580ac20ae4ed6fc8d1cd1a6201bfaddb9b82a940ea48e1/pyvcell_fvsolver-0.11.1-cp312-abi3-macosx_15_0_arm64.whl
@@ -2631,6 +2652,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/9e/51/17023c0f8f1869d8806b979a2bffa3f861f26a3f1a66b094288323fba52f/rfc3986_validator-0.1.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/6a/a83720e953b1682d2d109d3c2dbb0bc9bf28cc1cbc205be4ef4be5da709d/jsonpointer-3.1.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/b6/78aaf9141fb46742928c113f3cf6ef2259d538cb02b604b7656c1dc9883c/fastapi-0.142.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a1/ac/cf525e7164f412e18defece9552112f4e7217f4c1af1296a4ab0d0560243/smoldyn-2.76-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a2/f0/d6613774d86fbf6d145751d43c59875e47a6f9f17daee0aef173bd36d90e/markupsafe-3.0.4-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/a4/73/319dfa745dd668efe89309141ded489126461fcecd2b8f3a3cda185129b6/rpds_py-2026.6.3-cp312-cp312-macosx_11_0_arm64.whl
@@ -13769,26 +13791,6 @@ packages:
     - zstd >=1.5.7,<1.6.0a0
   size: 433687
   timestamp: 1786599629846
-- pypi: .
-  name: viva-pde-particle
-  requires_dist:
-  - process-bigraph>=1.9.1
-  - bigraph-schema
-  - bigraph-viz>=2.0.3
-  - pyyaml>=6.0
-  - jsonschema[format-nongpl]>=4.21
-  - jinja2>=3.1
-  - pypdf>=4.0
-  - matplotlib
-  - plotly
-  - numpy
-  - scipy
-  - vivarium-workbench @ git+https://github.com/vivarium-collective/vivarium-workbench.git@main ; extra == 'workbench'
-  - pytest>=7.4 ; extra == 'dev'
-  - viva-pde-particle[workbench] ; extra == 'dev'
-  - pyvcell[solver,native]>=0.3.3 ; python_full_version >= '3.12' and extra == 'reference'
-  - libvcell>=0.0.19 ; python_full_version >= '3.12' and extra == 'reference'
-  requires_python: '>=3.11'
 - pypi: ../pyvcell
   name: pyvcell
   requires_dist:
@@ -13819,11 +13821,34 @@ packages:
   - antimony>=3.1.3 ; extra == 'convert'
   - python-libsbml>=5.20.4,<6 ; extra == 'convert'
   - sympy>=1.13.1,<2 ; extra == 'convert'
-  - libvcell>=0.0.19 ; extra == 'native'
+  - libvcell>=0.0.26 ; extra == 'native'
   - pyvcell-mbsolver>=1.0.3,<2 ; extra == 'mb'
   - pyvcell[native] ; extra == 'mb'
-  - pyvcell[solver,viz,remote,io,convert,native,mb] ; extra == 'all'
+  - pyvcell-odesolver>=0.9.7,<2 ; extra == 'ode'
+  - pyvcell[native] ; extra == 'ode'
+  - pyvcell[solver,viz,remote,io,convert,native,mb,ode] ; extra == 'all'
   requires_python: '>=3.12,<4.0'
+- pypi: ./
+  name: viva-pde-particle
+  requires_dist:
+  - process-bigraph>=1.9.1
+  - bigraph-schema
+  - bigraph-viz>=2.0.3
+  - pyyaml>=6.0
+  - jsonschema[format-nongpl]>=4.21
+  - jinja2>=3.1
+  - pypdf>=4.0
+  - matplotlib
+  - plotly
+  - numpy
+  - scipy
+  - viva-smoldyn @ git+https://github.com/vivarium-collective/viva-smoldyn.git@main
+  - vivarium-workbench @ git+https://github.com/vivarium-collective/vivarium-workbench.git@main ; extra == 'workbench'
+  - pytest>=7.4 ; extra == 'dev'
+  - viva-pde-particle[workbench] ; extra == 'dev'
+  - pyvcell[solver,native]>=0.3.3 ; python_full_version >= '3.12' and extra == 'reference'
+  - libvcell>=0.0.19 ; python_full_version >= '3.12' and extra == 'reference'
+  requires_python: '>=3.11'
 - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
   name: vcell-fenics
   version: 0.1.1
@@ -13849,6 +13874,20 @@ packages:
   name: viva-catalog
   version: 0.1.0
   requires_python: '>=3.9'
+- pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
+  name: viva-smoldyn
+  version: 0.3.0
+  requires_dist:
+  - process-bigraph>=1.8.5
+  - bigraph-schema
+  - viva-emitters>=0.4.2
+  - smoldyn
+  - numpy
+  - pyyaml
+  - viva-superpowers ; extra == 'dashboard'
+  - pytest ; extra == 'dev'
+  - bigraph-viz ; extra == 'dev'
+  requires_python: '>=3.11'
 - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
   name: viva-superpowers
   version: 0.23.0
@@ -14252,6 +14291,13 @@ packages:
   - sphinx ; extra == 'docs'
   - gmpy2>=2.1.0a4 ; platform_python_implementation != 'PyPy' and extra == 'gmpy'
   - pytest>=4.6 ; extra == 'tests'
+- pypi: https://files.pythonhosted.org/packages/44/26/f6851f7b8c430b21e0f593aad3e1e8971ef08453621d9f8553a5c4e90095/libvcell-0.0.26-py3-none-macosx_13_0_arm64.whl
+  name: libvcell
+  version: 0.0.26
+  sha256: d64456886b2d01b8c4b26a161545c95d0c8c7dd55eca1739e4b43fdf01d8bc3e
+  requires_dist:
+  - pydantic>=2.10.6,<3.0.0
+  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/44/b9/040d1a1c7836922828e6480cd2366bb8fe0ebf75b413d2bb51a9b0e7f78f/opentelemetry_api-1.45.0-py3-none-any.whl
   name: opentelemetry-api
   version: 1.45.0
@@ -14775,6 +14821,23 @@ packages:
   - urllib3>=1.25.4,!=2.2.0,<3
   - awscrt==0.36.0 ; extra == 'crt'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/7a/76/311f70d5b01b2c70ebf9924f188c666fb6343b885c5107c329c6650afb60/smoldyn-2.76-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: smoldyn
+  version: '2.76'
+  sha256: c268584a3a01909e700c44a1b3567a6aa7616cc1488be071856f1326a11302ec
+  requires_dist:
+  - mypy ; extra == 'dev'
+  - numpy ; extra == 'dev'
+  - matplotlib ; extra == 'dev'
+  - pyflakes ; extra == 'dev'
+  - black ; extra == 'dev'
+  - flaky ; extra == 'dev'
+  - biosimulators-utils[logging,smoldyn]>=0.1.188 ; extra == 'biosimulators'
+  - pandas ; extra == 'biosimulators'
+  - biosimulators-simularium>=0.6 ; extra == 'biosimulators'
+  - flake8 ; extra == 'biosimulators-dev'
+  - python-dateutil ; extra == 'biosimulators-tests'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
   name: rfc3339-validator
   version: 0.1.4
@@ -14959,6 +15022,23 @@ packages:
   - pydantic-settings>=2.0.0 ; extra == 'all'
   - pydantic-extra-types>=2.0.0 ; extra == 'all'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/a1/ac/cf525e7164f412e18defece9552112f4e7217f4c1af1296a4ab0d0560243/smoldyn-2.76-py3-none-any.whl
+  name: smoldyn
+  version: '2.76'
+  sha256: 0a2960187c0c089414e956a85afd0942db4ee9785cdab7295e6f675498d3dc88
+  requires_dist:
+  - mypy ; extra == 'dev'
+  - numpy ; extra == 'dev'
+  - matplotlib ; extra == 'dev'
+  - pyflakes ; extra == 'dev'
+  - black ; extra == 'dev'
+  - flaky ; extra == 'dev'
+  - biosimulators-utils[logging,smoldyn]>=0.1.188 ; extra == 'biosimulators'
+  - pandas ; extra == 'biosimulators'
+  - biosimulators-simularium>=0.6 ; extra == 'biosimulators'
+  - flake8 ; extra == 'biosimulators-dev'
+  - python-dateutil ; extra == 'biosimulators-tests'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
   name: sympy
   version: 1.14.0
@@ -14997,6 +15077,13 @@ packages:
   - envwrap ; extra == 'telegram'
   - ipywidgets>=6 ; extra == 'notebook'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/aa/33/fa42652f64b4599b3fbf33320857ddff7f40e71a6c4bb0808a20d4d0c660/libvcell-0.0.26-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: libvcell
+  version: 0.0.26
+  sha256: 70512614fa44346958ee0ebaa5d0cf04bb8f9fc0c840c181f93f00648f50b8a2
+  requires_dist:
+  - pydantic>=2.10.6,<3.0.0
+  requires_python: '>=3.10,<4.0'
 - pypi: https://files.pythonhosted.org/packages/af/0b/324ad794141ed819fa0a498e5dd1ac706c1dcd71881f860deaf8165857b0/libvcell-0.0.19-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
   name: libvcell
   version: 0.0.19
