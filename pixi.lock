@@ -418,7 +418,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -820,7 +820,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -1278,7 +1278,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -1702,7 +1702,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -2183,7 +2183,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -2607,7 +2607,7 @@ environments:
       - pypi: git+https://github.com/virtualcell/vcell-fenics.git?rev=4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17#4dab281e1ed3f7c2b2bb60c6c2d1a8ccb251ca17
       - pypi: git+https://github.com/vivarium-collective/investigation-contracts.git?rev=65c793fd231d952e49a9cfe4244797dadde1bedc#65c793fd231d952e49a9cfe4244797dadde1bedc
       - pypi: git+https://github.com/vivarium-collective/viva-basic-processes.git?branch=main#3f7d64ee06337c8887d8db6d47b0bdfc6dea0093
-      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+      - pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
       - pypi: git+https://github.com/vivarium-collective/viva-marketplace.git?branch=main#4157fb72c25e6070923c791e22af47fe3ca46f47
       - pypi: git+https://github.com/vivarium-collective/viva-smoldyn.git?branch=main#a41faf02ec72d597e72a5b306e98568b69f1bede
       - pypi: git+https://github.com/vivarium-collective/viva-superpowers.git?branch=main#dcec4c69c301e07acfd383d7fbfb08f5ca20e840
@@ -4391,8 +4391,7 @@ packages:
   - libllvm23 >=23.1.2,<23.2.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: APACHE
-  purls:
-  - pkg:pypi/libclang-cpp23-1
+  purls: []
   run_exports:
     weak:
     - libclang-cpp23.1 >=23.1.2,<23.2.0a0
@@ -5024,8 +5023,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: Apache
-  purls:
-  - pkg:pypi/libllvm23
+  purls: []
   run_exports:
     weak:
     - libllvm23 >=23.1.2,<23.2.0a0
@@ -6488,7 +6486,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/numpy?source=compressed-mapping
+  - pkg:pypi/numpy?source=hash-mapping
   run_exports:
     weak:
     - numpy >=1.25,<3
@@ -6953,7 +6951,8 @@ packages:
   license: LGPL-3.0-only
   license_family: LGPL
   purls:
-  - pkg:pypi/pyside6?source=compressed-mapping
+  - pkg:pypi/pyside6?source=hash-mapping
+  - pkg:pypi/shiboken6?source=hash-mapping
   run_exports: {}
   size: 13944078
   timestamp: 1788744980531
@@ -9079,7 +9078,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pyvista-validation
+  - pkg:pypi/pyvista-validation?source=compressed-mapping
   run_exports: {}
   size: 40640
   timestamp: 1789614540757
@@ -9152,7 +9151,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/setuptools?source=compressed-mapping
+  - pkg:pypi/setuptools?source=hash-mapping
   run_exports: {}
   size: 524488
   timestamp: 1786282924579
@@ -9234,7 +9233,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/typing-inspection?source=compressed-mapping
+  - pkg:pypi/typing-inspection?source=hash-mapping
   run_exports: {}
   size: 21070
   timestamp: 1786818918217
@@ -9386,7 +9385,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: BSD-3-Clause AND MIT AND EPL-2.0
   purls:
-  - pkg:pypi/backports-zstd?source=compressed-mapping
+  - pkg:pypi/backports-zstd?source=hash-mapping
   run_exports: {}
   size: 238779
   timestamp: 1788491297224
@@ -10877,8 +10876,7 @@ packages:
   - libllvm23 >=23.1.2,<23.2.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: APACHE
-  purls:
-  - pkg:pypi/libclang-cpp23-1
+  purls: []
   run_exports:
     weak:
     - libclang-cpp23.1 >=23.1.2,<23.2.0a0
@@ -11375,8 +11373,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: Apache
-  purls:
-  - pkg:pypi/libllvm23
+  purls: []
   run_exports:
     weak:
     - libllvm23 >=23.1.2,<23.2.0a0
@@ -13877,9 +13874,9 @@ packages:
   - numpy
   - pytest ; extra == 'dev'
   requires_python: '>=3.11'
-- pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#227bd215382889cf93c2376054e1e8932d3ec8c5
+- pypi: git+https://github.com/vivarium-collective/viva-fenics.git?branch=main#db0c1b99698baeb043c585d638ebf7d549d29c3f
   name: viva-fenics
-  version: 0.2.0
+  version: 0.3.0
   requires_dist:
   - process-bigraph>=1.8.5
   - bigraph-schema>=1.8.1
