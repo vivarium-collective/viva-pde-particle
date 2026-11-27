@@ -28,6 +28,11 @@ dependencies = [
     # install just resolves viva-smoldyn + its PyPI deps, and the hybrid tests
     # importorskip the engine.
     "viva-smoldyn",
+    # The canonical FEniCSx wrapper — FenicsxReactionDiffusion reuses its
+    # FenicsxReactionDiffusionProcess. viva_fenics keeps dolfinx lazy, so importing it
+    # works in the light uv env (dolfinx itself is conda-only, via pixi); engine tests
+    # run under pixi.
+    "viva-fenics",
 ]
 
 [project.optional-dependencies]
@@ -64,3 +69,4 @@ packages = ["viva_pde_particle"]
 [tool.uv.sources]
 vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-workbench.git", branch = "main" }
 viva-smoldyn = { git = "https://github.com/vivarium-collective/viva-smoldyn.git", branch = "main" }
+viva-fenics = { git = "https://github.com/vivarium-collective/viva-fenics.git", branch = "main" }
