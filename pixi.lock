@@ -4391,8 +4391,7 @@ packages:
   - libllvm23 >=23.1.2,<23.2.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: APACHE
-  purls:
-  - pkg:pypi/libclang-cpp23-1
+  purls: []
   run_exports:
     weak:
     - libclang-cpp23.1 >=23.1.2,<23.2.0a0
@@ -5024,8 +5023,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: Apache
-  purls:
-  - pkg:pypi/libllvm23
+  purls: []
   run_exports:
     weak:
     - libllvm23 >=23.1.2,<23.2.0a0
@@ -6488,7 +6486,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/numpy?source=compressed-mapping
+  - pkg:pypi/numpy?source=hash-mapping
   run_exports:
     weak:
     - numpy >=1.25,<3
@@ -6953,7 +6951,8 @@ packages:
   license: LGPL-3.0-only
   license_family: LGPL
   purls:
-  - pkg:pypi/pyside6?source=compressed-mapping
+  - pkg:pypi/pyside6?source=hash-mapping
+  - pkg:pypi/shiboken6?source=hash-mapping
   run_exports: {}
   size: 13944078
   timestamp: 1788744980531
@@ -9079,7 +9078,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pyvista-validation
+  - pkg:pypi/pyvista-validation?source=compressed-mapping
   run_exports: {}
   size: 40640
   timestamp: 1789614540757
@@ -9152,7 +9151,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/setuptools?source=compressed-mapping
+  - pkg:pypi/setuptools?source=hash-mapping
   run_exports: {}
   size: 524488
   timestamp: 1786282924579
@@ -9234,7 +9233,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/typing-inspection?source=compressed-mapping
+  - pkg:pypi/typing-inspection?source=hash-mapping
   run_exports: {}
   size: 21070
   timestamp: 1786818918217
@@ -9386,7 +9385,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: BSD-3-Clause AND MIT AND EPL-2.0
   purls:
-  - pkg:pypi/backports-zstd?source=compressed-mapping
+  - pkg:pypi/backports-zstd?source=hash-mapping
   run_exports: {}
   size: 238779
   timestamp: 1788491297224
@@ -10877,8 +10876,7 @@ packages:
   - libllvm23 >=23.1.2,<23.2.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: APACHE
-  purls:
-  - pkg:pypi/libclang-cpp23-1
+  purls: []
   run_exports:
     weak:
     - libclang-cpp23.1 >=23.1.2,<23.2.0a0
@@ -11375,8 +11373,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: Apache-2.0 WITH LLVM-exception
   license_family: Apache
-  purls:
-  - pkg:pypi/libllvm23
+  purls: []
   run_exports:
     weak:
     - libllvm23 >=23.1.2,<23.2.0a0
